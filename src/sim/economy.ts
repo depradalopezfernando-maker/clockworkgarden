@@ -17,7 +17,7 @@ import { BASE_CLICK_YIELD } from '@content/balance';
 import { ownedOf, type GameState } from './state';
 import { prestigeMultiplier } from './prestige';
 import { kitchenGardenMultiplier } from './kitchenGarden';
-import { effectsOf } from './insight';
+import { effectsOf, levelsOf } from './insight';
 
 // ---------------------------------------------------------------------------
 // Costs
@@ -138,7 +138,16 @@ export function gardenPlotManaPerSecond(state: GameState): number {
  */
 export function totalManaPerSecond(state: GameState, kitchenGardenBaseFraction?: number): number {
   const plots = gardenPlotManaPerSecond(state);
-  return plots + plots * kitchenGardenMultiplier(state.kitchenGarden, kitchenGardenBaseFraction);
+  return plots + plots * kitchenGardenShare(state, kitchenGardenBaseFraction);
+}
+
+/** The Kitchen Garden's bonus as a multiple of Garden Plot income (D2). */
+export function kitchenGardenShare(state: GameState, baseFraction?: number): number {
+  return kitchenGardenMultiplier(
+    state.kitchenGarden,
+    { levels: levelsOf(state), season: state.season, nowSeconds: state.elapsedSeconds },
+    baseFraction
+  );
 }
 
 /**

@@ -12,6 +12,7 @@ import {
   paybackSeconds,
   totalManaPerSecond,
 } from '@sim/economy';
+import { fullBuildOut } from '@sim/kitchenGarden';
 import { initialState, ownedOf, type GameState } from '@sim/state';
 import { GENERATOR_TIERS, TIER_COUNT, tierAt } from '@content/generators';
 import { COST_MULT_BAND, PAYBACK_SECONDS_BAND } from '@content/balance';
@@ -170,7 +171,7 @@ describe('production', () => {
     const state: GameState = {
       ...base,
       owned: [100, ...base.owned.slice(1)],
-      kitchenGarden: { slots: 20, capacityPerSlot: 5, surfaceYieldMult: 1.2, activeFraction: 1 },
+      kitchenGarden: fullBuildOut(1, 0),
     };
     const plots = gardenPlotManaPerSecond(state);
     const total = totalManaPerSecond(state);

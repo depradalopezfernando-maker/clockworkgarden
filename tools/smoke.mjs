@@ -130,6 +130,33 @@ await page.locator('[data-testid="tab-milestones"]').click();
 check(await page.locator('[data-testid="milestones"]').isVisible(), 'the milestone list renders');
 await page.locator('[data-testid="tab-tree"]').click();
 
+// --- 4c. Kitchen Garden (§2a) -------------------------------------------------
+check(await page.locator('[data-testid="kg-plots"]').isVisible(), 'the Kitchen Garden renders');
+
+const plot0 = page.locator('[data-testid="kg-plot-0"]');
+check((await plot0.getAttribute('data-stage')) === 'bare', 'plots start bare');
+
+const dayBefore = Number(
+  (await page.locator('[data-testid="kg-day"]').textContent())?.replace(/\D/g, '')
+);
+await plot0.click(); // Dig
+check((await plot0.getAttribute('data-stage')) === 'dug', 'Dig advances the plot');
+await plot0.click(); // Plant
+await plot0.click(); // Cover
+check(
+  (await plot0.getAttribute('data-stage')) === 'growing',
+  'a full cycle starts the crop growing'
+);
+
+const dayAfter = Number(
+  (await page.locator('[data-testid="kg-day"]').textContent())?.replace(/\D/g, '')
+);
+check(
+  dayBefore - dayAfter === 6,
+  'a manual cycle spends 6s of Day Time (§2a)',
+  `${dayBefore}s -> ${dayAfter}s`
+);
+
 // --- 5. Passive production accrues --------------------------------------------
 const beforeIdle = (await readSave())?.state.mana ?? 0;
 await page.waitForTimeout(3000);

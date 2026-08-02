@@ -8,6 +8,7 @@ import { GENERATOR_TIERS, tierAt } from '@content/generators';
 import { formatDuration, formatNumber, formatRate, formatSeconds } from './format';
 import { SEASON_NAMES, themeVariables } from './theme';
 import { InsightPanel } from './InsightPanel';
+import { KitchenGardenPanel } from './KitchenGardenPanel';
 import { useGameRuntime, useGameState, useGameStatus } from './useGame';
 import './styles.css';
 
@@ -67,6 +68,8 @@ export function App() {
       </section>
 
       <InsightPanel state={state} />
+
+      <KitchenGardenPanel state={state} />
 
       {status.offline && !offlineDismissed && (
         <OfflineDialog

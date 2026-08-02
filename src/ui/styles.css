@@ -399,3 +399,60 @@ body {
   color: var(--ui-text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* --- Kitchen Garden (§2a) ------------------------------------------------ */
+
+.panel--wide {
+  grid-column: 1 / -1;
+}
+
+.meter__fill--night {
+  background: var(--season-shadow);
+}
+
+.plots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.plot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.8rem;
+  min-height: 4.2rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.plot:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.plot:not(:disabled):hover {
+  border-color: var(--season-primary);
+}
+
+.plot--growing {
+  cursor: default;
+  border-style: dashed;
+  border-color: var(--season-secondary);
+}
+
+.plot--grown {
+  border-color: var(--ui-positive);
+}
+
+.plot--add {
+  border-style: dashed;
+  justify-content: center;
+}

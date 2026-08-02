@@ -271,3 +271,14 @@ export const CAPSTONE_GATE_COUNT = 10;
 
 /** How long clearing a capstone challenge takes, in seconds. Placeholder. */
 export const CAPSTONE_DURATION_SECONDS = 90;
+
+/**
+ * The first generator tier of each Season. §2a prices Kitchen Garden slots and
+ * surfaces relative to this rather than as absolute numbers, so they stay
+ * meaningful at every stage without separate quadrillion-scale tuning.
+ */
+export const SEASON_FIRST_TIER: Readonly<Record<number, number>> = { 1: 1, 2: 6, 3: 11, 4: 16 };
+
+export function seasonTierOneCost(season: number): number {
+  return tierAt(SEASON_FIRST_TIER[Math.min(Math.max(season, 1), 4)] ?? 1).baseCost;
+}

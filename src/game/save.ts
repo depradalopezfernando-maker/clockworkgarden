@@ -11,10 +11,18 @@
 
 import { initialKitchenGarden, initialState, type GameState } from '@sim/state';
 import { TIER_COUNT } from '@content/generators';
+import {
+  DAY_LENGTH_SECONDS_BY_UPGRADE,
+  KG_MAX_SLOTS,
+  KG_STARTING_SLOTS,
+  SEED_SATCHEL_BASE_CAPACITY,
+} from '@content/balance';
+import { DEFAULT_SURFACE, surfaceById } from '@content/surfaces';
+import { emptyPlot, type KitchenGardenState, type Plot } from '@sim/kitchenGarden';
 import { nodeById } from '@content/insightTree';
 import { MILESTONES } from '@content/milestones';
 
-export const CURRENT_SAVE_VERSION = 2;
+export const CURRENT_SAVE_VERSION = 3;
 export const SAVE_KEY = 'clockwork-garden:save';
 
 export interface SaveFile {
@@ -58,6 +66,37 @@ const MIGRATIONS: Readonly<Record<number, (raw: unknown) => unknown>> = {
         lifetimeInsight: 0,
         purchasedNodes: [],
         claimedMilestones: [],
+      },
+    };
+  },
+  /**
+   * v2 -> v3 (Phase 4): the Kitchen Garden became a real per-plot state machine.
+   *
+   * v2 stored an abstract build-out ({slots, capacityPerSlot, surfaceYieldMult,
+   * activeFraction}); v3 stores actual plots. The player's slot COUNT is
+   * preserved and each becomes a bare plot - their crops are lost, but there
+   * were no real crops in v2, only a number standing in for them. Seeds and the
+   * Day budget start fresh.
+   */
+  2: (raw) => {
+    const envelope = (raw ?? {}) as Record<string, unknown>;
+    const state = (envelope['state'] ?? {}) as Record<string, unknown>;
+    const oldKg = (state['kitchenGarden'] ?? {}) as Record<string, unknown>;
+    const slots = typeof oldKg['slots'] === 'number' ? oldKg['slots'] : KG_STARTING_SLOTS;
+    const count = Math.min(Math.max(Math.floor(slots), KG_STARTING_SLOTS), KG_MAX_SLOTS);
+
+    return {
+      ...envelope,
+      version: 3,
+      state: {
+        ...state,
+        kitchenGarden: {
+          plots: Array.from({ length: count }, () => emptyPlot()),
+          seeds: SEED_SATCHEL_BASE_CAPACITY,
+          dayTimeRemaining: DAY_LENGTH_SECONDS_BY_UPGRADE[0] ?? 30,
+          nightRemaining: 0,
+          seedProgress: 0,
+        },
       },
     };
   },
@@ -109,12 +148,7 @@ function reviveState(raw: unknown): GameState {
     appliedSqp: Math.max(0, num(r['appliedSqp'], 0)),
     prestigeCount: Math.max(0, Math.floor(num(r['prestigeCount'], 0))),
     elapsedSeconds: Math.max(0, num(r['elapsedSeconds'], 0)),
-    kitchenGarden: {
-      slots: Math.max(0, num(kgRaw['slots'], kgBase.slots)),
-      capacityPerSlot: Math.max(1, num(kgRaw['capacityPerSlot'], kgBase.capacityPerSlot)),
-      surfaceYieldMult: Math.max(0, num(kgRaw['surfaceYieldMult'], kgBase.surfaceYieldMult)),
-      activeFraction: Math.min(1, Math.max(0, num(kgRaw['activeFraction'], kgBase.activeFraction))),
-    },
+    kitchenGarden: reviveKitchenGarden(kgRaw, kgBase),
     frenzy: {
       meter: Math.min(1, Math.max(0, num(frenzyRaw['meter'], 0))),
       remainingSeconds: Math.max(0, num(frenzyRaw['remainingSeconds'], 0)),
@@ -127,6 +161,48 @@ function reviveState(raw: unknown): GameState {
     claimedMilestones: stringIds(r['claimedMilestones']).filter((id) => MILESTONE_IDS.has(id)),
   };
 }
+
+function reviveKitchenGarden(
+  raw: Record<string, unknown>,
+  fallback: KitchenGardenState
+): KitchenGardenState {
+  const num = (v: unknown, d: number): number =>
+    typeof v === 'number' && Number.isFinite(v) ? v : d;
+
+  const rawPlots = Array.isArray(raw['plots']) ? (raw['plots'] as unknown[]) : null;
+  const plots: Plot[] = rawPlots
+    ? rawPlots.slice(0, KG_MAX_SLOTS).map((entry) => {
+        const p = (entry ?? {}) as Record<string, unknown>;
+        const surface = typeof p['surface'] === 'string' ? p['surface'] : DEFAULT_SURFACE;
+        const stage = typeof p['stage'] === 'string' ? p['stage'] : 'bare';
+        const base = emptyPlot(surfaceById(surface).id);
+        return {
+          ...base,
+          stage: (VALID_STAGES.has(stage) ? stage : 'bare') as Plot['stage'],
+          digAt: num(p['digAt'], -1),
+          plantAt: num(p['plantAt'], -1),
+          coverAt: num(p['coverAt'], -1),
+          grownAt: num(p['grownAt'], -1),
+          perfectUntil: num(p['perfectUntil'], -1),
+          plantedSeason: Math.max(0, Math.floor(num(p['plantedSeason'], 0))),
+        };
+      })
+    : fallback.plots.slice();
+
+  // Never fewer than the starting slots: a corrupt save must not leave a player
+  // with a Kitchen Garden they cannot use.
+  while (plots.length < KG_STARTING_SLOTS) plots.push(emptyPlot());
+
+  return {
+    plots,
+    seeds: Math.max(0, num(raw['seeds'], fallback.seeds)),
+    dayTimeRemaining: Math.max(0, num(raw['dayTimeRemaining'], fallback.dayTimeRemaining)),
+    nightRemaining: Math.max(0, num(raw['nightRemaining'], 0)),
+    seedProgress: Math.max(0, num(raw['seedProgress'], 0)),
+  };
+}
+
+const VALID_STAGES = new Set(['bare', 'dug', 'planted', 'growing', 'grown']);
 
 const MILESTONE_IDS = new Set(MILESTONES.map((m) => m.id));
 

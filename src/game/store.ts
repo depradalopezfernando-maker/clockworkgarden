@@ -12,6 +12,19 @@ import { MAX_CATCHUP_SECONDS, OFFLINE_MIN_EFFICIENCY, SIM_TICK_SECONDS } from '@
 import { advance, clickBell, type ClickResult } from '@sim/tick';
 import { buy as buyGenerator } from '@sim/economy';
 import { purchaseNode as purchaseInsightNode } from '@sim/insight';
+import { levelsOf } from '@sim/insight';
+import {
+  addSlot,
+  applySurface,
+  clearPlot,
+  performStep,
+  slotCap,
+  slotCost,
+  tickKitchenGarden,
+  type PlotStep,
+} from '@sim/kitchenGarden';
+import { seasonTierOneCost } from '@content/generators';
+import { SURFACES, type SurfaceId } from '@content/surfaces';
 import { effectsOf } from '@sim/insight';
 import { totalManaPerSecond } from '@sim/economy';
 import { offlineManaEarned } from '@sim/offline';
@@ -204,6 +217,20 @@ export class GameStore {
     let ticks = 0;
     while (this.accumulator >= SIM_TICK_SECONDS && ticks < 1000) {
       this.state = advance(this.state, SIM_TICK_SECONDS);
+
+      // The Kitchen Garden runs on the same clock: growth, Seeds and Night all
+      // advance on real time. Day Time deliberately does not (§2a).
+      const effects = effectsOf(this.state);
+      this.state = {
+        ...this.state,
+        kitchenGarden: tickKitchenGarden(this.state.kitchenGarden, SIM_TICK_SECONDS, {
+          dayLengthStep: effects.kgDayLengthStep,
+          hasShortNight: effects.kgDayLengthStep >= 2,
+          satchelBonus: effects.satchelBonus,
+          nowSeconds: this.state.elapsedSeconds,
+        }),
+      };
+
       this.accumulator -= SIM_TICK_SECONDS;
       ticks++;
     }
@@ -236,6 +263,59 @@ export class GameStore {
     const next = buyGenerator(this.state, tier);
     if (next === this.state) return false;
     this.state = next;
+    this.publish();
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Kitchen Garden (§2a)
+  // -------------------------------------------------------------------------
+
+  private kgContext() {
+    return {
+      levels: levelsOf(this.state),
+      season: this.state.season,
+      nowSeconds: this.state.elapsedSeconds,
+    };
+  }
+
+  kitchenGardenStep(plotIndex: number, step: PlotStep): boolean {
+    const outcome = performStep(this.state.kitchenGarden, plotIndex, step, this.kgContext());
+    if (!outcome.performed) return false;
+    this.state = { ...this.state, kitchenGarden: outcome.kg };
+    this.publish();
+    return true;
+  }
+
+  kitchenGardenClear(plotIndex: number): boolean {
+    const kg = clearPlot(this.state.kitchenGarden, plotIndex);
+    if (kg === this.state.kitchenGarden) return false;
+    this.state = { ...this.state, kitchenGarden: kg };
+    this.publish();
+    return true;
+  }
+
+  /** §2a: slots cost Mana; the Insight tree raises how many you may own. */
+  kitchenGardenBuySlot(): boolean {
+    const effects = effectsOf(this.state);
+    const cap = slotCap(effects.kgSlotBonus);
+    const kg = this.state.kitchenGarden;
+    if (kg.plots.length >= cap) return false;
+
+    const cost = slotCost(kg.plots.length + 1, seasonTierOneCost(this.state.season));
+    if (this.state.mana < cost) return false;
+
+    this.state = { ...this.state, mana: this.state.mana - cost, kitchenGarden: addSlot(kg, cap) };
+    this.publish();
+    return true;
+  }
+
+  kitchenGardenApplySurface(plotIndex: number, surface: SurfaceId): boolean {
+    const cost = SURFACES[surface].applyCostMultiplier * seasonTierOneCost(this.state.season);
+    if (this.state.mana < cost) return false;
+    const kg = applySurface(this.state.kitchenGarden, plotIndex, surface);
+    if (kg === this.state.kitchenGarden) return false;
+    this.state = { ...this.state, mana: this.state.mana - cost, kitchenGarden: kg };
     this.publish();
     return true;
   }

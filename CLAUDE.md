@@ -6,9 +6,14 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Phase 3 complete. Phase 4 is next — the Kitchen Garden (§2a), the largest
-single phase.** Playable in a browser: Bell, generators, Growth Frenzy, the
-50-node Insight tree, milestones, versioned saves, offline progress.
+**Phase 4 complete. Phase 5 is next — prestige loop, Season 1 capstone, and the
+VERTICAL SLICE human gate.** Playable in a browser: Bell, generators, Growth
+Frenzy, the Insight tree, milestones, the full Kitchen Garden (§2a), versioned
+saves, offline progress.
+
+**Read `docs/07-phase-4-kitchen-garden-report.md` §2 before Phase 5.** The
+Kitchen Garden supplies ~3.5% of income in real play, not the ~1/3 D2 targets,
+and the fix is a design choice awaiting the designer.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
@@ -21,6 +26,7 @@ src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
 src/content/generators.ts         the 20-tier table (§2), transcribed
 src/content/insightTree.ts        50 nodes (§3). Eight of them open generator tiers
 src/content/milestones.ts         37 milestones — the ONLY source of Insight
+src/content/surfaces.ts           the six Kitchen Garden surfaces (§2a)
 src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
 src/game/                         runtime: store + loop + versioned saves
 src/ui/                           React shell, HUD, formatting
@@ -33,11 +39,10 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 Start here: `docs/README.md`. Verify with `npm run ci`.
 Latest balance numbers: `docs/06-phase-1-balance-report.md`.
 
-**Phase 4's job:** the Kitchen Garden (§2a) — grid, per-plot Dig/Plant/Cover
-state machine, six surfaces, Seed Satchel, the spend-only Day/Night budget, and
-3 automation steps x 2 levels. **Decide the §7 "Light integration" scope cut
-BEFORE starting**, not during. Its Insight nodes already exist as data and are
-listed in `PENDING_EFFECT_KINDS` — wire them and remove them from that list.
+**Phase 5's job:** the prestige loop end to end, the Season 1 capstone (§4 and
+`docs/04` item 4 — **still undesigned, ask before building**), and the
+first-15-minutes tutorial. Then a human plays it for ninety minutes and decides
+whether Seasons 2-4 are worth building.
 
 ---
 
@@ -67,9 +72,10 @@ Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
 **Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
-capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); whether
-prestige wipes banked Insight (`docs/04` item 10 — Reading B implemented);
-offline Kitchen Garden behaviour (Phase 4).
+capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); how to
+make the Kitchen Garden matter (`docs/07` §2); whether prestige wipes banked
+Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen Garden
+behaviour (`docs/04` item 7 — crops currently grow on engaged-play time only).
 
 ---
 
@@ -121,6 +127,10 @@ rationale in `docs/03-technical-architecture.md` §8:
   Insight and the tree becomes free
 - no Insight node silently does nothing: every effect kind is applied or listed
   in `PENDING_EFFECT_KINDS`
+- Night pauses ONLY new Kitchen Garden actions — never the Bell, Garden Plots,
+  Frenzy, Pollination or the Festival (§2a's narrow blast radius)
+- Day Time is spend-only and never ticks down on a timer (§9 lists real-time
+  energy gates as a known failure mode)
 
 ---
 

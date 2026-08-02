@@ -16,7 +16,7 @@ import {
 } from '@sim/campaign';
 import { paybackSeconds } from '@sim/economy';
 import { totalSqp } from '@sim/prestige';
-import { FULL_BUILD_OUT, kitchenGardenIncomeShare } from '@sim/kitchenGarden';
+import { fullBuildOut, kitchenGardenIncomeShare } from '@sim/kitchenGarden';
 import { effectiveOfflineHours, averageOfflineEfficiency } from '@sim/offline';
 import {
   KITCHEN_GARDEN_BASE_FRACTION,
@@ -120,7 +120,11 @@ rule('3. Prestige cadence (§4 target: 4-5 natural resets, every one felt)');
 rule('4. Kitchen Garden share (§10 item 10, decision D2)');
 // ---------------------------------------------------------------------------
 {
-  const full = kitchenGardenIncomeShare(FULL_BUILD_OUT);
+  const full = kitchenGardenIncomeShare(fullBuildOut(4, 0), {
+    levels: { dig: 0, plant: 0, cover: 0 },
+    season: 4,
+    nowSeconds: 1e9,
+  });
   console.log(`  BaseFraction:                 ${KITCHEN_GARDEN_BASE_FRACTION}`);
   console.log(`  share at full S4 build-out:   ${(full * 100).toFixed(1)}%`);
   console.log(

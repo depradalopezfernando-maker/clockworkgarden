@@ -7,6 +7,10 @@
 
 import { TIER_COUNT } from '@content/generators';
 import { initialFrenzy, type FrenzyState } from './frenzy';
+import { initialKitchenGarden, type KitchenGardenState } from './kitchenGarden';
+
+export type { KitchenGardenState };
+export { initialKitchenGarden };
 
 export interface GameState {
   /** Spendable Mana. Reset by prestige. */
@@ -40,7 +44,7 @@ export interface GameState {
   /** Seconds of engaged play. §8's timeline is measured in this, not wall clock. */
   readonly elapsedSeconds: number;
 
-  /** Kitchen Garden build-out, as far as Phase 1 models it. */
+  /** §2a. Per-plot state, Seeds, and the Day/Night budget. */
   readonly kitchenGarden: KitchenGardenState;
 
   /** §5 Growth Frenzy meter and active window. */
@@ -64,27 +68,6 @@ export interface GameState {
    * exactly what §3's milestone design exists to prevent.
    */
   readonly claimedMilestones: readonly string[];
-}
-
-/**
- * Phase 1 models the Kitchen Garden at build-out level only - enough to fit
- * `KITCHEN_GARDEN_BASE_FRACTION` (decision D2) against its income-share target.
- * The per-plot state machine, Day/Night budget, and Dig/Plant/Cover sequence are
- * Phase 4.
- */
-export interface KitchenGardenState {
-  /** Plot slots unlocked, 4-20. */
-  readonly slots: number;
-  /** Plants per slot, from the surface installed (1, 3 or 5). */
-  readonly capacityPerSlot: number;
-  /** Combined surface yield multiplier. */
-  readonly surfaceYieldMult: number;
-  /** Fraction of plots currently grown and producing. */
-  readonly activeFraction: number;
-}
-
-export function initialKitchenGarden(): KitchenGardenState {
-  return { slots: 4, capacityPerSlot: 1, surfaceYieldMult: 1, activeFraction: 1 };
 }
 
 export function initialState(): GameState {

@@ -45,16 +45,25 @@ describe('round-tripping the current version', () => {
   });
 });
 
-describe('the frozen v2 fixture loads as-is', () => {
-  it('round-trips the Insight tree state', () => {
+describe('the frozen v2 fixture still loads after the v3 migration', () => {
+  it('keeps the Insight tree state and reports the migration', () => {
     const result = deserialize(JSON.stringify(v2Fixture));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.migratedFrom).toBeNull();
+    expect(result.migratedFrom).toBe(2);
     expect(result.save.state.insight).toBe(3);
     expect(result.save.state.lifetimeInsight).toBe(8);
     expect(result.save.state.purchasedNodes).toEqual(['s1-click-1', 's1-gen-3']);
     expect(result.save.state.claimedMilestones).toHaveLength(4);
+  });
+
+  it('converts the old abstract build-out into real plots, keeping the count', () => {
+    const result = deserialize(JSON.stringify(v2Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // v2 stored {slots: 4}; v3 stores four bare plots.
+    expect(result.save.state.kitchenGarden.plots).toHaveLength(4);
+    expect(result.save.state.kitchenGarden.plots.every((p) => p.stage === 'bare')).toBe(true);
   });
 });
 

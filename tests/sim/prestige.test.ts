@@ -7,6 +7,7 @@ import {
   sqpAvailable,
   totalSqp,
 } from '@sim/prestige';
+import { fullBuildOut } from '@sim/kitchenGarden';
 import { initialState, type GameState } from '@sim/state';
 import { PRESTIGE_SQP_COEFFICIENT, PRESTIGE_SQP_REFERENCE } from '@content/balance';
 import { TIER_COUNT } from '@content/generators';
@@ -93,7 +94,7 @@ describe('§4 — what a reset keeps and what it takes', () => {
     mana: 999,
     owned: new Array<number>(TIER_COUNT).fill(7),
     elapsedSeconds: 4321,
-    kitchenGarden: { slots: 17, capacityPerSlot: 5, surfaceYieldMult: 1.2, activeFraction: 1 },
+    kitchenGarden: fullBuildOut(2, 0),
   };
 
   it('resets Mana and every Garden Plot', () => {

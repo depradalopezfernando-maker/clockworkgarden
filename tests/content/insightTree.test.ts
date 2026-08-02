@@ -200,6 +200,12 @@ describe('no node silently does nothing', () => {
       'production-bonus',
       'offline-floor',
       'frenzy-duration',
+      // Wired in Phase 4.
+      'kg-slots',
+      'kg-surface',
+      'kg-automation',
+      'kg-day-length',
+      'satchel-capacity',
     ];
     const accounted = new Set<string>([...applied, ...PENDING_EFFECT_KINDS]);
 

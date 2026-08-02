@@ -75,7 +75,7 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * against - is K-independent. Reset count is set by player behaviour and by the
  * span of lifetime Mana across the campaign. See docs/06-phase-1-balance-report.md.
  */
-export const PRESTIGE_SQP_COEFFICIENT = 20;
+export const PRESTIGE_SQP_COEFFICIENT = 26;
 /**
  * SIM. The lifetime Mana at which SQP starts accruing.
  *
@@ -231,6 +231,16 @@ export const KG_MAX_SLOTS = 20; // SPEC §2a and §9
 /** SPEC §2a. SlotCost(n) = BASE_MULT * (Season Tier-1 cost) * GROWTH^(n-5). */
 export const KG_SLOT_COST_BASE_MULTIPLIER = 3;
 export const KG_SLOT_COST_GROWTH = 1.15; // open question 8 - too shallow late
+
+/**
+ * HUMAN §2a. Base time for a crop to grow, before the surface's multiplier.
+ *
+ * The spec gives surfaces RELATIVE grow times (0.75x, 1.3x) but never an
+ * absolute. 120s makes a Bare Soil crop roughly two minutes and a Stone
+ * Parterre a little over two and a half - long enough that replanting is a
+ * ritual rather than a treadmill, short enough to see within a session.
+ */
+export const KG_BASE_GROW_SECONDS = 120;
 
 /** HUMAN §2a. All three of Dig/Plant/Cover within this window doubles yield. */
 export const PERFECT_PLANTING_WINDOW_SECONDS = 2;

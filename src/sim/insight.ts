@@ -18,11 +18,6 @@ import type { GameState } from './state';
  * read by `aggregateEffects` below.
  */
 export const PENDING_EFFECT_KINDS: readonly NodeEffect['kind'][] = [
-  'kg-slots', // Phase 4
-  'kg-surface', // Phase 4
-  'kg-automation', // Phase 4
-  'kg-day-length', // Phase 4
-  'satchel-capacity', // Phase 4
   'barn-capacity', // Phase 8
   'insulation', // Phase 9
   'cosmetic', // no mechanical effect, by design (§3)
@@ -152,6 +147,17 @@ export function noEffects(): InsightEffects {
  * approximate.
  */
 const effectsCache = new WeakMap<readonly string[], InsightEffects>();
+const levelsCache = new WeakMap<readonly string[], AutomationLevels>();
+
+/** Memoised automation levels, keyed like `effectsOf`. */
+export function levelsOf(state: GameState): AutomationLevels {
+  const key = state.purchasedNodes;
+  const cached = levelsCache.get(key);
+  if (cached) return cached;
+  const computed = automationLevels(key);
+  levelsCache.set(key, computed);
+  return computed;
+}
 
 export function effectsOf(state: GameState): InsightEffects {
   const key = state.purchasedNodes;
@@ -162,10 +168,10 @@ export function effectsOf(state: GameState): InsightEffects {
   return computed;
 }
 
-/** Automation levels per step, derived from purchased nodes. Phase 4 uses this. */
-export function automationLevels(
-  purchasedNodeIds: readonly string[]
-): Readonly<Record<'dig' | 'plant' | 'cover', 0 | 1 | 2>> {
+export type AutomationLevels = Readonly<Record<'dig' | 'plant' | 'cover', 0 | 1 | 2>>;
+
+/** Automation levels per step, derived from purchased nodes (§2a). */
+export function automationLevels(purchasedNodeIds: readonly string[]): AutomationLevels {
   const levels = { dig: 0, plant: 0, cover: 0 } as Record<'dig' | 'plant' | 'cover', 0 | 1 | 2>;
   for (const id of purchasedNodeIds) {
     const node = nodeById(id);

@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { ARCHETYPES, simulateAllArchetypes, simulateCampaign } from '@sim/campaign';
 import {
-  FULL_BUILD_OUT,
+  emptyPlot,
+  fullBuildOut,
   kitchenGardenIncomeShare,
   kitchenGardenMultiplier,
+  type Plot,
 } from '@sim/kitchenGarden';
 import {
   KG_MAX_SLOTS,
@@ -87,36 +89,51 @@ describe('the simulation is deterministic', () => {
   });
 });
 
+const MANUAL = { dig: 0, plant: 0, cover: 0 } as const;
+const CONTEXT = { levels: MANUAL, season: 4, nowSeconds: 1e9 };
+
+/** A grown plot of the given surface, planted this Season. */
+const grown = (surface: Plot['surface']): Plot => ({
+  ...emptyPlot(surface),
+  stage: 'grown',
+  grownAt: 0,
+  plantedSeason: 4,
+});
+
 describe('D2 — the Kitchen Garden stays bounded at every build-out', () => {
   it('lands inside its income-share target at full Season 4 build-out', () => {
-    const share = kitchenGardenIncomeShare(FULL_BUILD_OUT);
+    const share = kitchenGardenIncomeShare(fullBuildOut(4, 0), CONTEXT);
     expect(share).toBeGreaterThanOrEqual(KITCHEN_GARDEN_TARGET_INCOME_SHARE.min);
     expect(share).toBeLessThanOrEqual(KITCHEN_GARDEN_TARGET_INCOME_SHARE.max);
   });
 
   it('never claims 100% of Garden Plot income, at any configuration', () => {
-    for (let slots = 0; slots <= KG_MAX_SLOTS; slots++) {
-      for (const capacityPerSlot of [1, 3, 5]) {
-        for (const surfaceYieldMult of [0.85, 1, 1.1, 1.2, 1.5]) {
-          const m = kitchenGardenMultiplier({
-            slots,
-            capacityPerSlot,
-            surfaceYieldMult,
-            activeFraction: 1,
-          });
-          expect(m).toBeLessThan(1);
-          expect(Number.isFinite(m)).toBe(true);
-        }
+    for (let count = 0; count <= KG_MAX_SLOTS; count++) {
+      for (const surface of [
+        'bare-soil',
+        'stone-parterre',
+        'raised-garden-box',
+        'clockwork-trellis',
+      ] as const) {
+        const kg = {
+          ...fullBuildOut(4, 0),
+          plots: Array.from({ length: count }, () => grown(surface)),
+        };
+        const m = kitchenGardenMultiplier(kg, CONTEXT);
+        expect(m).toBeLessThan(1);
+        expect(Number.isFinite(m)).toBe(true);
       }
     }
   });
 
-  it('clamps slots above the cap rather than scaling past it', () => {
-    const capped = kitchenGardenMultiplier({ ...FULL_BUILD_OUT, slots: 1000 });
-    expect(capped).toBe(kitchenGardenMultiplier(FULL_BUILD_OUT));
-  });
+  it('contributes nothing with no plots, and nothing from plots still growing', () => {
+    const none = { ...fullBuildOut(4, 0), plots: [] };
+    expect(kitchenGardenMultiplier(none, CONTEXT)).toBe(0);
 
-  it('contributes nothing with no slots', () => {
-    expect(kitchenGardenMultiplier({ ...FULL_BUILD_OUT, slots: 0 })).toBe(0);
+    const growing = {
+      ...fullBuildOut(4, 0),
+      plots: [{ ...emptyPlot('clockwork-trellis'), stage: 'growing' as const, grownAt: 1e12 }],
+    };
+    expect(kitchenGardenMultiplier(growing, CONTEXT)).toBe(0);
   });
 });

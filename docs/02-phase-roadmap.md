@@ -138,7 +138,19 @@ still lands in 6–10 hrs with real gates instead of Phase 1's placeholders.
 
 ---
 
-## Phase 4 — Kitchen Garden (§2a)
+## Phase 4 — Kitchen Garden (§2a) ✅ COMPLETE (2026-08-02, 1 session)
+
+**Full scope built — no cut taken.** 275 tests plus 26 browser smoke checks.
+Campaign still lands in 6–10h (9.88 / 8.15 / 6.22) after re-fitting K to 26.
+
+**The exit criterion is met but qualified.** A manual cycle costs 6s of Day Time,
+a fully-automated plot costs 0s, and active play out-earns automation — all
+proven. But the Kitchen Garden supplies **~3.5% of income in real play, not the
+~⅓ D2 targets**, because full build-out arrives only in Season 4. That is a
+design question, not a tuning slip: see
+`docs/07-phase-4-kitchen-garden-report.md` §2 for five options.
+
+Original plan follows.
 
 **Sessions: 4–6** · Entry: Phase 3 · **Largest single phase**
 
