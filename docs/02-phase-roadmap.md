@@ -53,7 +53,10 @@ asset. Nothing else is blocked.
 
 ---
 
-## Phase 1 — Headless Economy & Balance Simulation ⭐
+## Phase 1 — Headless Economy & Balance Simulation ⭐ ✅ COMPLETE (2026-08-02, 1 session)
+
+**Result: all three archetypes finish in 6–10h.** See `docs/06-phase-1-balance-report.md`.
+Original plan follows.
 
 **Sessions: 3–4** · Entry: Phase 0
 

@@ -38,3 +38,8 @@ jobs:
       # one. See docs/04-spec-open-questions.md.
       - name: Spec audit
         run: npm run audit:spec
+
+      # The balance harness is a gate, not a report. If a content change pushes
+      # the campaign outside 6-10 hours for any archetype, CI says so.
+      - name: Balance simulation
+        run: npm run simulate

@@ -66,8 +66,30 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * adds a fixed small amount. Over-banking is self-limiting, which mechanises
  * §4's "reset cap by design, not by code" instead of leaving it to hope.
  */
-export const PRESTIGE_SQP_COEFFICIENT = 40; // SIM  (K)
-export const PRESTIGE_SQP_REFERENCE = 1e6; // SPEC §4
+/**
+ * SIM (K). Fitted by `npm run fit` in Phase 1.
+ *
+ * K scales the absolute multiplier and therefore campaign LENGTH. It provably
+ * cannot change the reset COUNT: SQP is linear in K, so the ratio between
+ * successive prestiges - which is what the player's reset decision compares
+ * against - is K-independent. Reset count is set by player behaviour and by the
+ * span of lifetime Mana across the campaign. See docs/06-phase-1-balance-report.md.
+ */
+export const PRESTIGE_SQP_COEFFICIENT = 35;
+/**
+ * SIM. The lifetime Mana at which SQP starts accruing.
+ *
+ * The spec says 1e6. The simulation found that at the Season 1 capstone - the
+ * moment §4 unlocks prestige - a player holds only ~5e5 lifetime Mana, BELOW
+ * that reference. log10 goes negative, SQP clamps to zero, and the first
+ * prestige is worth exactly x1.00: nothing at all.
+ *
+ * That is worse than the x1.18 problem decision D3 set out to fix, and it is not
+ * visible on paper - it needs a simulated playthrough to see, because it depends
+ * on when the capstone actually fires. Fitted to 5e4, which makes the first
+ * prestige worth ~x1.88.
+ */
+export const PRESTIGE_SQP_REFERENCE = 5e4;
 export const PRESTIGE_BONUS_PER_SQP = 0.02; // SPEC §4  (+2% per SQP)
 
 /** SIM. Phase 1 fits PRESTIGE_SQP_COEFFICIENT until natural play lands here. */

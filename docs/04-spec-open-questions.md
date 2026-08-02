@@ -73,38 +73,51 @@ Log-shaped, computed **absolutely** from all-time lifetime Mana (the Cookie Clic
 model), never summed across resets:
 
 ```
-TotalSQP           = max( 0, floor( K × log10( LifetimeMana / 1e6 ) ) )
+TotalSQP           = max( 0, floor( K × log10( LifetimeMana / REFERENCE ) ) )
 SQPGainedThisReset = TotalSQP_now − TotalSQP_at_last_reset
 PrestigeMultiplier = 1 + 0.02 × TotalSQP
 
-K = 40   // sim-fitted
+K         = 35     // FITTED in Phase 1
+REFERENCE = 5e4    // FITTED in Phase 1 — the spec's 1e6 was wrong, see below
 ```
+
+**Phase 1 correction (2026-08-02).** The spec's reference of 1e6 sits _above_ the
+lifetime Mana a player holds when prestige unlocks at the Season 1 capstone
+(~9e5, measured). `log10` goes negative, SQP clamps to zero, and the first
+prestige is worth **exactly ×1.00** — worse than the ×1.18 this decision existed
+to fix. Fitted to 5e4, which makes it ×1.88. Full detail in
+`docs/06-phase-1-balance-report.md` §2.
+
+Also established: **K controls campaign length and provably cannot control reset
+count** (SQP is linear in K, so the ratio a player compares against is
+K-independent). §4's "4–5 natural resets" is a behavioural prediction, not
+something tuning can guarantee.
 
 **`LifetimeMana` is all-time and does NOT reset on prestige.** The spec was silent
 on this and it matters: computing SQP fresh each reset and _adding_ it would
 double-count badly (×27 instead of ×12.6 by the fourth reset).
 
-Projected with K = 40:
+**Measured** (`npm run simulate`, K = 35, REFERENCE = 5e4). These are simulated
+step-ups from a full playthrough, replacing an earlier hand projection whose
+lifetime-Mana estimates were ~100x too high:
 
-| Reset      | SQP gained | Total SQP | Multiplier | Step-up |
-| ---------- | ---------: | --------: | ---------: | ------: |
-| 1 (end S1) |         77 |        77 |      ×2.54 |   ×2.54 |
-| 2 (end S2) |        167 |       244 |      ×5.88 |   ×2.31 |
-| 3 (end S3) |        169 |       413 |      ×9.26 |   ×1.57 |
-| 4 (end S4) |        167 |       580 |     ×12.60 |   ×1.36 |
+| Archetype | First prestige offered | Step-ups thereafter       | Resets |
+| --------- | ---------------------: | ------------------------- | -----: |
+| idle      |                  ×1.88 | ×2.00 ×2.00               |      3 |
+| casual    |                  ×1.88 | ×1.61 ×1.60 ×1.60         |      4 |
+| active    |                  ×1.88 | ×1.40 ×1.41 ×1.41 ×1.40 … |      5 |
 
 Two properties this shape buys, both wanted for a _bounded_ game:
 
-- **Every reset is felt.** The first is ×2.54, not the spec's ×1.18. Players learn
-  prestige is worth doing at the moment the game teaches it.
+- **Every reset is felt.** The first is ×1.88, not the spec's ×1.18 — and not the
+  ×1.00 that the un-fitted reference produced.
 - **Over-banking is self-limiting.** Because gain scales with the log of lifetime
-  Mana, grinding twice as long adds a fixed small amount. That produces the
-  spec's 4–5 natural resets without needing a cap — §4's "reset cap by design,
-  not by code," now actually mechanised.
+  Mana, grinding twice as long adds a fixed small amount (exactly K SQP per order
+  of magnitude, by construction). §4's "reset cap by design, not by code".
 
-Prestige remains **optional and speedup-flavoured**, per §4. A ×12.6 final
-multiplier is small against ~1e18 of natural production growth, which is correct:
-it accelerates, it does not gate.
+Prestige remains **optional and speedup-flavoured**, per §4 — but it is far from
+cosmetic: never resetting stretches the campaign from ~9.5h to ~25h for an idle
+player. It accelerates; it does not gate.
 
 ### D6 — Season advancement (§2/§8)
 

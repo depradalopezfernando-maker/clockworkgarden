@@ -19,6 +19,7 @@ and game feel need human gates.
 | [03 — Technical Architecture](03-technical-architecture.md) | Proposed codebase shape, the sim/view split, saves, testing                                              |
 | [04 — Open Design Questions](04-spec-open-questions.md)     | Audit findings, and the four decisions taken on 2026-08-02                                               |
 | [05 — Asset Pipeline](05-asset-pipeline.md)                 | CC0 sourcing, the palette lock, and a live network constraint                                            |
+| [06 — Phase 1 Balance Report](06-phase-1-balance-report.md) | Simulated campaign length, the fitted constants, and what the sim does not prove                         |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
 
@@ -64,16 +65,20 @@ over-banking is self-limiting.
 
 ## Where things stand
 
-**Phase 0 is complete** (2026-08-02). The project builds, `npm run ci` is green,
-41 tests pass, the palette is locked, and the `src/sim` purity boundary is
-lint-enforced and verified. See [ADRs](adr/) for the technical decisions.
+**Phases 0 and 1 are complete** (2026-08-02). `npm run ci` is green, 114 tests
+pass, and the economy has been simulated end to end: **all three player
+archetypes finish inside §8's 6–10 hour target** (9.50h / 8.11h / 6.40h). Full
+numbers and caveats in [06 — Phase 1 Balance Report](06-phase-1-balance-report.md).
+
+The simulation found a defect no amount of reading would have caught: the first
+prestige was worth **×1.00 — nothing** — because the spec's SQP reference sat
+above the lifetime Mana a player holds when prestige unlocks. Now ×1.88.
 
 Next steps, in order:
 
-1. **Build the headless economy and balance simulation** (Phase 1, ~3–4 sessions).
-   Nine of the spec's own ten playtest questions (§10) are answerable by simulation
-   without a browser. This is the single highest-leverage inversion in the plan,
-   and it fits the sim-tuned constants from the decisions above.
+1. **Build the minimum playable loop** (Phase 2, ~3–4 sessions). React shell,
+   Bell, generator list, Growth Frenzy, versioned saves, offline on the real
+   clock. Deliberately plain 2D.
 2. **Design the Season 1 and 2 capstones** before Phase 5. They are gated on but
    never designed; three are proposed in [doc 04](04-spec-open-questions.md) item 4.
    This blocks the vertical-slice go/no-go, not Phase 1.

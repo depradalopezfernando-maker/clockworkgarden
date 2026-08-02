@@ -6,8 +6,8 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Phase 0 complete. Phase 1 is next — the headless economy and balance harness.**
-No game logic exists yet; `src/sim` is deliberately empty and waiting.
+**Phase 1 complete. Phase 2 is next — the minimum playable loop.**
+The economy is built, simulated, and lands in 6-10 hours. No UI exists yet.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
@@ -17,14 +17,18 @@ tools/spec-audit.mjs              numerical audit of the spec's own formulas
 tools/screenshot.mjs              drive the app, capture it, report layout problems
 src/content/balance.ts            EVERY tunable constant, with provenance tags
 src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
-src/sim/                          empty. Phase 1 fills it. Purity is lint-enforced
+src/content/generators.ts         the 20-tier table (§2), transcribed
+src/sim/                          pure economy: costs, prestige, offline, harness
+tools/simulate.ts                 the balance report. Run it after any content change
+tools/fit.ts                      sweeps constants against the pacing targets
 ```
 
 Start here: `docs/README.md`. Verify with `npm run ci`.
+Latest balance numbers: `docs/06-phase-1-balance-report.md`.
 
-**Phase 1's job:** implement §2/§4/§7 as pure functions, transcribe the 20-tier
-table, build the simulation harness, and fit `PRESTIGE_SQP_COEFFICIENT` and
-`KITCHEN_GARDEN_BASE_FRACTION` against the campaign-length and reset targets.
+**Phase 2's job:** React shell, Bell, generator list, Growth Frenzy, versioned
+save/load with migrations, offline wired to the real clock, number formatting.
+Deliberately plain 2D - the 3D layer is Phase 6.
 
 ---
 
@@ -38,15 +42,17 @@ The four questions that blocked implementation were decided on 2026-08-02.
 D1  BarnCapacity = max(500 × TotalManaPerSec, 2.5 × CostOfNextUnpurchasedTier)
 D2  PlotContribution = BaseFraction × mods × GardenPlotManaPerSec   // NOT total
     BaseFraction = 0.004      // sim-fitted; target ~1/3 of income at full build
-D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / 1e6)))         // K = 40
+D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 35, REF = 5e4
     PrestigeMultiplier = 1 + 0.02 × TotalSQP
     LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
 D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
     simulation validates, not a trigger. Prestige is renamed ("Turn the Soil").
 ```
 
-Constants marked sim-fitted are **starting values**; Phase 1's harness tunes them
-against the 6–10 hr and 4–5 reset targets. The formula _shapes_ are fixed.
+K and REF were **fitted in Phase 1** (`npm run fit`). REF is not the spec's 1e6:
+the simulation found a player holds only ~9e5 lifetime Mana when prestige
+unlocks, so 1e6 made the first reset worth exactly nothing. See
+`docs/06-phase-1-balance-report.md` §2.
 
 **Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
 capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); offline
