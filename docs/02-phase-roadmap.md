@@ -25,31 +25,36 @@ front-loads (b) rather than leaving it to the end.
 
 Phase 6 runs in parallel with 7–9 if you want; it shares no logic with them. The
 roadmap assumes it runs after Phase 5 so the vertical slice is judged on
-*gameplay*, not on how it looks.
+_gameplay_, not on how it looks.
 
 ---
 
-## Phase 0 — Foundations & Decisions
-**Sessions: 1–2** · Entry: none — **ready to start**
+## Phase 0 — Foundations & Decisions ✅ COMPLETE (2026-08-02, 1 session)
 
-- ~~Resolve `docs/04` items 1, 2, 3, 6~~ — **done 2026-08-02**, see "Decisions
-  taken" in `docs/04-spec-open-questions.md`. Transcribe D1/D2/D3/D6 into
-  `src/content/balance.ts` as the starting constants.
-- Scaffold: Vite + TypeScript strict + React + Vitest + ESLint + Prettier.
-- CI: typecheck, lint, test, build on every push.
-- `CLAUDE.md` (the standing brief for every future session).
-- **Lock the palette as data** — `src/content/palette.ts`, four Season ramps. This
-  is §11's consistency guardrail turned into something enforceable, and it must
-  exist before any asset touches the repo.
-- ADRs for the load-bearing choices: plain `number` over big-number lib
-  (justified by audit 5), state management, save schema versioning.
+- ✅ Design decisions D1/D2/D3/D6 resolved and transcribed into
+  `src/content/balance.ts`, every constant tagged SPEC / SIM / HUMAN.
+- ✅ Scaffold: Vite + TypeScript strict + React 19 + Vitest + ESLint 10 + Prettier.
+- ✅ CI: typecheck, lint, format, test, build, spec audit on every push.
+- ✅ `CLAUDE.md` standing brief.
+- ✅ **Palette locked as data** — `src/content/palette.ts`, four Season ramps plus
+  the §11 silhouette treatment. **Human art review still pending** (flagged in
+  the file); it is a defensible starting point, not an art-directed choice.
+- ✅ ADRs 0001–0004: plain `number`, sim purity, state outside React, versioned
+  saves. Each carries a "revisit if" clause.
+- ✅ **The `src/sim` purity boundary is lint-enforced _and_ the lint rules are
+  themselves tested** (`tests/architecture/boundary.test.ts`) — a rule nobody
+  verifies is a rule that silently stops working.
+- ✅ `tools/screenshot.mjs` — the visual verification loop, working end to end.
 
-**Exit:** `npm run ci` green on an empty project. Palette committed. No blocking
-design questions remain.
+**Exit met:** `npm run ci` green, 41 tests passing, app builds and renders.
+
+**Carried forward:** the palette needs a human eye before Phase 6 sources any
+asset. Nothing else is blocked.
 
 ---
 
 ## Phase 1 — Headless Economy & Balance Simulation ⭐
+
 **Sessions: 3–4** · Entry: Phase 0
 
 **The highest-leverage phase in the plan. No UI is written.**
@@ -76,6 +81,7 @@ it will ever be.**
 ---
 
 ## Phase 2 — Minimum Playable Loop
+
 **Sessions: 3–4** · Entry: Phase 1 exit met
 
 - React shell, HUD, Bell, generator purchase list. Deliberately plain 2D.
@@ -91,6 +97,7 @@ tab, return, and find correct offline progress.
 ---
 
 ## Phase 3 — Insight Tree & Milestones
+
 **Sessions: 2–3** · Entry: Phase 2
 
 - Milestone engine (§3): predicates over game state awarding Insight.
@@ -106,6 +113,7 @@ still lands in 6–10 hrs with real gates instead of Phase 1's placeholders.
 ---
 
 ## Phase 4 — Kitchen Garden (§2a)
+
 **Sessions: 4–6** · Entry: Phase 3 · **Largest single phase**
 
 - Grid + slot expansion, 4 → 20 slots.
@@ -129,6 +137,7 @@ asserted.
 ---
 
 ## Phase 5 — Prestige, Season 1 Capstone → **VERTICAL SLICE** ⭐
+
 **Sessions: 2–3** · Entry: Phase 4 · **HUMAN GATE**
 
 - Prestige loop end-to-end, with the Phase-0 formula decision.
@@ -147,6 +156,7 @@ place to find out the design does not work, if it does not.
 ---
 
 ## Phase 6 — 3D Presentation & CC0 Assets
+
 **Sessions: 4–6** · Entry: Phase 5 passed · **HUMAN GATE**
 
 - **Prerequisite:** asset access resolved. `kenney.nl` is currently blocked by the
@@ -167,6 +177,7 @@ place to find out the design does not work, if it does not.
 ---
 
 ## Phase 7 — Season 2: Pollination Combo (§6.1)
+
 **Sessions: 2–3** · Entry: Phase 5
 
 Three flower types, 3s chain window, Bronze/Silver/Golden Bloom tiers, Tier 8
@@ -179,6 +190,7 @@ Pollination"). Tiers 6–10.
 ---
 
 ## Phase 8 — Season 3: Harvest Festival (§6.2)
+
 **Sessions: 2–3** · Entry: Phase 7
 
 Barn Capacity **with the `docs/04` item 1 resolution and its regression test**,
@@ -191,19 +203,21 @@ the deadlock found in the audit can never recur.
 ---
 
 ## Phase 9 — Season 4: Frost Dormancy & The Long Night (§6.3)
+
 **Sessions: 3–4** · Entry: Phase 8 · Most interacting systems
 
 Frost Cycles (5–8 min, 60% floor, 45s), three Insulation steps, Stoke the Furnace
 meter, Greenhouse Bed frost immunity, and The Long Night (2–3 min at 25% floor)
 with its two-of-three-Insulation + banked-Mana gates. Tiers 16–20.
 
-**Exit:** sim proves an under-invested player *can still clear* The Long Night,
+**Exit:** sim proves an under-invested player _can still clear_ The Long Night,
 just slower — §6.3 is explicit that it must be a difficulty spike, not a hard build
 gate. This is a genuine failure mode worth testing for.
 
 ---
 
 ## Phase 10 — Full Bloom Ending & Endless Sandbox
+
 **Sessions: 2** · Entry: Phase 9
 
 Tier 20 purchase triggers the ending sequence; credits (game-icons.net attribution
@@ -213,6 +227,7 @@ lives here); endless mode as a clearly optional post-ending unlock, per §9's
 ---
 
 ## Phase 11 — Balance Tuning Against Real Play
+
 **Sessions: 3–5, mostly short** · Entry: Phase 10 · **HUMAN GATE**
 
 Work through §10's ten playtest questions with real data. Sessions here are cheap
@@ -220,12 +235,13 @@ because the config is isolated and the simulation is already built — most are
 "change three constants, re-run the sweep, report."
 
 **Exit:** full campaign lands in 6–10 hrs for at least three archetypes, and the
-human playtester agrees each Season *feels* distinct (§10 item 4 — the one no
+human playtester agrees each Season _feels_ distinct (§10 item 4 — the one no
 simulation can answer).
 
 ---
 
 ## Phase 12 — Polish, Accessibility, Performance, Ship
+
 **Sessions: 4–6** · Entry: Phase 11 · **HUMAN GATE**
 
 Mobile/touch, responsive layout, keyboard nav, reduced-motion, colourblind-safe
@@ -238,22 +254,22 @@ evaluate sound, and an incremental with no click feedback feels dead.
 
 ## Summary
 
-| Phase | Sessions | Human gate |
-|---|---:|---|
-| 0 Foundations | 1–2 | design decisions |
-| 1 **Economy + sim** ⭐ | 3–4 | |
-| 2 Playable loop | 3–4 | |
-| 3 Insight tree | 2–3 | |
-| 4 Kitchen Garden | 4–6 | scope decision at entry |
-| 5 **Vertical slice** ⭐ | 2–3 | **GO / NO-GO** |
-| 6 3D presentation | 4–6 | art review; **asset access blocked** |
-| 7 Season 2 | 2–3 | |
-| 8 Season 3 | 2–3 | |
-| 9 Season 4 | 3–4 | |
-| 10 Ending + sandbox | 2 | |
-| 11 Balance tuning | 3–5 | playtest |
-| 12 Polish & ship | 4–6 | playtest, audio |
-| **Total** | **35–51** | |
+| Phase                   |  Sessions | Human gate                           |
+| ----------------------- | --------: | ------------------------------------ |
+| 0 Foundations           |       1–2 | design decisions                     |
+| 1 **Economy + sim** ⭐  |       3–4 |                                      |
+| 2 Playable loop         |       3–4 |                                      |
+| 3 Insight tree          |       2–3 |                                      |
+| 4 Kitchen Garden        |       4–6 | scope decision at entry              |
+| 5 **Vertical slice** ⭐ |       2–3 | **GO / NO-GO**                       |
+| 6 3D presentation       |       4–6 | art review; **asset access blocked** |
+| 7 Season 2              |       2–3 |                                      |
+| 8 Season 3              |       2–3 |                                      |
+| 9 Season 4              |       3–4 |                                      |
+| 10 Ending + sandbox     |         2 |                                      |
+| 11 Balance tuning       |       3–5 | playtest                             |
+| 12 Polish & ship        |       4–6 | playtest, audio                      |
+| **Total**               | **35–51** |                                      |
 
 **Two moments matter more than the rest:** Phase 1's exit (the economy works on
 paper) and Phase 5's gate (it works in your hands). Everything after Phase 5 is

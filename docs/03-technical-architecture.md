@@ -152,8 +152,8 @@ Not in the spec (`docs/04` item 9), needed from Phase 2.
 
 ```ts
 interface SaveFile {
-  version: number;        // integer, monotonic
-  savedAt: number;        // epoch ms — offline progress depends on it
+  version: number; // integer, monotonic
+  savedAt: number; // epoch ms — offline progress depends on it
   state: GameState;
 }
 ```
@@ -178,7 +178,7 @@ interface SaveFile {
 ```ts
 interface Presenter {
   mount(el: HTMLElement): void;
-  sync(state: GameState, alpha: number): void;   // alpha = interpolation factor
+  sync(state: GameState, alpha: number): void; // alpha = interpolation factor
   dispose(): void;
 }
 ```
@@ -192,7 +192,7 @@ the null presenter and stay fast; the 2D build remains a working fallback if the
 
 1. Playwright drives the running game to a known state.
 2. Screenshot.
-3. Claude *reads the image* and checks composition, overflow, contrast, empty
+3. Claude _reads the image_ and checks composition, overflow, contrast, empty
    panels, z-order.
 4. Iterate.
 
@@ -208,13 +208,13 @@ slots × 5 capacity.
 
 ## 8. Testing strategy
 
-| Layer | Tool | What it protects |
-|---|---|---|
-| Formulas | Vitest | §2/§4/§7 arithmetic, exactly as specified |
-| **Invariants** | Vitest | The properties below — the highest-value tests here |
-| Balance | `tools/simulate.ts` | Campaign lands in 6–10 hrs, 4–5 prestiges |
-| Saves | Vitest + fixtures | Every migration, from every old version |
-| UI | Playwright + Chromium | Smoke flows, screenshots |
+| Layer          | Tool                  | What it protects                                    |
+| -------------- | --------------------- | --------------------------------------------------- |
+| Formulas       | Vitest                | §2/§4/§7 arithmetic, exactly as specified           |
+| **Invariants** | Vitest                | The properties below — the highest-value tests here |
+| Balance        | `tools/simulate.ts`   | Campaign lands in 6–10 hrs, 4–5 prestiges           |
+| Saves          | Vitest + fixtures     | Every migration, from every old version             |
+| UI             | Playwright + Chromium | Smoke flows, screenshots                            |
 
 **Invariant tests are where the real value is.** Each is a genuine failure mode
 this design has, drawn from the audit and the spec's own guardrails:

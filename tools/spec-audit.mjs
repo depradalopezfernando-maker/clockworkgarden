@@ -13,33 +13,33 @@
 // §2 — generator table, transcribed verbatim from the spec.
 // ---------------------------------------------------------------------------
 const TIERS = [
-  { t: 1,  season: 1, name: 'Watering Can',               cost: 15,      mult: 1.10, yield: 0.1 },
-  { t: 2,  season: 1, name: 'Sprout Bed',                 cost: 150,     mult: 1.10, yield: 1 },
-  { t: 3,  season: 1, name: 'Butterfly Swarm',            cost: 1.2e3,   mult: 1.11, yield: 8 },
-  { t: 4,  season: 1, name: 'Garden Gnome Crew',          cost: 9e3,     mult: 1.11, yield: 55 },
-  { t: 5,  season: 1, name: 'Sunbeam Lattice',            cost: 6.5e4,   mult: 1.12, yield: 380 },
-  { t: 6,  season: 2, name: 'Beehive Outpost',            cost: 4.5e5,   mult: 1.10, yield: 2.6e3 },
-  { t: 7,  season: 2, name: 'Sunflower Field',            cost: 3.2e6,   mult: 1.10, yield: 1.8e4 },
-  { t: 8,  season: 2, name: 'Pollinator Drone Swarm',     cost: 2.2e7,   mult: 1.11, yield: 1.25e5 },
-  { t: 9,  season: 2, name: 'Nectar Refinery',            cost: 1.5e8,   mult: 1.11, yield: 8.5e5 },
-  { t: 10, season: 2, name: 'Solar Bloom Array',          cost: 1e9,     mult: 1.12, yield: 5.8e6 },
-  { t: 11, season: 3, name: 'Harvest Cart Brigade',       cost: 7e9,     mult: 1.10, yield: 4e7 },
-  { t: 12, season: 3, name: 'Grain Silo Complex',         cost: 4.8e10,  mult: 1.10, yield: 2.75e8 },
-  { t: 13, season: 3, name: 'Cider Press Guild',          cost: 3.3e11,  mult: 1.11, yield: 1.9e9 },
-  { t: 14, season: 3, name: 'Scarecrow Sentinel Network', cost: 2.3e12,  mult: 1.11, yield: 1.3e10 },
-  { t: 15, season: 3, name: 'Harvest Moon Shrine',        cost: 1.6e13,  mult: 1.12, yield: 9e10 },
-  { t: 16, season: 4, name: 'Frost Lantern Ring',         cost: 1.1e14,  mult: 1.10, yield: 6.2e11 },
-  { t: 17, season: 4, name: 'Insulated Greenhouse Wing',  cost: 7.5e14,  mult: 1.10, yield: 4.3e12 },
-  { t: 18, season: 4, name: 'Ember Furnace Core',         cost: 5.2e15,  mult: 1.11, yield: 2.9e13 },
-  { t: 19, season: 4, name: 'Aurora Conduit',             cost: 3.6e16,  mult: 1.11, yield: 2e14 },
-  { t: 20, season: 4, name: 'The Clockwork Heart',        cost: 2.5e17,  mult: 1.12, yield: 1.4e15 },
+  { t: 1, season: 1, name: 'Watering Can', cost: 15, mult: 1.1, yield: 0.1 },
+  { t: 2, season: 1, name: 'Sprout Bed', cost: 150, mult: 1.1, yield: 1 },
+  { t: 3, season: 1, name: 'Butterfly Swarm', cost: 1.2e3, mult: 1.11, yield: 8 },
+  { t: 4, season: 1, name: 'Garden Gnome Crew', cost: 9e3, mult: 1.11, yield: 55 },
+  { t: 5, season: 1, name: 'Sunbeam Lattice', cost: 6.5e4, mult: 1.12, yield: 380 },
+  { t: 6, season: 2, name: 'Beehive Outpost', cost: 4.5e5, mult: 1.1, yield: 2.6e3 },
+  { t: 7, season: 2, name: 'Sunflower Field', cost: 3.2e6, mult: 1.1, yield: 1.8e4 },
+  { t: 8, season: 2, name: 'Pollinator Drone Swarm', cost: 2.2e7, mult: 1.11, yield: 1.25e5 },
+  { t: 9, season: 2, name: 'Nectar Refinery', cost: 1.5e8, mult: 1.11, yield: 8.5e5 },
+  { t: 10, season: 2, name: 'Solar Bloom Array', cost: 1e9, mult: 1.12, yield: 5.8e6 },
+  { t: 11, season: 3, name: 'Harvest Cart Brigade', cost: 7e9, mult: 1.1, yield: 4e7 },
+  { t: 12, season: 3, name: 'Grain Silo Complex', cost: 4.8e10, mult: 1.1, yield: 2.75e8 },
+  { t: 13, season: 3, name: 'Cider Press Guild', cost: 3.3e11, mult: 1.11, yield: 1.9e9 },
+  { t: 14, season: 3, name: 'Scarecrow Sentinel Network', cost: 2.3e12, mult: 1.11, yield: 1.3e10 },
+  { t: 15, season: 3, name: 'Harvest Moon Shrine', cost: 1.6e13, mult: 1.12, yield: 9e10 },
+  { t: 16, season: 4, name: 'Frost Lantern Ring', cost: 1.1e14, mult: 1.1, yield: 6.2e11 },
+  { t: 17, season: 4, name: 'Insulated Greenhouse Wing', cost: 7.5e14, mult: 1.1, yield: 4.3e12 },
+  { t: 18, season: 4, name: 'Ember Furnace Core', cost: 5.2e15, mult: 1.11, yield: 2.9e13 },
+  { t: 19, season: 4, name: 'Aurora Conduit', cost: 3.6e16, mult: 1.11, yield: 2e14 },
+  { t: 20, season: 4, name: 'The Clockwork Heart', cost: 2.5e17, mult: 1.12, yield: 1.4e15 },
 ];
 
 const fmt = (n) => n.toExponential(2);
 const bar = (s) => console.log(`\n${'='.repeat(78)}\n${s}\n${'='.repeat(78)}`);
 
 // Geometric sum: cost to buy `k` units of a tier starting from 0 owned.
-const bulkCost = (base, mult, k) => base * (Math.pow(mult, k) - 1) / (mult - 1);
+const bulkCost = (base, mult, k) => (base * (Math.pow(mult, k) - 1)) / (mult - 1);
 
 // ---------------------------------------------------------------------------
 // AUDIT 1 — cost/yield ratio drift. Spec §2 claims ~7-10x per tier for both.
@@ -76,8 +76,10 @@ bar('AUDIT 2 — §6.2 Barn Capacity vs. cost of the NEXT tier (Seasons 3-4)');
 console.log('Reading A: cap = 500 x (per-UNIT yield of best generator owned)');
 console.log('Reading B: cap = 500 x (TOTAL mana/sec), assuming 25 units of best tier owned\n');
 console.log('bestTier -> nextTier   capA        capB        nextCost    A_blocks  B_blocks');
-let blocksA = 0, blocksB = 0;
-for (let i = 10; i < TIERS.length - 1; i++) { // Season 3 onward (index 10 = tier 11)
+let blocksA = 0,
+  blocksB = 0;
+for (let i = 10; i < TIERS.length - 1; i++) {
+  // Season 3 onward (index 10 = tier 11)
   const best = TIERS[i];
   const next = TIERS[i + 1];
   const capA = 500 * best.yield;
@@ -131,10 +133,9 @@ console.log('  If its multiplier is ~1.0x, players learn "prestige does nothing"
 // If "CurrentTotalManaPerSec" includes Kitchen Garden output, this is recursive.
 // ---------------------------------------------------------------------------
 bar('AUDIT 3 — §2a Kitchen Garden self-reference (1% of "CurrentTotalManaPerSec")');
-const MAX_SLOTS = 20;
 const scenarios = [
-  { label: 'S1: 4 Bare Soil plots, 1 plant each',            slots: 4,  cap: 1, yieldMult: 1.0 },
-  { label: 'S2: 10 Raised Garden Box, 3 plants each',        slots: 10, cap: 3, yieldMult: 1.0 },
+  { label: 'S1: 4 Bare Soil plots, 1 plant each', slots: 4, cap: 1, yieldMult: 1.0 },
+  { label: 'S2: 10 Raised Garden Box, 3 plants each', slots: 10, cap: 3, yieldMult: 1.0 },
   { label: 'S4: 20 Clockwork Trellis, 5 plants, 1.2x yield', slots: 20, cap: 5, yieldMult: 1.2 },
 ];
 console.log('scenario                                        totalFraction  recursive?');
@@ -164,7 +165,9 @@ const worst = bulkCost(t20.cost, t20.mult, 400) * 1e6; // x generous prestige mu
 console.log('  worst-case lifetime mana (x1e6 prestige):'.padEnd(34), fmt(worst));
 console.log('\n  Number.MAX_SAFE_INTEGER:'.padEnd(35), fmt(Number.MAX_SAFE_INTEGER));
 console.log('  Number.MAX_VALUE:'.padEnd(35), fmt(Number.MAX_VALUE));
-console.log(`\n  Verdict: peak ~${fmt(worst)} is ${(Math.log10(worst) / Math.log10(Number.MAX_VALUE) * 100).toFixed(1)}% of float64's exponent range.`);
+console.log(
+  `\n  Verdict: peak ~${fmt(worst)} is ${((Math.log10(worst) / Math.log10(Number.MAX_VALUE)) * 100).toFixed(1)}% of float64's exponent range.`
+);
 console.log('  Plain JS `number` is sufficient. NO big-number library required.');
 console.log('  (Values exceed MAX_SAFE_INTEGER, so integer exactness is lost - irrelevant');
 console.log('   for display, but save files must never assume integer round-tripping.)');
@@ -175,7 +178,7 @@ console.log('   for display, but save files must never assume integer round-trip
 // ---------------------------------------------------------------------------
 bar('AUDIT 6 — §2a Kitchen Garden slot costs vs. Season income');
 const seasonTier1 = { 1: TIERS[0], 2: TIERS[5], 3: TIERS[10], 4: TIERS[15] };
-console.log('slot n   season   slotCost     as multiple of that Season\'s Tier-1 cost');
+console.log("slot n   season   slotCost     as multiple of that Season's Tier-1 cost");
 for (const n of [5, 8, 12, 16, 20]) {
   const season = n <= 7 ? 1 : n <= 11 ? 2 : n <= 15 ? 3 : 4;
   const base = seasonTier1[season].cost;
@@ -187,8 +190,10 @@ for (const n of [5, 8, 12, 16, 20]) {
     ('x' + (cost / base).toFixed(1)).padStart(12)
   );
 }
-console.log('\n  Slot 20 costs ~%sx a Season-4 Tier-1 generator - trivially affordable',
-  (3 * Math.pow(1.15, 15)).toFixed(0));
+console.log(
+  '\n  Slot 20 costs ~%sx a Season-4 Tier-1 generator - trivially affordable',
+  (3 * Math.pow(1.15, 15)).toFixed(0)
+);
 console.log('  by the time it unlocks. The 1.15 curve is too shallow to be a real');
 console.log('  decision; slot cost is effectively free late. Consider re-anchoring.');
 

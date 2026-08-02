@@ -12,12 +12,12 @@ the art direction.
 
 Tested live from this environment, not assumed:
 
-| Source | What it provides | Status |
-|---|---|---|
-| `registry.npmjs.org` | npm packages | **200 — reachable** (allowlisted, bypasses proxy) |
-| `kenney.nl` | §11 Style A: Isometric Miniature Farm, Nature Kit | **403 at gateway — BLOCKED** |
-| `game-icons.net` | §11 UI iconography | **403 at gateway — BLOCKED** |
-| `itch.io` | §11 Style B: KayKit Forest Nature Pack | untested, assume blocked |
+| Source               | What it provides                                  | Status                                            |
+| -------------------- | ------------------------------------------------- | ------------------------------------------------- |
+| `registry.npmjs.org` | npm packages                                      | **200 — reachable** (allowlisted, bypasses proxy) |
+| `kenney.nl`          | §11 Style A: Isometric Miniature Farm, Nature Kit | **403 at gateway — BLOCKED**                      |
+| `game-icons.net`     | §11 UI iconography                                | **403 at gateway — BLOCKED**                      |
+| `itch.io`            | §11 Style B: KayKit Forest Nature Pack            | untested, assume blocked                          |
 
 The environment's network policy allowlists package registries (npm, PyPI,
 crates.io, Go proxy) and denies general web hosts. Confirmed via
@@ -94,12 +94,12 @@ protects the whole art direction.
 
 ## 3. Pack inventory (§11 Style A — the recommended direction)
 
-| Pack | Source | Licence | Attribution | Use |
-|---|---|---|---|---|
-| Isometric Miniature Farm (60 assets) | kenney.nl | **CC0** | not required | Kitchen Garden tiles, farm structures |
-| Nature Kit (330 assets) | kenney.nl | **CC0** | not required | Season environment dressing |
-| Game Icons (4,170+) | **npm** `@iconify-json/game-icons` | **CC BY 3.0** | **required** | Insight tree nodes, badges, buttons |
-| KayKit Forest Nature Pack | itch.io | varies — **verify** | verify | Optional; §11 Style B supplement |
+| Pack                                 | Source                             | Licence             | Attribution  | Use                                   |
+| ------------------------------------ | ---------------------------------- | ------------------- | ------------ | ------------------------------------- |
+| Isometric Miniature Farm (60 assets) | kenney.nl                          | **CC0**             | not required | Kitchen Garden tiles, farm structures |
+| Nature Kit (330 assets)              | kenney.nl                          | **CC0**             | not required | Season environment dressing           |
+| Game Icons (4,170+)                  | **npm** `@iconify-json/game-icons` | **CC BY 3.0**       | **required** | Insight tree nodes, badges, buttons   |
+| KayKit Forest Nature Pack            | itch.io                            | varies — **verify** | verify       | Optional; §11 Style B supplement      |
 
 **Maintain `assets/vendor/LICENSES.md`** listing every pack, its source URL, its
 licence, and its attribution requirement. CC0 needs none; CC BY 3.0 does, and
@@ -142,15 +142,15 @@ should be GPU-instanced from the start rather than optimised later.
 
 ## 5. Asset needs by phase
 
-| Phase | Needs |
-|---|---|
-| 0 | **Palette locked.** No assets |
-| 1 | None (headless) |
-| 2–5 | Placeholder geometry / CSS. UI icons via npm — available now |
-| 6 | **Full 3D packs required.** Route 1 or 2 must be resolved |
-| 7–9 | Season-specific dressing; per-Season props from Nature Kit |
-| 10 | §11 Style C hero pieces — Clockwork Heart, four capstones. Human-authored |
-| 12 | Credits screen with CC BY 3.0 attribution |
+| Phase | Needs                                                                     |
+| ----- | ------------------------------------------------------------------------- |
+| 0     | **Palette locked.** No assets                                             |
+| 1     | None (headless)                                                           |
+| 2–5   | Placeholder geometry / CSS. UI icons via npm — available now              |
+| 6     | **Full 3D packs required.** Route 1 or 2 must be resolved                 |
+| 7–9   | Season-specific dressing; per-Season props from Nature Kit                |
+| 10    | §11 Style C hero pieces — Clockwork Heart, four capstones. Human-authored |
+| 12    | Credits screen with CC BY 3.0 attribution                                 |
 
 §11's advice to reserve the papercraft Style C for hero pieces "once the core game
 is playable" maps cleanly onto Phase 10, and it is the right call — it is the one

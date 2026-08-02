@@ -8,24 +8,24 @@ resolution. Items 1, 2, 3 and 6 were **decided by the designer on 2026-08-02** a
 are recorded in "Decisions taken" below — those four blocked Phase 1, which is now
 unblocked. The rest remain open but block only later phases.
 
-| # | Severity | Area | One-line | Status |
-|---|---|---|---|---|
-| 1 | **BLOCKER** | §6.2 | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases | **RESOLVED** |
-| 2 | **BLOCKER** | §2a | Kitchen Garden yield is self-referential and diverges | **RESOLVED** |
-| 3 | Major | §4 | Prestige spans 1.18× → 368,000×; first prestige is worthless | **RESOLVED** |
-| 4 | Major | §2 | Season 1 and Season 2 capstones are referenced but never designed | open — blocks Phase 5 |
-| 5 | Medium | §2 | "Insight skill unlock" gates are unmapped to specific nodes | open — Phase 3 |
-| 6 | Medium | §2/§8 | Nothing defines what actually advances a Season | **RESOLVED** |
-| 7 | Medium | §2a/§7 | Kitchen Garden behaviour while offline is unspecified | open — Phase 4 |
-| 8 | Minor | §2a | Slot cost curve is too shallow to be a real decision late | open — Phase 4 |
-| 9 | Minor | — | Save/load, versioning, and migration are absent from the spec | open — Phase 2 |
+| #   | Severity    | Area   | One-line                                                          | Status                |
+| --- | ----------- | ------ | ----------------------------------------------------------------- | --------------------- |
+| 1   | **BLOCKER** | §6.2   | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases               | **RESOLVED**          |
+| 2   | **BLOCKER** | §2a    | Kitchen Garden yield is self-referential and diverges             | **RESOLVED**          |
+| 3   | Major       | §4     | Prestige spans 1.18× → 368,000×; first prestige is worthless      | **RESOLVED**          |
+| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed | open — blocks Phase 5 |
+| 5   | Medium      | §2     | "Insight skill unlock" gates are unmapped to specific nodes       | open — Phase 3        |
+| 6   | Medium      | §2/§8  | Nothing defines what actually advances a Season                   | **RESOLVED**          |
+| 7   | Medium      | §2a/§7 | Kitchen Garden behaviour while offline is unspecified             | open — Phase 4        |
+| 8   | Minor       | §2a    | Slot cost curve is too shallow to be a real decision late         | open — Phase 4        |
+| 9   | Minor       | —      | Save/load, versioning, and migration are absent from the spec     | open — Phase 2        |
 
 ---
 
 ## Decisions taken — 2026-08-02
 
 These are authoritative. They override the spec text where they conflict, and
-Phase 1 implements them. Constants marked *sim-fitted* are starting values for the
+Phase 1 implements them. Constants marked _sim-fitted_ are starting values for the
 Phase 1 balance harness to tune against the 6–10 hr and 4–5 reset targets; the
 **shape** of each formula is fixed, the coefficient is not.
 
@@ -81,19 +81,19 @@ K = 40   // sim-fitted
 ```
 
 **`LifetimeMana` is all-time and does NOT reset on prestige.** The spec was silent
-on this and it matters: computing SQP fresh each reset and *adding* it would
+on this and it matters: computing SQP fresh each reset and _adding_ it would
 double-count badly (×27 instead of ×12.6 by the fourth reset).
 
 Projected with K = 40:
 
-| Reset | SQP gained | Total SQP | Multiplier | Step-up |
-|---|---:|---:|---:|---:|
-| 1 (end S1) | 77 | 77 | ×2.54 | ×2.54 |
-| 2 (end S2) | 167 | 244 | ×5.88 | ×2.31 |
-| 3 (end S3) | 169 | 413 | ×9.26 | ×1.57 |
-| 4 (end S4) | 167 | 580 | ×12.60 | ×1.36 |
+| Reset      | SQP gained | Total SQP | Multiplier | Step-up |
+| ---------- | ---------: | --------: | ---------: | ------: |
+| 1 (end S1) |         77 |        77 |      ×2.54 |   ×2.54 |
+| 2 (end S2) |        167 |       244 |      ×5.88 |   ×2.31 |
+| 3 (end S3) |        169 |       413 |      ×9.26 |   ×1.57 |
+| 4 (end S4) |        167 |       580 |     ×12.60 |   ×1.36 |
 
-Two properties this shape buys, both wanted for a *bounded* game:
+Two properties this shape buys, both wanted for a _bounded_ game:
 
 - **Every reset is felt.** The first is ×2.54, not the spec's ×1.18. Players learn
   prestige is worth doing at the moment the game teaches it.
@@ -129,17 +129,17 @@ string, changeable at any time).
 
 **The ambiguity:** "current best generator's per-second output" has two readings.
 
-- **Reading A** — 500 × the *per-unit* yield of your best generator tier.
-- **Reading B** — 500 × your *total* mana/sec from that tier (owned × yield).
+- **Reading A** — 500 × the _per-unit_ yield of your best generator tier.
+- **Reading B** — 500 × your _total_ mana/sec from that tier (owned × yield).
 
 **Audit result:** Reading A blocks **all 9** tier purchases from Tier 12 through
-Tier 20. The cap sits below the next tier's *base* cost in every single case:
+Tier 20. The cap sits below the next tier's _base_ cost in every single case:
 
-| Transition | Cap (Reading A) | Next tier cost | Result |
-|---|---:|---:|---|
-| T11 → T12 | 2.00e10 | 4.80e10 | **cannot afford** |
-| T14 → T15 | 6.50e12 | 1.60e13 | **cannot afford** |
-| T19 → T20 | 1.00e17 | 2.50e17 | **cannot afford** |
+| Transition | Cap (Reading A) | Next tier cost | Result            |
+| ---------- | --------------: | -------------: | ----------------- |
+| T11 → T12  |         2.00e10 |        4.80e10 | **cannot afford** |
+| T14 → T15  |         6.50e12 |        1.60e13 | **cannot afford** |
+| T19 → T20  |         1.00e17 |        2.50e17 | **cannot afford** |
 
 Under Reading A the player physically cannot bank enough Mana to buy the next
 tier, and since Mana above the cap decays at 5%/min, they never will. The game
@@ -164,30 +164,32 @@ independent of balance changes. Add a regression test asserting
 ## 2. BLOCKER — Kitchen Garden yield is self-referential
 
 **Spec (§2a):**
+
 ```
 PlotContribution = (BaseFraction × SurfaceYieldMult × PerfectPlantingMult
                     × AutomationYieldMult) × CurrentTotalManaPerSec
 ```
+
 with `BaseFraction ≈ 1%` "of current total Mana/sec per plot."
 
-**The problem:** Kitchen Garden output *is part of* total Mana/sec. If
+**The problem:** Kitchen Garden output _is part of_ total Mana/sec. If
 `CurrentTotalManaPerSec` includes it, the definition is recursive — plot output
 feeds total, which feeds plot output.
 
 **Audit result:** with the spec's own late-game numbers, the loop diverges.
 
-| Configuration | KG claims % of total | Behaviour |
-|---|---:|---|
-| S1: 4 Bare Soil, 1 plant | 4% | converges (×1.04) |
-| S2: 10 Raised Box, 3 plants | 30% | converges (×1.43) |
-| **S4: 20 Clockwork Trellis, 5 plants, 1.2×** | **120%** | **diverges — infinite** |
+| Configuration                                | KG claims % of total | Behaviour               |
+| -------------------------------------------- | -------------------: | ----------------------- |
+| S1: 4 Bare Soil, 1 plant                     |                   4% | converges (×1.04)       |
+| S2: 10 Raised Box, 3 plants                  |                  30% | converges (×1.43)       |
+| **S4: 20 Clockwork Trellis, 5 plants, 1.2×** |             **120%** | **diverges — infinite** |
 
 At 20 slots × 5 capacity × 1% × 1.2 the Kitchen Garden claims 120% of total
 production. A self-referential system claiming >100% of itself has no fixed point;
 production goes to infinity within seconds.
 
 **Recommendation:** Define the base explicitly as Garden-Plot-only, which the
-spec's own design intent in §2a already implies ("layers a genuine bonus *on top*"):
+spec's own design intent in §2a already implies ("layers a genuine bonus _on top_"):
 
 ```
 PlotContribution = BaseFraction × mods × GardenPlotManaPerSec
@@ -206,6 +208,7 @@ income at full build-out. This resolves §10's item 10 placeholder.
 ## 3. Major — Prestige rewards are wildly non-uniform across the campaign
 
 **Spec (§4):**
+
 ```
 SQP = floor( sqrt( LifetimeMana / 1,000,000 ) )
 PrestigeMultiplier = 1 + (0.02 × TotalSQP)
@@ -214,12 +217,12 @@ PrestigeMultiplier = 1 + (0.02 × TotalSQP)
 **Audit result** (lifetime Mana estimated as 10× the cost of 25 units of each
 Season's capstone tier):
 
-| Prestige at end of | Est. lifetime Mana | SQP | Cumulative multiplier |
-|---|---:|---:|---:|
-| Season 1 | 8.7e7 | 9 | **×1.18** |
-| Season 2 | 1.3e12 | 1,153 | ×24 |
-| Season 3 | 2.1e16 | 146,000 | ×2,950 |
-| Season 4 | 3.3e20 | 18,300,000 | **×368,000** |
+| Prestige at end of | Est. lifetime Mana |        SQP | Cumulative multiplier |
+| ------------------ | -----------------: | ---------: | --------------------: |
+| Season 1           |              8.7e7 |          9 |             **×1.18** |
+| Season 2           |             1.3e12 |      1,153 |                   ×24 |
+| Season 3           |             2.1e16 |    146,000 |                ×2,950 |
+| Season 4           |             3.3e20 | 18,300,000 |          **×368,000** |
 
 The problem is the **first** one. §4 unlocks prestige after the Season 1 capstone
 and the reward is **+18%** — for wiping all your generators. Players learn
@@ -227,7 +230,7 @@ and the reward is **+18%** — for wiping all your generators. Players learn
 and the spec's target of 4–5 natural resets will not happen.
 
 The root cause is shape: `sqrt` of an exponentially-growing currency, fed into a
-*linear* multiplier, gives a reward that is nearly flat early and explosive late.
+_linear_ multiplier, gives a reward that is nearly flat early and explosive late.
 
 **Recommendation:** Normalise against progress rather than raw Mana. Anchor the
 divisor to the current Season so each prestige is worth a comparable amount:
@@ -251,11 +254,11 @@ Mana. Consistently-felt resets; prestige stays optional and speedup-flavoured.
 
 **Spec:** The §2 tier table gates Tier 5 on "Season 1 capstone clear" and Tier 10
 on "Season 2 capstone clear". §6 designs a new mechanic for Seasons 2, 3, and 4,
-and §6.3 designs *The Long Night* as Season 4's capstone event. §8 promises "a
+and §6.3 designs _The Long Night_ as Season 4's capstone event. §8 promises "a
 capstone challenge" every Season.
 
 **But:** no capstone is ever designed for Season 1 or Season 2. Season 3's
-Harvest Festival is a *recurring* event, not a capstone either — so arguably three
+Harvest Festival is a _recurring_ event, not a capstone either — so arguably three
 of four are missing.
 
 This is a genuine content gap, not an ambiguity. It gates Tiers 5, 10, and 15, and
@@ -267,7 +270,7 @@ mechanic — mirroring how The Long Night tests Season 4's Frost systems:
 - **Season 1 — "First Bloom":** a timed Growth Frenzy challenge. Reach a target
   Mana/sec within one Frenzy window. Tests §5, the only mechanic the player has.
 - **Season 2 — "The Great Pollination":** sustain a Pollination Chain of 9+
-  (Golden Bloom) *during* a Frenzy. Tests §6.1 and explicitly rewards the
+  (Golden Bloom) _during_ a Frenzy. Tests §6.1 and explicitly rewards the
   stacking the spec calls "the Season's peak moment".
 - **Season 3 — "The Grand Harvest":** enter a Harvest Festival with the Barn at
   ≥90% capacity and convert a target overflow into Seeds. Tests §6.2's banking
@@ -283,7 +286,7 @@ implementation each and can slot into Phases 5, 7, and 8 respectively.
 **Spec:** Tiers 3, 4, 8, 9, 13, 14, 18, 19 unlock via "Insight skill unlock."
 
 Which node? At what Insight cost? What are its prerequisites? §3 describes the
-tree's *categories* but never enumerates its nodes, so eight of twenty generator
+tree's _categories_ but never enumerates its nodes, so eight of twenty generator
 unlock gates currently point at nothing.
 
 **Recommendation:** Author the full ~50-node tree as a data file in Phase 3, with
@@ -301,12 +304,12 @@ Phase 3, where it is the bulk of the work.
 
 The tier table gates Tier 6 on "Season 2 start" and Tier 5 on "Season 1 capstone
 clear", implying capstone-clear advances the Season. But §8 presents Seasons on a
-*time* axis (0:15–1:30, 1:30–3:15…), which implies elapsed play. And prestige
-("Season Change", §4) shares the Season vocabulary while explicitly *not* being
+_time_ axis (0:15–1:30, 1:30–3:15…), which implies elapsed play. And prestige
+("Season Change", §4) shares the Season vocabulary while explicitly _not_ being
 Season advancement — a naming collision worth resolving in the UI.
 
 **Recommendation:** Make Season advancement **exclusively** capstone-clear;
-treat §8's timings as *predictions* the balance simulation should validate, not as
+treat §8's timings as _predictions_ the balance simulation should validate, not as
 triggers. Rename the prestige action in-game (e.g. **"Turn the Soil"**) so
 "Season Change" does not mean two different things to the player.
 
@@ -321,7 +324,7 @@ Kitchen Garden while away. Open sub-questions:
 
 - Do planted crops continue growing offline? (§2a says plants grow through Night
   in real time, which suggests yes.)
-- Does Day Time refill while offline? Since it "only depletes when *you* perform an
+- Does Day Time refill while offline? Since it "only depletes when _you_ perform an
   action," it should simply be untouched — but that means a returning player always
   finds a full Day, which is fine and probably intended.
 - Do Seeds regenerate offline (+1/10s, capped at Satchel capacity)? At 20 capacity
@@ -341,15 +344,15 @@ by §7's curve or run at full rate.
 
 **Spec (§2a):** `SlotCost(n) = 3 × (Season Tier-1 cost) × 1.15^(n−5)`, n = 5..20.
 
-**Audit result:** because the anchor jumps ~7× per *tier* but the multiplier only
-compounds at 1.15 per *slot*, the final slot costs ~24× a Season-4 Tier-1
+**Audit result:** because the anchor jumps ~7× per _tier_ but the multiplier only
+compounds at 1.15 per _slot_, the final slot costs ~24× a Season-4 Tier-1
 generator — which by Season 4 is pocket change. Slot 20 is effectively free.
 
-| Slot | Season | Cost | × that Season's Tier-1 |
-|---|---|---:|---:|
-| 5 | 1 | 4.5e1 | ×3.0 |
-| 12 | 3 | 5.6e10 | ×8.0 |
-| 20 | 4 | 2.7e15 | ×24.4 |
+| Slot | Season |   Cost | × that Season's Tier-1 |
+| ---- | ------ | -----: | ---------------------: |
+| 5    | 1      |  4.5e1 |                   ×3.0 |
+| 12   | 3      | 5.6e10 |                   ×8.0 |
+| 20   | 4      | 2.7e15 |                  ×24.4 |
 
 Not broken — just not a decision. If slot expansion is meant to be a meaningful
 investment, raise the exponent (~1.35) or anchor to a mid-tier generator instead of
@@ -381,17 +384,17 @@ significantly more expensive.
 
 ## Decision status
 
-| # | Decision | Blocks | Status |
-|---|---|---|---|
-| 1 | Barn Capacity = total output + safety floor | Phase 1 | **decided 2026-08-02** |
-| 2 | Non-recursive KG yield; `BaseFraction` 0.4% | Phase 1 | **decided 2026-08-02** |
-| 3 | Log-shaped prestige on non-resetting lifetime Mana | Phase 1 | **decided 2026-08-02** |
-| 6 | Capstone-gated Seasons; prestige renamed | Phase 1 | **decided 2026-08-02** |
-| 4 | Approve/replace the three proposed capstones | Phase 5 | open |
-| 5 | Map "Insight skill unlock" gates to real nodes | Phase 3 | open (authored in Phase 3) |
-| 7 | Offline crop growth tapered or full-rate | Phase 4 | open |
-| 8 | Should slot cost be a real decision | Phase 4 | open |
-| 9 | Confirm no anti-tamper requirement | Phase 2 | open |
+| #   | Decision                                           | Blocks  | Status                     |
+| --- | -------------------------------------------------- | ------- | -------------------------- |
+| 1   | Barn Capacity = total output + safety floor        | Phase 1 | **decided 2026-08-02**     |
+| 2   | Non-recursive KG yield; `BaseFraction` 0.4%        | Phase 1 | **decided 2026-08-02**     |
+| 3   | Log-shaped prestige on non-resetting lifetime Mana | Phase 1 | **decided 2026-08-02**     |
+| 6   | Capstone-gated Seasons; prestige renamed           | Phase 1 | **decided 2026-08-02**     |
+| 4   | Approve/replace the three proposed capstones       | Phase 5 | open                       |
+| 5   | Map "Insight skill unlock" gates to real nodes     | Phase 3 | open (authored in Phase 3) |
+| 7   | Offline crop growth tapered or full-rate           | Phase 4 | open                       |
+| 8   | Should slot cost be a real decision                | Phase 4 | open                       |
+| 9   | Confirm no anti-tamper requirement                 | Phase 2 | open                       |
 
 **Phase 1 is unblocked.** The next decision that gates real work is item 4 — the
 Season 1 and 2 capstones — which blocks Phase 5, the vertical-slice go/no-go.

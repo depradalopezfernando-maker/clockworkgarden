@@ -1,6 +1,6 @@
 # Effort Estimate — Sessions and Tokens
 
-**Scope:** *Clockwork Garden* as specified, on TypeScript + React + Three.js.
+**Scope:** _Clockwork Garden_ as specified, on TypeScript + React + Three.js.
 **Confidence:** Medium. Read the assumptions in §1 before quoting any number here.
 
 ---
@@ -16,7 +16,7 @@ a bottom-up model with the assumptions stated openly rather than a single figure
   context exhaustion. Roughly **1.5–3 hours** of agent work. With auto-compaction a
   session can run longer; this model assumes compaction happens once or twice.
 - **Tokens** = total billed input + output for a session. Input dominates heavily
-  and is mostly *cache reads*, because every tool call re-sends conversation
+  and is mostly _cache reads_, because every tool call re-sends conversation
   context. A dense implementation session on a codebase this size runs **~0.8–1.5M
   tokens**, of which output is only ~40–80k.
 
@@ -30,10 +30,10 @@ typing-bound.
 
 **Known biases in this estimate:**
 
-- *Optimistic* about content authoring — data tables are genuinely fast.
-- *Optimistic* about the Three.js phases; screenshot-driven iteration is slower in
+- _Optimistic_ about content authoring — data tables are genuinely fast.
+- _Optimistic_ about the Three.js phases; screenshot-driven iteration is slower in
   practice than it looks on paper.
-- *Pessimistic* about the core economy — it is well-specified and may go faster.
+- _Pessimistic_ about the core economy — it is well-specified and may go faster.
 - **Excludes your time entirely.** Playtesting, design decisions, art review, and
   audio are human workstreams not counted below.
 
@@ -41,21 +41,21 @@ typing-bound.
 
 ## 2. Bottom-up size estimate
 
-| Area | Est. LOC (incl. tests) | Notes |
-|---|---:|---|
-| Core economy engine (state, tick, formulas) | 1,200 | Plus ~600 LOC of tests |
-| Generator + content data tables | 800 | Mostly data; 20 tiers, flavour text |
-| Insight tree (data + logic + UI) | 1,500 | ~50 nodes; tree layout UI is the cost |
-| Milestone / achievement engine | 500 | Many small predicates |
-| **Kitchen Garden (§2a)** | 2,000 | Largest subsystem; grid UI + state machine |
-| Season mechanics (§5, §6.1–6.3) | 1,600 | Four distinct systems |
-| Prestige + offline + save/load/migration | 900 | Save layer is not in the spec |
-| React UI shell, HUD, panels, tutorial | 3,000 | Volume-driven |
-| Three.js presentation layer | 2,500 | Loader, iso camera, tile/diorama registry, season env, FX |
-| Balance simulation harness | 800 | High value per line |
-| Test suite (unit + sim + Playwright) | 2,500 | |
-| Build tooling, CI, deploy | 400 | |
-| **Total** | **~17,700** | Call it **15,000–20,000 LOC** |
+| Area                                        | Est. LOC (incl. tests) | Notes                                                     |
+| ------------------------------------------- | ---------------------: | --------------------------------------------------------- |
+| Core economy engine (state, tick, formulas) |                  1,200 | Plus ~600 LOC of tests                                    |
+| Generator + content data tables             |                    800 | Mostly data; 20 tiers, flavour text                       |
+| Insight tree (data + logic + UI)            |                  1,500 | ~50 nodes; tree layout UI is the cost                     |
+| Milestone / achievement engine              |                    500 | Many small predicates                                     |
+| **Kitchen Garden (§2a)**                    |                  2,000 | Largest subsystem; grid UI + state machine                |
+| Season mechanics (§5, §6.1–6.3)             |                  1,600 | Four distinct systems                                     |
+| Prestige + offline + save/load/migration    |                    900 | Save layer is not in the spec                             |
+| React UI shell, HUD, panels, tutorial       |                  3,000 | Volume-driven                                             |
+| Three.js presentation layer                 |                  2,500 | Loader, iso camera, tile/diorama registry, season env, FX |
+| Balance simulation harness                  |                    800 | High value per line                                       |
+| Test suite (unit + sim + Playwright)        |                  2,500 |                                                           |
+| Build tooling, CI, deploy                   |                    400 |                                                           |
+| **Total**                                   |            **~17,700** | Call it **15,000–20,000 LOC**                             |
 
 That is a medium-sized project — comparable to a well-built open-source
 incremental game, which is the right reference class.
@@ -66,30 +66,30 @@ incremental game, which is the right reference class.
 
 Phases are defined in `docs/02-phase-roadmap.md`.
 
-| Phase | Name | Sessions | Token est. | Character of the work |
-|---|---|---:|---:|---|
-| 0 | Foundations & decisions | 1–2 | 1–2M | Scaffold, CI, ADRs, palette lock |
-| 1 | **Headless economy + balance sim** | 3–4 | 3–5M | Pure logic. High confidence |
-| 2 | Minimum playable loop (2D placeholder) | 3–4 | 3–5M | First actually-playable build |
-| 3 | Insight tree + milestones | 2–3 | 2–4M | Content-heavy, low risk |
-| 4 | **Kitchen Garden (§2a)** | 4–6 | 5–8M | Largest single chunk |
-| 5 | Prestige + S1 capstone → **vertical slice** | 2–3 | 2–4M | **Human playtest gate** |
-| 6 | 3D presentation + CC0 assets | 4–6 | 5–9M | Iteration-bound; slowest per line |
-| 7 | Season 2 — Pollination Combo | 2–3 | 2–4M | |
-| 8 | Season 3 — Harvest Festival | 2–3 | 2–4M | |
-| 9 | Season 4 — Frost / Long Night | 3–4 | 3–5M | Most interacting systems |
-| 10 | Full Bloom ending + endless sandbox | 2 | 2–3M | |
-| 11 | Balance tuning against real playtest | 3–5 | 3–6M | Many short cheap sessions |
-| 12 | Polish, a11y, perf, mobile, ship | 4–6 | 4–8M | Audio is human-owned |
-| | **Total** | **35–51** | **37–67M** | |
+| Phase | Name                                        |  Sessions | Token est. | Character of the work             |
+| ----- | ------------------------------------------- | --------: | ---------: | --------------------------------- |
+| 0     | Foundations & decisions                     |       1–2 |       1–2M | Scaffold, CI, ADRs, palette lock  |
+| 1     | **Headless economy + balance sim**          |       3–4 |       3–5M | Pure logic. High confidence       |
+| 2     | Minimum playable loop (2D placeholder)      |       3–4 |       3–5M | First actually-playable build     |
+| 3     | Insight tree + milestones                   |       2–3 |       2–4M | Content-heavy, low risk           |
+| 4     | **Kitchen Garden (§2a)**                    |       4–6 |       5–8M | Largest single chunk              |
+| 5     | Prestige + S1 capstone → **vertical slice** |       2–3 |       2–4M | **Human playtest gate**           |
+| 6     | 3D presentation + CC0 assets                |       4–6 |       5–9M | Iteration-bound; slowest per line |
+| 7     | Season 2 — Pollination Combo                |       2–3 |       2–4M |                                   |
+| 8     | Season 3 — Harvest Festival                 |       2–3 |       2–4M |                                   |
+| 9     | Season 4 — Frost / Long Night               |       3–4 |       3–5M | Most interacting systems          |
+| 10    | Full Bloom ending + endless sandbox         |         2 |       2–3M |                                   |
+| 11    | Balance tuning against real playtest        |       3–5 |       3–6M | Many short cheap sessions         |
+| 12    | Polish, a11y, perf, mobile, ship            |       4–6 |       4–8M | Audio is human-owned              |
+|       | **Total**                                   | **35–51** | **37–67M** |                                   |
 
 ### Headline figures
 
-| Milestone | Sessions | Tokens | Wall-clock (at ~4 sessions/wk) |
-|---|---:|---:|---|
-| Economy proven headlessly (end Phase 1) | **4–6** | ~4–7M | ~1–1.5 weeks |
-| **Playable vertical slice (end Phase 5)** | **13–19** | **~16–28M** | ~3–5 weeks |
-| Full game, all 4 Seasons, shippable | **35–51** | **~37–67M** | ~9–13 weeks |
+| Milestone                                 |  Sessions |      Tokens | Wall-clock (at ~4 sessions/wk) |
+| ----------------------------------------- | --------: | ----------: | ------------------------------ |
+| Economy proven headlessly (end Phase 1)   |   **4–6** |       ~4–7M | ~1–1.5 weeks                   |
+| **Playable vertical slice (end Phase 5)** | **13–19** | **~16–28M** | ~3–5 weeks                     |
+| Full game, all 4 Seasons, shippable       | **35–51** | **~37–67M** | ~9–13 weeks                    |
 
 The wall-clock column assumes a fairly committed cadence and includes no time for
 your own playtesting, which is a real and non-trivial addition — the game is

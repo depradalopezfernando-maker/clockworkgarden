@@ -11,14 +11,14 @@ and game feel need human gates.
 
 ## Read in this order
 
-| Doc | What it answers |
-|---|---|
-| [00 — Feasibility Analysis](00-feasibility-analysis.md) | Can this be built with Claude Code? Where does it help, where does it not, what did the spec audit find? |
-| [01 — Effort Estimate](01-effort-estimate.md) | How many sessions and tokens, derived bottom-up with assumptions stated |
-| [02 — Phase Roadmap](02-phase-roadmap.md) | Thirteen phases with entry/exit criteria and human gates |
-| [03 — Technical Architecture](03-technical-architecture.md) | Proposed codebase shape, the sim/view split, saves, testing |
-| [04 — Open Design Questions](04-spec-open-questions.md) | Audit findings, and the four decisions taken on 2026-08-02 |
-| [05 — Asset Pipeline](05-asset-pipeline.md) | CC0 sourcing, the palette lock, and a live network constraint |
+| Doc                                                         | What it answers                                                                                          |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [00 — Feasibility Analysis](00-feasibility-analysis.md)     | Can this be built with Claude Code? Where does it help, where does it not, what did the spec audit find? |
+| [01 — Effort Estimate](01-effort-estimate.md)               | How many sessions and tokens, derived bottom-up with assumptions stated                                  |
+| [02 — Phase Roadmap](02-phase-roadmap.md)                   | Thirteen phases with entry/exit criteria and human gates                                                 |
+| [03 — Technical Architecture](03-technical-architecture.md) | Proposed codebase shape, the sim/view split, saves, testing                                              |
+| [04 — Open Design Questions](04-spec-open-questions.md)     | Audit findings, and the four decisions taken on 2026-08-02                                               |
+| [05 — Asset Pipeline](05-asset-pipeline.md)                 | CC0 sourcing, the palette lock, and a live network constraint                                            |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
 
@@ -44,11 +44,11 @@ big-number library is needed** — unusual for this genre and a real simplificat
 
 **Three defects found.**
 
-| # | Severity | Finding |
-|---|---|---|
-| 1 | **Blocker** | §6.2 Barn Capacity, read literally, deadlocks **9 of 9** Season 3–4 tier purchases — the game becomes unwinnable at Tier 11 |
-| 2 | **Blocker** | §2a Kitchen Garden yield is self-referential; at 20 Clockwork Trellis slots it claims 120% of total production and diverges to infinity |
-| 3 | Major | §4 prestige spans ×1.18 → ×368,000 across four resets. The first prestige — the one that teaches the mechanic — is worth +18% |
+| #   | Severity    | Finding                                                                                                                                 |
+| --- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Blocker** | §6.2 Barn Capacity, read literally, deadlocks **9 of 9** Season 3–4 tier purchases — the game becomes unwinnable at Tier 11             |
+| 2   | **Blocker** | §2a Kitchen Garden yield is self-referential; at 20 Clockwork Trellis slots it claims 120% of total production and diverges to infinity |
+| 3   | Major       | §4 prestige spans ×1.18 → ×368,000 across four resets. The first prestige — the one that teaches the mechanic — is worth +18%           |
 
 Plus content gaps: Season 1 and 2 capstones are gated on but never designed;
 Season advancement is undefined; eight generator unlock gates point at Insight
@@ -64,7 +64,11 @@ over-banking is self-limiting.
 
 ## Where things stand
 
-**Phase 1 is unblocked.** The next steps, in order:
+**Phase 0 is complete** (2026-08-02). The project builds, `npm run ci` is green,
+41 tests pass, the palette is locked, and the `src/sim` purity boundary is
+lint-enforced and verified. See [ADRs](adr/) for the technical decisions.
+
+Next steps, in order:
 
 1. **Build the headless economy and balance simulation** (Phase 1, ~3–4 sessions).
    Nine of the spec's own ten playtest questions (§10) are answerable by simulation

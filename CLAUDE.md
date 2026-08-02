@@ -6,16 +6,25 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Planning only. No game code exists yet.** The repository contains the design
-spec, a numerical audit of it, and a build plan.
+**Phase 0 complete. Phase 1 is next — the headless economy and balance harness.**
+No game logic exists yet; `src/sim` is deliberately empty and waiting.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
 docs/                             feasibility, estimate, roadmap, architecture
+docs/adr/                         load-bearing technical decisions
 tools/spec-audit.mjs              numerical audit of the spec's own formulas
+tools/screenshot.mjs              drive the app, capture it, report layout problems
+src/content/balance.ts            EVERY tunable constant, with provenance tags
+src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
+src/sim/                          empty. Phase 1 fills it. Purity is lint-enforced
 ```
 
-Start here: `docs/README.md`.
+Start here: `docs/README.md`. Verify with `npm run ci`.
+
+**Phase 1's job:** implement §2/§4/§7 as pure functions, transcribe the 20-tier
+table, build the simulation harness, and fit `PRESTIGE_SQP_COEFFICIENT` and
+`KITCHEN_GARDEN_BASE_FRACTION` against the campaign-length and reset targets.
 
 ---
 
@@ -37,7 +46,7 @@ D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
 ```
 
 Constants marked sim-fitted are **starting values**; Phase 1's harness tunes them
-against the 6–10 hr and 4–5 reset targets. The formula *shapes* are fixed.
+against the 6–10 hr and 4–5 reset targets. The formula _shapes_ are fixed.
 
 **Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
 capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); offline
@@ -80,12 +89,13 @@ testable.
 
 **6. Protect the invariants.** These encode the design's promises. Full list and
 rationale in `docs/03-technical-architecture.md` §8:
-   - tier payback time stays flat (~150–180s) across all 20 tiers
-   - Barn Capacity always exceeds the next tier's cost
-   - total Mana/sec stays finite for every Kitchen Garden configuration
-   - Night never gates the Bell, Garden Plots, Frenzy, Pollination, or Festival
-   - active play out-earns full automation
-   - core cost multipliers stay inside 1.07–1.12
+
+- tier payback time stays flat (~150–180s) across all 20 tiers
+- Barn Capacity always exceeds the next tier's cost
+- total Mana/sec stays finite for every Kitchen Garden configuration
+- Night never gates the Bell, Garden Plots, Frenzy, Pollination, or Festival
+- active play out-earns full automation
+- core cost multipliers stay inside 1.07–1.12
 
 ---
 
@@ -117,11 +127,28 @@ Phases 5, 6, 11, and 12 have human gates for exactly these reasons.
 
 ---
 
+## Commands
+
+```
+npm run ci          typecheck + lint + format:check + test + build   (the gate)
+npm test            vitest run
+npm run dev         vite dev server
+npm run audit:spec  re-derive the economy's properties from the tier table
+npm run screenshot  drive a running preview, capture it, report layout problems
+```
+
+`npm run screenshot` needs a server: `npm run build && npx vite preview --port 4173 &`
+then `node tools/screenshot.mjs http://localhost:4173/ out.png`. Read the PNG.
+Note: never `pkill -f "vite preview"` — the pattern matches its own shell and
+kills the session. Use `fuser -k 4173/tcp`.
+
 ## Working style for this repo
 
 - One phase per session where possible — cross-phase sessions carry both phases'
   context for the whole conversation.
 - Use `npm test` as the verification loop, not file re-reads. Test output is
   hundreds of tokens; re-reading modules is tens of thousands.
+- Prettier formats everything except `clockwork-garden-design-spec.md`, which is
+  the designer's source of truth and must never be reformatted.
 - Update this file when a phase completes or an architectural decision changes.
 - Branch: `claude/game-feasibility-analysis-rfct2r` unless told otherwise.
