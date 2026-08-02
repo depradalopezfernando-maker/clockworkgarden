@@ -124,10 +124,17 @@ export function gardenPlotManaPerSecond(state: GameState): number {
   return base * prestigeMultiplier(state.appliedSqp);
 }
 
-/** Total production, Garden Plots plus the Kitchen Garden's bounded share. */
-export function totalManaPerSecond(state: GameState): number {
+/**
+ * Total production, Garden Plots plus the Kitchen Garden's bounded share.
+ *
+ * `kitchenGardenBaseFraction` is overridable so the balance harness can sweep
+ * D2's constant through the SAME code path the live game uses. Duplicating the
+ * income formula for the simulation would let the two drift apart, which would
+ * quietly invalidate every number in the balance report.
+ */
+export function totalManaPerSecond(state: GameState, kitchenGardenBaseFraction?: number): number {
   const plots = gardenPlotManaPerSecond(state);
-  return plots + plots * kitchenGardenMultiplier(state.kitchenGarden);
+  return plots + plots * kitchenGardenMultiplier(state.kitchenGarden, kitchenGardenBaseFraction);
 }
 
 /** §2 click yield. `bonus` is the summed upgrade bonus; frenzy is 1 or 2. */

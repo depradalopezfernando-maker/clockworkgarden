@@ -6,6 +6,7 @@
  */
 
 import { TIER_COUNT } from '@content/generators';
+import { initialFrenzy, type FrenzyState } from './frenzy';
 
 export interface GameState {
   /** Spendable Mana. Reset by prestige. */
@@ -41,6 +42,9 @@ export interface GameState {
 
   /** Kitchen Garden build-out, as far as Phase 1 models it. */
   readonly kitchenGarden: KitchenGardenState;
+
+  /** §5 Growth Frenzy meter and active window. */
+  readonly frenzy: FrenzyState;
 }
 
 /**
@@ -75,6 +79,7 @@ export function initialState(): GameState {
     prestigeCount: 0,
     elapsedSeconds: 0,
     kitchenGarden: initialKitchenGarden(),
+    frenzy: initialFrenzy(),
   };
 }
 

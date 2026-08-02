@@ -28,7 +28,7 @@ import type { KitchenGardenState } from './state';
  */
 export function kitchenGardenMultiplier(
   kg: KitchenGardenState,
-  baseFraction = KITCHEN_GARDEN_BASE_FRACTION
+  baseFraction: number = KITCHEN_GARDEN_BASE_FRACTION
 ): number {
   const slots = Math.min(Math.max(kg.slots, 0), KG_MAX_SLOTS);
   const plantUnits = slots * kg.capacityPerSlot * kg.surfaceYieldMult * kg.activeFraction;

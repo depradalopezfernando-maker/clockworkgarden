@@ -65,10 +65,14 @@ over-banking is self-limiting.
 
 ## Where things stand
 
-**Phases 0 and 1 are complete** (2026-08-02). `npm run ci` is green, 114 tests
-pass, and the economy has been simulated end to end: **all three player
-archetypes finish inside §8's 6–10 hour target** (9.50h / 8.11h / 6.40h). Full
-numbers and caveats in [06 — Phase 1 Balance Report](06-phase-1-balance-report.md).
+**Phases 0, 1 and 2 are complete** (2026-08-02). The game is playable in a
+browser — Bell, generators, Growth Frenzy, versioned saves and offline progress —
+verified end to end in real Chromium by `npm run smoke`.
+
+`npm run ci` is green with **180 tests plus 15 browser smoke checks**, and the
+economy has been simulated end to end: **all three player archetypes finish
+inside §8's 6–10 hour target** (9.50h / 8.11h / 6.40h). Full numbers and caveats
+in [06 — Phase 1 Balance Report](06-phase-1-balance-report.md).
 
 The simulation found a defect no amount of reading would have caught: the first
 prestige was worth **×1.00 — nothing** — because the spec's SQP reference sat
@@ -76,9 +80,9 @@ above the lifetime Mana a player holds when prestige unlocks. Now ×1.88.
 
 Next steps, in order:
 
-1. **Build the minimum playable loop** (Phase 2, ~3–4 sessions). React shell,
-   Bell, generator list, Growth Frenzy, versioned saves, offline on the real
-   clock. Deliberately plain 2D.
+1. **Build the Insight tree and milestones** (Phase 3, ~2–3 sessions). This
+   resolves [doc 04](04-spec-open-questions.md) item 5 — eight generator tiers
+   currently unlock on an "Insight skill unlock" with no node behind it.
 2. **Design the Season 1 and 2 capstones** before Phase 5. They are gated on but
    never designed; three are proposed in [doc 04](04-spec-open-questions.md) item 4.
    This blocks the vertical-slice go/no-go, not Phase 1.

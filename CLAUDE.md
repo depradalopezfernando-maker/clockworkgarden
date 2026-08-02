@@ -6,8 +6,9 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Phase 1 complete. Phase 2 is next — the minimum playable loop.**
-The economy is built, simulated, and lands in 6-10 hours. No UI exists yet.
+**Phase 2 complete. Phase 3 is next — the Insight tree and milestones.**
+The game is playable in a browser: Bell, generators, Growth Frenzy, versioned
+saves, offline progress. Deliberately plain 2D — the 3D layer is Phase 6.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
@@ -18,24 +19,28 @@ tools/screenshot.mjs              drive the app, capture it, report layout probl
 src/content/balance.ts            EVERY tunable constant, with provenance tags
 src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
 src/content/generators.ts         the 20-tier table (§2), transcribed
-src/sim/                          pure economy: costs, prestige, offline, harness
+src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
+src/game/                         runtime: store + loop + versioned saves
+src/ui/                           React shell, HUD, formatting
 tools/simulate.ts                 the balance report. Run it after any content change
 tools/fit.ts                      sweeps constants against the pacing targets
+tools/smoke.mjs                   drives the built app in Chromium end to end
+tests/fixtures/saves/             FROZEN old save formats. Never edit these
 ```
 
 Start here: `docs/README.md`. Verify with `npm run ci`.
 Latest balance numbers: `docs/06-phase-1-balance-report.md`.
 
-**Phase 2's job:** React shell, Bell, generator list, Growth Frenzy, versioned
-save/load with migrations, offline wired to the real clock, number formatting.
-Deliberately plain 2D - the 3D layer is Phase 6.
+**Phase 3's job:** the milestone engine (§3), the full ~50-node Insight tree as
+data — which finally resolves the eight generator tiers currently gated on an
+"Insight skill unlock" that does not exist (`docs/04` item 5) — and the tree UI.
 
 ---
 
 ## Design decisions already taken
 
 The four questions that blocked implementation were decided on 2026-08-02.
-**Phase 1 is unblocked.** Full rationale in `docs/04-spec-open-questions.md`
+Full rationale in `docs/04-spec-open-questions.md`
 ("Decisions taken"); these override the spec text where they conflict.
 
 ```
@@ -54,9 +59,12 @@ the simulation found a player holds only ~9e5 lifetime Mana when prestige
 unlocks, so 1e6 made the first reset worth exactly nothing. See
 `docs/06-phase-1-balance-report.md` §2.
 
+Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
+obfuscation costs effort and protects nothing).
+
 **Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
-capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); offline
-Kitchen Garden behaviour (Phase 4); anti-tamper stance (Phase 2).
+capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); the
+Insight tree's ~50 nodes (Phase 3); offline Kitchen Garden behaviour (Phase 4).
 
 ---
 
@@ -141,7 +149,12 @@ npm test            vitest run
 npm run dev         vite dev server
 npm run audit:spec  re-derive the economy's properties from the tier table
 npm run screenshot  drive a running preview, capture it, report layout problems
+npm run simulate    the balance report (also a CI gate)
+npm run fit         sweep constants against the pacing targets
+npm run smoke       drive the built app in Chromium: play, reload, offline
 ```
+
+`npm run smoke` needs a preview server on :4173, same as `screenshot`.
 
 `npm run screenshot` needs a server: `npm run build && npx vite preview --port 4173 &`
 then `node tools/screenshot.mjs http://localhost:4173/ out.png`. Read the PNG.

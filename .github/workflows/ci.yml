@@ -43,3 +43,15 @@ jobs:
       # the campaign outside 6-10 hours for any archetype, CI says so.
       - name: Balance simulation
         run: npm run simulate
+
+      # Phase 2's exit criterion, executed in real Chromium: play, reload, come
+      # back to correct offline progress. Unit tests cannot prove this - the
+      # store, save layer, React subscription and localStorage all have to work
+      # together in a browser.
+      - name: Smoke test (browser)
+        run: |
+          npx vite preview --port 4173 &
+          npx wait-on http://localhost:4173/ --timeout 60000
+          npm run smoke
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: /opt/pw-browsers

@@ -8,17 +8,17 @@ resolution. Items 1, 2, 3 and 6 were **decided by the designer on 2026-08-02** a
 are recorded in "Decisions taken" below — those four blocked Phase 1, which is now
 unblocked. The rest remain open but block only later phases.
 
-| #   | Severity    | Area   | One-line                                                          | Status                |
-| --- | ----------- | ------ | ----------------------------------------------------------------- | --------------------- |
-| 1   | **BLOCKER** | §6.2   | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases               | **RESOLVED**          |
-| 2   | **BLOCKER** | §2a    | Kitchen Garden yield is self-referential and diverges             | **RESOLVED**          |
-| 3   | Major       | §4     | Prestige spans 1.18× → 368,000×; first prestige is worthless      | **RESOLVED**          |
-| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed | open — blocks Phase 5 |
-| 5   | Medium      | §2     | "Insight skill unlock" gates are unmapped to specific nodes       | open — Phase 3        |
-| 6   | Medium      | §2/§8  | Nothing defines what actually advances a Season                   | **RESOLVED**          |
-| 7   | Medium      | §2a/§7 | Kitchen Garden behaviour while offline is unspecified             | open — Phase 4        |
-| 8   | Minor       | §2a    | Slot cost curve is too shallow to be a real decision late         | open — Phase 4        |
-| 9   | Minor       | —      | Save/load, versioning, and migration are absent from the spec     | open — Phase 2        |
+| #   | Severity    | Area   | One-line                                                          | Status                  |
+| --- | ----------- | ------ | ----------------------------------------------------------------- | ----------------------- |
+| 1   | **BLOCKER** | §6.2   | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases               | **RESOLVED**            |
+| 2   | **BLOCKER** | §2a    | Kitchen Garden yield is self-referential and diverges             | **RESOLVED**            |
+| 3   | Major       | §4     | Prestige spans 1.18× → 368,000×; first prestige is worthless      | **RESOLVED**            |
+| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed | open — blocks Phase 5   |
+| 5   | Medium      | §2     | "Insight skill unlock" gates are unmapped to specific nodes       | open — Phase 3          |
+| 6   | Medium      | §2/§8  | Nothing defines what actually advances a Season                   | **RESOLVED**            |
+| 7   | Medium      | §2a/§7 | Kitchen Garden behaviour while offline is unspecified             | open — Phase 4          |
+| 8   | Minor       | §2a    | Slot cost curve is too shallow to be a real decision late         | open — Phase 4          |
+| 9   | Minor       | —      | Save/load, versioning, and migration are absent from the spec     | **RESOLVED** (ADR-0004) |
 
 ---
 

@@ -29,12 +29,9 @@ import {
   gardenPlotManaPerSecond,
   isCampaignComplete,
   isCapstoneAvailable,
+  totalManaPerSecond,
 } from './economy';
-import {
-  buildOutForSeason,
-  kitchenGardenIncomeShare,
-  kitchenGardenMultiplier,
-} from './kitchenGarden';
+import { buildOutForSeason, kitchenGardenIncomeShare } from './kitchenGarden';
 import {
   canPrestige,
   prestige,
@@ -167,10 +164,8 @@ export function simulateCampaign(
     state = { ...state, kitchenGarden: kg };
 
     // --- Income ------------------------------------------------------------
-    const plots = gardenPlotManaPerSecond(state);
-    const kgBonus = plots * kitchenGardenMultiplier(kg, kitchenGardenBaseFraction);
     const clicks = clicksPerSecond * clickYield(state, 0, frenzy);
-    const income = (plots + kgBonus) * frenzy + clicks;
+    const income = totalManaPerSecond(state, kitchenGardenBaseFraction) * frenzy + clicks;
 
     const earned = income * stepSeconds;
     state = {

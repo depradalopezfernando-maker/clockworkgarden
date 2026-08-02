@@ -1,0 +1,296 @@
+/* Phase 2 UI — deliberately plain 2D. The isometric 3D layer is Phase 6.
+   Every colour comes from CSS variables set by theme.ts, which reads the locked
+   palette in src/content/palette.ts. Never hard-code a colour here. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  /* Rapid Bell tapping otherwise selects the label text or fires zoom on iOS. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 68rem;
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  .app {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}
+
+.panel {
+  background: var(--ui-surface-raised);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+/* --- HUD ----------------------------------------------------------------- */
+
+.hud__season {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--season-accent);
+  margin: 0 0 0.25rem;
+}
+
+.hud__mana {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--ui-mana);
+  line-height: 1.1;
+  /* Tabular figures stop the number jittering as digits change ten times a
+     second, which is otherwise the most noticeable flaw in an idle-game HUD. */
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__rate {
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.15rem;
+}
+
+.hud__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--ui-text-muted);
+}
+
+.hud__stats b {
+  color: var(--ui-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Bell ---------------------------------------------------------------- */
+
+.bell {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1.5rem 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ui-text);
+  background: var(--season-primary);
+  border: 2px solid var(--season-shadow);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    filter 0.12s ease;
+}
+
+.bell:hover {
+  filter: brightness(1.08);
+}
+
+.bell:active {
+  transform: scale(0.97);
+}
+
+.bell--frenzy {
+  background: var(--season-accent);
+  border-color: var(--season-accent);
+  animation: frenzy-pulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes frenzy-pulse {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bell,
+  .bell--frenzy {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* --- Frenzy meter -------------------------------------------------------- */
+
+.meter {
+  margin-top: 0.9rem;
+}
+
+.meter__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--ui-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.meter__track {
+  height: 10px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  background: var(--season-secondary);
+  transition: width 0.1s linear;
+}
+
+.meter__fill--active {
+  background: var(--season-accent);
+}
+
+/* --- Generators ---------------------------------------------------------- */
+
+.generators {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.generator {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.generator:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.generator:not(:disabled):hover {
+  border-color: var(--season-primary);
+}
+
+/* Both must be block: side by side they render as "Watering Can0.1/s each",
+   which reads as a rendering fault rather than two fields. */
+.generator__name {
+  display: block;
+  font-weight: 600;
+}
+
+.generator__detail {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.generator__cost {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.generator__cost b {
+  display: block;
+  color: var(--ui-mana);
+}
+
+.generator__cost--affordable b {
+  color: var(--ui-positive);
+}
+
+.generator__owned {
+  font-size: 0.78rem;
+  color: var(--ui-text-muted);
+}
+
+/* --- Dialog -------------------------------------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 65%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 10;
+}
+
+.dialog {
+  background: var(--ui-surface-raised);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 26rem;
+  width: 100%;
+}
+
+.dialog h2 {
+  margin: 0 0 0.5rem;
+  color: var(--season-accent);
+}
+
+.dialog p {
+  color: var(--ui-text-muted);
+  line-height: 1.5;
+}
+
+.dialog b {
+  color: var(--ui-mana);
+  font-variant-numeric: tabular-nums;
+}
+
+.button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ui-text);
+  background: var(--season-primary);
+  border: 1px solid var(--season-shadow);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.footnote {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+}

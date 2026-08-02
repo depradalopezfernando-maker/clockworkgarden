@@ -83,7 +83,18 @@ it will ever be.**
 
 ---
 
-## Phase 2 — Minimum Playable Loop
+## Phase 2 — Minimum Playable Loop ✅ COMPLETE (2026-08-02, 1 session)
+
+**Exit met.** 180 tests plus 15 browser smoke checks. The built app runs in
+Chromium: ring the Bell, trigger a Frenzy, buy generators, watch production
+accrue, reload with progress intact, return after 4 simulated hours away and
+find offline Mana credited (1463 against 1440 expected).
+
+Three display bugs were caught by reading a screenshot rather than by assertions:
+rates floored to `0/s` for a generator producing 0.1/s, generator name and detail
+ran together as one word, and a trailing-zero trim turned 550 into 55.
+
+Original plan follows.
 
 **Sessions: 3–4** · Entry: Phase 1 exit met
 
