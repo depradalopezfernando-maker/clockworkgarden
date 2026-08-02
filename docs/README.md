@@ -17,7 +17,7 @@ and game feel need human gates.
 | [01 — Effort Estimate](01-effort-estimate.md) | How many sessions and tokens, derived bottom-up with assumptions stated |
 | [02 — Phase Roadmap](02-phase-roadmap.md) | Thirteen phases with entry/exit criteria and human gates |
 | [03 — Technical Architecture](03-technical-architecture.md) | Proposed codebase shape, the sim/view split, saves, testing |
-| [04 — Open Design Questions](04-spec-open-questions.md) | **Answer these before building.** Two are blockers |
+| [04 — Open Design Questions](04-spec-open-questions.md) | Audit findings, and the four decisions taken on 2026-08-02 |
 | [05 — Asset Pipeline](05-asset-pipeline.md) | CC0 sourcing, the palette lock, and a live network constraint |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
@@ -54,19 +54,25 @@ Plus content gaps: Season 1 and 2 capstones are gated on but never designed;
 Season advancement is undefined; eight generator unlock gates point at Insight
 nodes that do not exist yet.
 
-All have recommended resolutions in [doc 04](04-spec-open-questions.md).
+**All three are now resolved** — see "Decisions taken" in
+[doc 04](04-spec-open-questions.md). Barn Capacity uses total output plus a
+structural safety floor; Kitchen Garden yield is non-recursive at ~⅓ of income;
+prestige is log-shaped on non-resetting lifetime Mana, so every reset is felt and
+over-banking is self-limiting.
 
 ---
 
-## The three things worth acting on first
+## Where things stand
 
-1. **Answer `docs/04` items 1, 2, 3 and 6.** Mostly your decisions. Nothing should
-   be built until items 1 and 2 have answers, because both make the game
-   unshippable as written.
-2. **Prove the economy headlessly before building any UI** (Phase 1, ~3–4
-   sessions). Nine of the spec's own ten playtest questions (§10) are answerable by
-   simulation without a browser. This is the single highest-leverage inversion in
-   the plan.
+**Phase 1 is unblocked.** The next steps, in order:
+
+1. **Build the headless economy and balance simulation** (Phase 1, ~3–4 sessions).
+   Nine of the spec's own ten playtest questions (§10) are answerable by simulation
+   without a browser. This is the single highest-leverage inversion in the plan,
+   and it fits the sim-tuned constants from the decisions above.
+2. **Design the Season 1 and 2 capstones** before Phase 5. They are gated on but
+   never designed; three are proposed in [doc 04](04-spec-open-questions.md) item 4.
+   This blocks the vertical-slice go/no-go, not Phase 1.
 3. **Resolve 3D asset access before Phase 6.** `kenney.nl` is currently blocked by
    this environment's network policy — either widen it or commit the CC0 packs to
    `assets/vendor/`. UI icons are already available via npm. Nothing before Phase 6

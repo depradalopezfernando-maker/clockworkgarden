@@ -19,17 +19,29 @@ Start here: `docs/README.md`.
 
 ---
 
-## Before writing any game code
+## Design decisions already taken
 
-Four design questions block implementation. They are decisions for the designer,
-not defaults to guess at — building on a guess means rebuilding.
+The four questions that blocked implementation were decided on 2026-08-02.
+**Phase 1 is unblocked.** Full rationale in `docs/04-spec-open-questions.md`
+("Decisions taken"); these override the spec text where they conflict.
 
-- **`docs/04-spec-open-questions.md` items 1, 2, 3, 6 must be answered.**
-- Items 1 and 2 are blockers: as literally specified, Barn Capacity deadlocks
-  progression at Tier 11, and Kitchen Garden yield diverges to infinity.
+```
+D1  BarnCapacity = max(500 × TotalManaPerSec, 2.5 × CostOfNextUnpurchasedTier)
+D2  PlotContribution = BaseFraction × mods × GardenPlotManaPerSec   // NOT total
+    BaseFraction = 0.004      // sim-fitted; target ~1/3 of income at full build
+D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / 1e6)))         // K = 40
+    PrestigeMultiplier = 1 + 0.02 × TotalSQP
+    LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
+D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
+    simulation validates, not a trigger. Prestige is renamed ("Turn the Soil").
+```
 
-If a session is asked to start building and these are unresolved, **ask** rather
-than assume.
+Constants marked sim-fitted are **starting values**; Phase 1's harness tunes them
+against the 6–10 hr and 4–5 reset targets. The formula *shapes* are fixed.
+
+**Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
+capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); offline
+Kitchen Garden behaviour (Phase 4); anti-tamper stance (Phase 2).
 
 ---
 

@@ -1,24 +1,124 @@
-# Open Design Questions — Resolve Before Phase 1
+# Open Design Questions
 
 Findings from a numerical audit of `clockwork-garden-design-spec.md`. Reproduce
 with `node tools/spec-audit.mjs`.
 
 Each item states what the spec says, what the audit found, and a recommended
-resolution. **The recommendation is a proposal, not a decision** — these are design
-calls that belong to the designer. Items marked **BLOCKER** must be answered
-before the economy is implemented; building on a guess means rebuilding.
+resolution. Items 1, 2, 3 and 6 were **decided by the designer on 2026-08-02** and
+are recorded in "Decisions taken" below — those four blocked Phase 1, which is now
+unblocked. The rest remain open but block only later phases.
 
-| # | Severity | Area | One-line |
-|---|---|---|---|
-| 1 | **BLOCKER** | §6.2 | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases |
-| 2 | **BLOCKER** | §2a | Kitchen Garden yield is self-referential and diverges |
-| 3 | Major | §4 | Prestige spans 1.18× → 368,000×; first prestige is worthless |
-| 4 | Major | §2 | Season 1 and Season 2 capstones are referenced but never designed |
-| 5 | Medium | §2 | "Insight skill unlock" gates are unmapped to specific nodes |
-| 6 | Medium | §2/§8 | Nothing defines what actually advances a Season |
-| 7 | Medium | §2a/§7 | Kitchen Garden behaviour while offline is unspecified |
-| 8 | Minor | §2a | Slot cost curve is too shallow to be a real decision late |
-| 9 | Minor | — | Save/load, versioning, and migration are absent from the spec |
+| # | Severity | Area | One-line | Status |
+|---|---|---|---|---|
+| 1 | **BLOCKER** | §6.2 | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases | **RESOLVED** |
+| 2 | **BLOCKER** | §2a | Kitchen Garden yield is self-referential and diverges | **RESOLVED** |
+| 3 | Major | §4 | Prestige spans 1.18× → 368,000×; first prestige is worthless | **RESOLVED** |
+| 4 | Major | §2 | Season 1 and Season 2 capstones are referenced but never designed | open — blocks Phase 5 |
+| 5 | Medium | §2 | "Insight skill unlock" gates are unmapped to specific nodes | open — Phase 3 |
+| 6 | Medium | §2/§8 | Nothing defines what actually advances a Season | **RESOLVED** |
+| 7 | Medium | §2a/§7 | Kitchen Garden behaviour while offline is unspecified | open — Phase 4 |
+| 8 | Minor | §2a | Slot cost curve is too shallow to be a real decision late | open — Phase 4 |
+| 9 | Minor | — | Save/load, versioning, and migration are absent from the spec | open — Phase 2 |
+
+---
+
+## Decisions taken — 2026-08-02
+
+These are authoritative. They override the spec text where they conflict, and
+Phase 1 implements them. Constants marked *sim-fitted* are starting values for the
+Phase 1 balance harness to tune against the 6–10 hr and 4–5 reset targets; the
+**shape** of each formula is fixed, the coefficient is not.
+
+### D1 — Barn Capacity (§6.2)
+
+```
+BarnCapacity = max( 500 × TotalManaPerSec ,  2.5 × CostOfNextUnpurchasedTier )
+```
+
+`TotalManaPerSec` is total production, not per-unit yield. The second term is a
+structural safety rail: it makes the audited deadlock impossible regardless of
+future retuning. Accepted cost — the cap can never itself be the thing blocking a
+purchase, which slightly softens §6.2's banking tension.
+
+**Invariant test:** `BarnCapacity > nextTierCost` at every tier, all Seasons.
+
+### D2 — Kitchen Garden yield (§2a)
+
+Non-recursive. The base is Garden Plot income only:
+
+```
+PlotContribution = BaseFraction × SurfaceYieldMult × PerfectPlantingMult
+                                × AutomationYieldMult × GardenPlotManaPerSec
+TotalManaPerSec  = GardenPlotManaPerSec + Σ PlotContribution
+```
+
+```
+BaseFraction = 0.004        // 0.4%, sim-fitted
+```
+
+**Target:** the Kitchen Garden supplies **~⅓ of total income** at full Season 4
+build-out (20 slots × 5 plants × 1.2 yield = 120 plant-units → +48% → 32% share).
+Unmistakably worth engaging with; never eclipses the Garden Plot backbone.
+
+Note the scope consequence, deliberately accepted: keeping the Kitchen Garden at
+roughly a third of income preserves the §7 escape hatch — a 32% subsystem can
+still be cut to "Light integration"; a 55% one cannot.
+
+**Invariant test:** total Mana/sec is finite and non-recursive for every
+configuration up to 20 Clockwork Trellis slots.
+
+### D3 — Prestige (§4)
+
+Log-shaped, computed **absolutely** from all-time lifetime Mana (the Cookie Clicker
+model), never summed across resets:
+
+```
+TotalSQP           = max( 0, floor( K × log10( LifetimeMana / 1e6 ) ) )
+SQPGainedThisReset = TotalSQP_now − TotalSQP_at_last_reset
+PrestigeMultiplier = 1 + 0.02 × TotalSQP
+
+K = 40   // sim-fitted
+```
+
+**`LifetimeMana` is all-time and does NOT reset on prestige.** The spec was silent
+on this and it matters: computing SQP fresh each reset and *adding* it would
+double-count badly (×27 instead of ×12.6 by the fourth reset).
+
+Projected with K = 40:
+
+| Reset | SQP gained | Total SQP | Multiplier | Step-up |
+|---|---:|---:|---:|---:|
+| 1 (end S1) | 77 | 77 | ×2.54 | ×2.54 |
+| 2 (end S2) | 167 | 244 | ×5.88 | ×2.31 |
+| 3 (end S3) | 169 | 413 | ×9.26 | ×1.57 |
+| 4 (end S4) | 167 | 580 | ×12.60 | ×1.36 |
+
+Two properties this shape buys, both wanted for a *bounded* game:
+
+- **Every reset is felt.** The first is ×2.54, not the spec's ×1.18. Players learn
+  prestige is worth doing at the moment the game teaches it.
+- **Over-banking is self-limiting.** Because gain scales with the log of lifetime
+  Mana, grinding twice as long adds a fixed small amount. That produces the
+  spec's 4–5 natural resets without needing a cap — §4's "reset cap by design,
+  not by code," now actually mechanised.
+
+Prestige remains **optional and speedup-flavoured**, per §4. A ×12.6 final
+multiplier is small against ~1e18 of natural production growth, which is correct:
+it accelerates, it does not gate.
+
+### D6 — Season advancement (§2/§8)
+
+Season advancement is **capstone-clear, exclusively.** §8's timeline (0:15–1:30,
+1:30–3:15, …) is a **prediction the balance simulation validates**, never a
+trigger. Time-gating would block fast players and push slow players into content
+they are not ready for, and would make §8 a constraint on tuning rather than a
+consequence of it.
+
+**The prestige action is renamed** to break the collision with Season
+advancement — "Season Change" currently means two different things, one of which
+wipes your generators, at the exact moment the player is deciding whether to do
+it. Working name: **"Turn the Soil"** (final name is the designer's call; it is a
+string, changeable at any time).
 
 ---
 
@@ -57,9 +157,7 @@ The second term is a safety rail that makes the deadlock structurally impossible
 independent of balance changes. Add a regression test asserting
 `BarnCapacity > nextTierCost` at every tier.
 
-**Decision needed:** Confirm Reading B, and confirm whether the safety floor is
-acceptable (it slightly weakens the §6.2 "bank toward the Festival" tension, in
-exchange for guaranteeing the game is completable).
+**DECIDED — see D1.** Reading B adopted, with the safety floor.
 
 ---
 
@@ -100,11 +198,8 @@ This is non-recursive by construction. Note the consequence: at full Season 4
 build-out the Kitchen Garden adds **+120%** — it more than doubles production.
 That may be more than intended for a subsystem framed as a bonus layer.
 
-**Decision needed:** Two questions. (a) Confirm the non-recursive definition.
-(b) Decide the intended late-game contribution — if the Kitchen Garden should be a
-*meaningful bonus* rather than *the majority of income*, `BaseFraction` wants to be
-nearer **0.4%** (→ ~48% at full build-out) than 1%. §10 item 10 already flags this
-ratio as a placeholder; the audit gives it a concrete target.
+**DECIDED — see D2.** Non-recursive, `BaseFraction = 0.4%`, targeting ~⅓ of total
+income at full build-out. This resolves §10's item 10 placeholder.
 
 ---
 
@@ -147,9 +242,8 @@ genre convention the spec cites (Cookie Clicker's first Heavenly Chip is felt
 immediately). Exact constants are for Phase 1's simulation to fit — the sim can
 sweep them against the "4–5 natural resets" target directly.
 
-**Decision needed:** Confirm the intent is a *consistently felt* prestige rather
-than a late-game payoff, and confirm ~2–3× per reset as the target the simulation
-should fit to.
+**DECIDED — see D3.** Log-shaped, computed absolutely from non-resetting lifetime
+Mana. Consistently-felt resets; prestige stays optional and speedup-flavoured.
 
 ---
 
@@ -216,8 +310,7 @@ treat §8's timings as *predictions* the balance simulation should validate, not
 triggers. Rename the prestige action in-game (e.g. **"Turn the Soil"**) so
 "Season Change" does not mean two different things to the player.
 
-**Decision needed:** Confirm capstone-gated advancement, and decide whether to
-rename the prestige action.
+**DECIDED — see D6.** Capstone-gated exclusively; prestige action renamed.
 
 ---
 
@@ -286,17 +379,19 @@ significantly more expensive.
 
 ---
 
-## Summary of decisions requested
+## Decision status
 
-| # | Decision | Blocks |
-|---|---|---|
-| 1 | Barn Capacity = Reading B + safety floor? | Phase 1 |
-| 2 | Non-recursive KG yield; `BaseFraction` 1% or ~0.4%? | Phase 1 |
-| 3 | Prestige normalised per Season, target ~2–3×/reset? | Phase 1 |
-| 4 | Approve/replace the three proposed capstones? | Phases 5, 7, 8 |
-| 6 | Season advancement is capstone-gated? Rename prestige? | Phase 1 |
-| 7 | Offline crop growth tapered or full-rate? | Phase 4 |
-| 8 | Should slot cost be a real decision? | Phase 4 |
-| 9 | Confirm no anti-tamper requirement | Phase 2 |
+| # | Decision | Blocks | Status |
+|---|---|---|---|
+| 1 | Barn Capacity = total output + safety floor | Phase 1 | **decided 2026-08-02** |
+| 2 | Non-recursive KG yield; `BaseFraction` 0.4% | Phase 1 | **decided 2026-08-02** |
+| 3 | Log-shaped prestige on non-resetting lifetime Mana | Phase 1 | **decided 2026-08-02** |
+| 6 | Capstone-gated Seasons; prestige renamed | Phase 1 | **decided 2026-08-02** |
+| 4 | Approve/replace the three proposed capstones | Phase 5 | open |
+| 5 | Map "Insight skill unlock" gates to real nodes | Phase 3 | open (authored in Phase 3) |
+| 7 | Offline crop growth tapered or full-rate | Phase 4 | open |
+| 8 | Should slot cost be a real decision | Phase 4 | open |
+| 9 | Confirm no anti-tamper requirement | Phase 2 | open |
 
-Items 1, 2, 3 and 6 are the ones genuinely blocking Phase 1.
+**Phase 1 is unblocked.** The next decision that gates real work is item 4 — the
+Season 1 and 2 capstones — which blocks Phase 5, the vertical-slice go/no-go.

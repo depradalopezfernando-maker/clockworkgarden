@@ -30,9 +30,11 @@ roadmap assumes it runs after Phase 5 so the vertical slice is judged on
 ---
 
 ## Phase 0 — Foundations & Decisions
-**Sessions: 1–2** · Entry: design questions answered
+**Sessions: 1–2** · Entry: none — **ready to start**
 
-- Resolve `docs/04-spec-open-questions.md` items **1, 2, 3, 6** (your decisions).
+- ~~Resolve `docs/04` items 1, 2, 3, 6~~ — **done 2026-08-02**, see "Decisions
+  taken" in `docs/04-spec-open-questions.md`. Transcribe D1/D2/D3/D6 into
+  `src/content/balance.ts` as the starting constants.
 - Scaffold: Vite + TypeScript strict + React + Vitest + ESLint + Prettier.
 - CI: typecheck, lint, test, build on every push.
 - `CLAUDE.md` (the standing brief for every future session).
@@ -60,8 +62,11 @@ design questions remain.
 - Build the simulation harness: run the campaign forward at configurable
   clicks-per-minute and session patterns, output time-to-each-Season, prestige
   timings, and Mana curves.
-- Answer §10's questions 1, 2, 3, 10 numerically. Fit the Phase-0 prestige decision
-  to the "4–5 natural resets" target by parameter sweep.
+- Answer §10's questions 1, 2, 3, 10 numerically.
+- **Fit the sim-tuned constants** from the decisions: D3's prestige coefficient
+  `K` (starting 40) against the "4–5 natural resets" target, and D2's
+  `BaseFraction` (starting 0.004) against the "~⅓ of income at full build-out"
+  target. Formula shapes are fixed; only these coefficients move.
 
 **Exit:** a report showing simulated campaign length inside **6–10 hours** across
 at least three player archetypes (idle / casual / active), and 4–5 natural
