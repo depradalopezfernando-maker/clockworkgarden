@@ -75,7 +75,7 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * against - is K-independent. Reset count is set by player behaviour and by the
  * span of lifetime Mana across the campaign. See docs/06-phase-1-balance-report.md.
  */
-export const PRESTIGE_SQP_COEFFICIENT = 35;
+export const PRESTIGE_SQP_COEFFICIENT = 20;
 /**
  * SIM. The lifetime Mana at which SQP starts accruing.
  *
@@ -86,10 +86,12 @@ export const PRESTIGE_SQP_COEFFICIENT = 35;
  *
  * That is worse than the x1.18 problem decision D3 set out to fix, and it is not
  * visible on paper - it needs a simulated playthrough to see, because it depends
- * on when the capstone actually fires. Fitted to 5e4, which makes the first
- * prestige worth ~x1.88.
+ * on when the capstone actually fires.
+ *
+ * Re-fitted in Phase 3 (5e4 -> 1e4) once the Insight tree's production bonuses
+ * entered the economy. First prestige is now ~x1.78.
  */
-export const PRESTIGE_SQP_REFERENCE = 5e4;
+export const PRESTIGE_SQP_REFERENCE = 1e4;
 export const PRESTIGE_BONUS_PER_SQP = 0.02; // SPEC §4  (+2% per SQP)
 
 /** SIM. Phase 1 fits PRESTIGE_SQP_COEFFICIENT until natural play lands here. */

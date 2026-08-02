@@ -3,6 +3,7 @@ import { CURRENT_SAVE_VERSION, decodeSave, deserialize, encodeSave, serialize } 
 import { initialState } from '@sim/state';
 import { TIER_COUNT } from '@content/generators';
 import v1Fixture from '../fixtures/saves/v1.json';
+import v2Fixture from '../fixtures/saves/v2.json';
 
 /**
  * ADR-0004. Every version ships with a FROZEN fixture of that format and a test
@@ -44,8 +45,21 @@ describe('round-tripping the current version', () => {
   });
 });
 
-describe('the frozen v1 fixture still loads', () => {
-  it('migrates to the current version without loss', () => {
+describe('the frozen v2 fixture loads as-is', () => {
+  it('round-trips the Insight tree state', () => {
+    const result = deserialize(JSON.stringify(v2Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.migratedFrom).toBeNull();
+    expect(result.save.state.insight).toBe(3);
+    expect(result.save.state.lifetimeInsight).toBe(8);
+    expect(result.save.state.purchasedNodes).toEqual(['s1-click-1', 's1-gen-3']);
+    expect(result.save.state.claimedMilestones).toHaveLength(4);
+  });
+});
+
+describe('the frozen v1 fixture still loads after the v2 migration', () => {
+  it('migrates forward without losing the pre-Insight progress', () => {
     const result = deserialize(JSON.stringify(v1Fixture));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -59,11 +73,40 @@ describe('the frozen v1 fixture still loads', () => {
     expect(result.save.state.frenzy.meter).toBeCloseTo(0.35, 6);
   });
 
-  it('reports no migration when already current', () => {
+  it('reports that it came from version 1', () => {
     const result = deserialize(JSON.stringify(v1Fixture));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.migratedFrom).toBeNull();
+    expect(result.migratedFrom).toBe(1);
+  });
+
+  it('starts the Insight tree empty — v1 predates it entirely', () => {
+    const result = deserialize(JSON.stringify(v1Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.state.insight).toBe(0);
+    expect(result.save.state.purchasedNodes).toEqual([]);
+    expect(result.save.state.claimedMilestones).toEqual([]);
+  });
+});
+
+describe('unknown ids in a save are dropped, not trusted', () => {
+  it('discards node and milestone ids this build does not know', () => {
+    const result = deserialize(
+      JSON.stringify({
+        version: 2,
+        savedAt: 0,
+        state: {
+          purchasedNodes: ['s1-click-1', 'renamed-in-a-later-build', 's1-click-1'],
+          claimedMilestones: ['m-water-10', 'no-such-milestone'],
+        },
+      })
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Also de-duplicated: a doubled id would pay a milestone twice.
+    expect(result.save.state.purchasedNodes).toEqual(['s1-click-1']);
+    expect(result.save.state.claimedMilestones).toEqual(['m-water-10']);
   });
 });
 

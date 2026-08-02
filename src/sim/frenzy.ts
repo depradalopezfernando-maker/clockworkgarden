@@ -48,12 +48,12 @@ export function frenzyMultiplier(frenzy: FrenzyState): number {
  * clicking would chain Frenzies back to back, which §5 explicitly does not want
  * ("rewards short bursts of attention rather than sustained clicking").
  */
-export function addFrenzyClick(frenzy: FrenzyState): FrenzyState {
+export function addFrenzyClick(frenzy: FrenzyState, bonusSeconds = 0): FrenzyState {
   if (isFrenzyActive(frenzy)) return frenzy;
 
   const meter = frenzy.meter + FRENZY_METER_GAIN_PER_CLICK;
   if (meter >= 1) {
-    return { meter: 0, remainingSeconds: FRENZY_DURATION_SECONDS };
+    return { meter: 0, remainingSeconds: FRENZY_DURATION_SECONDS + bonusSeconds };
   }
   return { ...frenzy, meter };
 }

@@ -110,7 +110,19 @@ tab, return, and find correct offline progress.
 
 ---
 
-## Phase 3 — Insight Tree & Milestones
+## Phase 3 — Insight Tree & Milestones ✅ COMPLETE (2026-08-02, 1 session)
+
+**Exit met.** 232 tests plus 21 browser smoke checks. 50 nodes, 37 milestones,
+all eight "Insight skill unlock" tiers resolved to real nodes (`docs/04` item 5
+closed), and the campaign still lands in 6–10 hours against the real gates
+(9.12 / 7.58 / 6.08h) after re-fitting K and the reference.
+
+Two findings: turning on real gates initially **stalled every archetype at Season
+1** because the harness never claimed milestones, and the tree's production
+bonuses as first authored pushed casual and active below the 6-hour floor. Both
+in `docs/06-phase-1-balance-report.md` §7a.
+
+Original plan follows.
 
 **Sessions: 2–3** · Entry: Phase 2
 

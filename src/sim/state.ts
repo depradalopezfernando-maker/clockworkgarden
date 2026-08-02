@@ -45,6 +45,25 @@ export interface GameState {
 
   /** §5 Growth Frenzy meter and active window. */
   readonly frenzy: FrenzyState;
+
+  /** Unspent Insight (§3). */
+  readonly insight: number;
+
+  /** All-time Insight earned. Never reset; used for reporting and milestones. */
+  readonly lifetimeInsight: number;
+
+  /**
+   * Insight tree nodes bought. Survives prestige — §4 keeps "unlocked plant
+   * types", and these ARE those unlocks.
+   */
+  readonly purchasedNodes: readonly string[];
+
+  /**
+   * Milestones already paid out. MUST survive prestige: if these reset, a player
+   * re-earns the same Insight every reset and the tree becomes free, which is
+   * exactly what §3's milestone design exists to prevent.
+   */
+  readonly claimedMilestones: readonly string[];
 }
 
 /**
@@ -80,6 +99,10 @@ export function initialState(): GameState {
     elapsedSeconds: 0,
     kitchenGarden: initialKitchenGarden(),
     frenzy: initialFrenzy(),
+    insight: 0,
+    lifetimeInsight: 0,
+    purchasedNodes: [],
+    claimedMilestones: [],
   };
 }
 

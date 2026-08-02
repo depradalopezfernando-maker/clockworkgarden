@@ -105,6 +105,21 @@ export function prestige(
     capstonesCleared: state.capstonesCleared,
     elapsedSeconds: state.elapsedSeconds,
     kitchenGarden: state.kitchenGarden,
+
+    // §4 keeps "unlocked plant types" - the Insight tree IS those unlocks.
+    purchasedNodes: state.purchasedNodes,
+    lifetimeInsight: state.lifetimeInsight,
+
+    // MUST survive. If claimed milestones reset, every reset re-pays the same
+    // Insight and the tree becomes free - precisely what §3's milestone design
+    // exists to prevent. Guarded by a test.
+    claimedMilestones: state.claimedMilestones,
+
+    // Unspent Insight survives too. §4 lists "in-progress Insight" as reset,
+    // which reads more naturally as progress toward the next milestone than as
+    // banked points; wiping a player's savings would punish exactly the
+    // planning the tree is meant to reward. Raised as open question 10.
+    insight: state.insight,
   };
 }
 

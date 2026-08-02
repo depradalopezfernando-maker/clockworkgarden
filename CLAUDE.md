@@ -6,9 +6,9 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Phase 2 complete. Phase 3 is next — the Insight tree and milestones.**
-The game is playable in a browser: Bell, generators, Growth Frenzy, versioned
-saves, offline progress. Deliberately plain 2D — the 3D layer is Phase 6.
+**Phase 3 complete. Phase 4 is next — the Kitchen Garden (§2a), the largest
+single phase.** Playable in a browser: Bell, generators, Growth Frenzy, the
+50-node Insight tree, milestones, versioned saves, offline progress.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
@@ -19,6 +19,8 @@ tools/screenshot.mjs              drive the app, capture it, report layout probl
 src/content/balance.ts            EVERY tunable constant, with provenance tags
 src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
 src/content/generators.ts         the 20-tier table (§2), transcribed
+src/content/insightTree.ts        50 nodes (§3). Eight of them open generator tiers
+src/content/milestones.ts         37 milestones — the ONLY source of Insight
 src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
 src/game/                         runtime: store + loop + versioned saves
 src/ui/                           React shell, HUD, formatting
@@ -31,9 +33,11 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 Start here: `docs/README.md`. Verify with `npm run ci`.
 Latest balance numbers: `docs/06-phase-1-balance-report.md`.
 
-**Phase 3's job:** the milestone engine (§3), the full ~50-node Insight tree as
-data — which finally resolves the eight generator tiers currently gated on an
-"Insight skill unlock" that does not exist (`docs/04` item 5) — and the tree UI.
+**Phase 4's job:** the Kitchen Garden (§2a) — grid, per-plot Dig/Plant/Cover
+state machine, six surfaces, Seed Satchel, the spend-only Day/Night budget, and
+3 automation steps x 2 levels. **Decide the §7 "Light integration" scope cut
+BEFORE starting**, not during. Its Insight nodes already exist as data and are
+listed in `PENDING_EFFECT_KINDS` — wire them and remove them from that list.
 
 ---
 
@@ -63,8 +67,9 @@ Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
 **Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
-capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); the
-Insight tree's ~50 nodes (Phase 3); offline Kitchen Garden behaviour (Phase 4).
+capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); whether
+prestige wipes banked Insight (`docs/04` item 10 — Reading B implemented);
+offline Kitchen Garden behaviour (Phase 4).
 
 ---
 
@@ -110,6 +115,12 @@ rationale in `docs/03-technical-architecture.md` §8:
 - Night never gates the Bell, Garden Plots, Frenzy, Pollination, or Festival
 - active play out-earns full automation
 - core cost multipliers stay inside 1.07–1.12
+- every "Insight skill unlock" tier has exactly one node, and no node opens a
+  tier that is not Insight-gated
+- claimed milestones survive prestige — otherwise every reset re-pays the same
+  Insight and the tree becomes free
+- no Insight node silently does nothing: every effect kind is applied or listed
+  in `PENDING_EFFECT_KINDS`
 
 ---
 

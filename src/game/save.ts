@@ -11,8 +11,10 @@
 
 import { initialKitchenGarden, initialState, type GameState } from '@sim/state';
 import { TIER_COUNT } from '@content/generators';
+import { nodeById } from '@content/insightTree';
+import { MILESTONES } from '@content/milestones';
 
-export const CURRENT_SAVE_VERSION = 1;
+export const CURRENT_SAVE_VERSION = 2;
 export const SAVE_KEY = 'clockwork-garden:save';
 
 export interface SaveFile {
@@ -36,7 +38,29 @@ export type LoadFailure = 'empty' | 'unparseable' | 'future-version' | 'corrupt'
  * exact transformation. Add a new one instead.
  */
 const MIGRATIONS: Readonly<Record<number, (raw: unknown) => unknown>> = {
-  // 1: (raw) => ({ ...raw, state: { ...raw.state, newField: default } }),
+  /**
+   * v1 -> v2 (Phase 3): the Insight tree arrived. v1 saves predate Insight
+   * entirely, so a returning player starts the tree empty with nothing claimed.
+   *
+   * `reviveState` would default these anyway, but the migration is written out
+   * explicitly: it is the record of WHAT CHANGED and when, and the next schema
+   * change will not be defaultable.
+   */
+  1: (raw) => {
+    const envelope = (raw ?? {}) as Record<string, unknown>;
+    const state = (envelope['state'] ?? {}) as Record<string, unknown>;
+    return {
+      ...envelope,
+      version: 2,
+      state: {
+        ...state,
+        insight: 0,
+        lifetimeInsight: 0,
+        purchasedNodes: [],
+        claimedMilestones: [],
+      },
+    };
+  },
 };
 
 export function serialize(state: GameState, nowMs: number): SaveFile {
@@ -95,7 +119,24 @@ function reviveState(raw: unknown): GameState {
       meter: Math.min(1, Math.max(0, num(frenzyRaw['meter'], 0))),
       remainingSeconds: Math.max(0, num(frenzyRaw['remainingSeconds'], 0)),
     },
+    insight: Math.max(0, num(r['insight'], 0)),
+    lifetimeInsight: Math.max(0, num(r['lifetimeInsight'], 0)),
+    // Unknown ids are dropped rather than trusted: a save may name a node this
+    // build has since removed or renamed.
+    purchasedNodes: stringIds(r['purchasedNodes']).filter((id) => nodeById(id) !== undefined),
+    claimedMilestones: stringIds(r['claimedMilestones']).filter((id) => MILESTONE_IDS.has(id)),
   };
+}
+
+const MILESTONE_IDS = new Set(MILESTONES.map((m) => m.id));
+
+function stringIds(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  for (const value of raw) {
+    if (typeof value === 'string') seen.add(value);
+  }
+  return [...seen];
 }
 
 /** Parse, migrate and revive. Never throws. */

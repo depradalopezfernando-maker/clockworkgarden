@@ -39,7 +39,18 @@ import {
   prestigeMultiplier,
   totalSqp,
 } from './prestige';
+import { availableNodes, purchaseNode } from './insight';
+import { claimMilestones } from './milestones';
 import { initialState, ownedOf, type GameState } from './state';
+
+/** Effect kinds this harness can price. See the purchase policy below. */
+const MODELLED_EFFECTS = new Set([
+  'unlock-generator',
+  'click-bonus',
+  'production-bonus',
+  'frenzy-duration',
+  'offline-floor',
+]);
 
 export interface PlayerArchetype {
   readonly name: string;
@@ -119,6 +130,10 @@ export interface CampaignResult {
   readonly kitchenGardenShareAtEnd: number;
   readonly finalManaPerSecond: number;
   readonly lifetimeMana: number;
+  /** Phase 3: how much of the Insight tree a playthrough actually affords. */
+  readonly lifetimeInsight: number;
+  readonly nodesPurchased: number;
+  readonly insightUnspent: number;
 }
 
 /**
@@ -175,6 +190,13 @@ export function simulateCampaign(
       elapsedSeconds: state.elapsedSeconds + stepSeconds,
     };
 
+    // Award Insight (§3). This loop does not go through `advance()` because it
+    // models Frenzy as an average uptime rather than a meter, so anything
+    // `advance()` does must be mirrored here deliberately. Forgetting this line
+    // stalled the whole campaign: no Insight meant no tree, no tree meant Tiers
+    // 3 and 4 never unlocked, and no archetype ever cleared Season 1.
+    state = claimMilestones(state).state;
+
     // --- Spend -------------------------------------------------------------
     // A player buys everything they can afford before moving on. Capped so a
     // pathological economy cannot spin here forever.
@@ -182,6 +204,34 @@ export function simulateCampaign(
       const option = bestPurchase(state);
       if (!option) break;
       state = buy(state, option.tier);
+    }
+
+    // --- Spend Insight -----------------------------------------------------
+    //
+    // The policy buys only nodes whose effects this simulation can actually
+    // value, and takes generator unlocks first because they gate progression
+    // outright - no sensible player leaves the next tier locked to buy a click
+    // bonus.
+    //
+    // Kitchen Garden and cosmetic nodes are SKIPPED, not because they are
+    // worthless but because their systems do not exist until Phase 4 and the
+    // sim cannot price them. Spending cheapest-first instead starved the
+    // generator unlocks so badly that no archetype finished inside 60 hours.
+    //
+    // Consequence worth stating: this makes the simulated Insight economy more
+    // generous than the real one. When Phase 4 lands, ~166 Insight of Kitchen
+    // Garden nodes start competing for the same pool and the tree gets
+    // materially tighter. Re-run this then.
+    for (let purchases = 0; purchases < 20; purchases++) {
+      const options = availableNodes(state).filter(
+        (node) => state.insight >= node.cost && MODELLED_EFFECTS.has(node.effect.kind)
+      );
+      if (options.length === 0) break;
+      const pick = options.find((node) => node.effect.kind === 'unlock-generator') ?? options[0];
+      if (!pick) break;
+      const next = purchaseNode(state, pick.id);
+      if (next === state) break;
+      state = next;
     }
 
     // --- Capstone, and therefore Season advancement (D6) --------------------
@@ -240,6 +290,9 @@ export function simulateCampaign(
     ),
     finalManaPerSecond: gardenPlotManaPerSecond(state),
     lifetimeMana: state.lifetimeMana,
+    lifetimeInsight: state.lifetimeInsight,
+    nodesPurchased: state.purchasedNodes.length,
+    insightUnspent: state.insight,
   };
 }
 

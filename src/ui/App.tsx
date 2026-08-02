@@ -7,6 +7,7 @@ import { ownedOf, type GameState } from '@sim/state';
 import { GENERATOR_TIERS, tierAt } from '@content/generators';
 import { formatDuration, formatNumber, formatRate, formatSeconds } from './format';
 import { SEASON_NAMES, themeVariables } from './theme';
+import { InsightPanel } from './InsightPanel';
 import { useGameRuntime, useGameState, useGameStatus } from './useGame';
 import './styles.css';
 
@@ -39,6 +40,7 @@ export function App() {
           multiplier={multiplier}
           elapsedSeconds={state.elapsedSeconds}
           prestigeCount={state.prestigeCount}
+          insight={state.insight}
         />
 
         <button
@@ -64,6 +66,8 @@ export function App() {
         <GeneratorList state={state} />
       </section>
 
+      <InsightPanel state={state} />
+
       {status.offline && !offlineDismissed && (
         <OfflineDialog
           awaySeconds={status.offline.awaySeconds}
@@ -83,9 +87,18 @@ interface HudProps {
   multiplier: number;
   elapsedSeconds: number;
   prestigeCount: number;
+  insight: number;
 }
 
-function Hud({ season, mana, perSecond, multiplier, elapsedSeconds, prestigeCount }: HudProps) {
+function Hud({
+  season,
+  mana,
+  perSecond,
+  multiplier,
+  elapsedSeconds,
+  prestigeCount,
+  insight,
+}: HudProps) {
   return (
     <header>
       <p className="hud__season">
@@ -104,6 +117,9 @@ function Hud({ season, mana, perSecond, multiplier, elapsedSeconds, prestigeCoun
         </span>
         <span>
           Played <b>{formatDuration(elapsedSeconds)}</b>
+        </span>
+        <span>
+          Insight <b data-testid="hud-insight">{insight}</b>
         </span>
         {prestigeCount > 0 && (
           <span>

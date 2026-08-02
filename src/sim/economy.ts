@@ -17,6 +17,7 @@ import { BASE_CLICK_YIELD } from '@content/balance';
 import { ownedOf, type GameState } from './state';
 import { prestigeMultiplier } from './prestige';
 import { kitchenGardenMultiplier } from './kitchenGarden';
+import { effectsOf } from './insight';
 
 // ---------------------------------------------------------------------------
 // Costs
@@ -77,8 +78,8 @@ export function isGateMet(state: GameState, gate: UnlockGate): boolean {
     case 'any':
       return gate.gates.some((g) => isGateMet(state, g));
     case 'insight-node':
-      // Phase 1 proxy. Phase 3 replaces this with a real Insight tree edge
-      // (docs/04 item 5).
+      // Phase 3 replaced the proxy with a real tree edge. Handled in
+      // isTierUnlocked, which knows the tier being asked about.
       return true;
     case 'capstone-clear':
       return state.capstonesCleared.includes(gate.season);
@@ -90,8 +91,10 @@ export function isGateMet(state: GameState, gate: UnlockGate): boolean {
 export function isTierUnlocked(state: GameState, tier: number): boolean {
   const t = tierAt(tier);
   if (t.unlock.kind === 'insight-node') {
-    // Resolve the proxy here, where the previous tier is known.
-    return tier > 1 && ownedOf(state, tier - 1) >= t.unlock.proxyOwnedOfPreviousTier;
+    // Phase 3: a real Insight node now opens this tier (docs/04 item 5, closed).
+    // Every one of the eight such tiers has a node; a test asserts the
+    // correspondence in both directions.
+    return effectsOf(state).unlockedTiers.has(tier);
   }
   return isGateMet(state, t.unlock);
 }
@@ -121,7 +124,8 @@ export function gardenPlotManaPerSecond(state: GameState): number {
   for (const t of GENERATOR_TIERS) {
     base += (state.owned[t.tier - 1] ?? 0) * t.baseYield;
   }
-  return base * prestigeMultiplier(state.appliedSqp);
+  const insight = effectsOf(state);
+  return base * prestigeMultiplier(state.appliedSqp) * (1 + insight.productionBonus);
 }
 
 /**
@@ -137,8 +141,15 @@ export function totalManaPerSecond(state: GameState, kitchenGardenBaseFraction?:
   return plots + plots * kitchenGardenMultiplier(state.kitchenGarden, kitchenGardenBaseFraction);
 }
 
-/** §2 click yield. `bonus` is the summed upgrade bonus; frenzy is 1 or 2. */
-export function clickYield(state: GameState, bonus = 0, frenzyMultiplier = 1): number {
+/**
+ * §2: `ClickYield = BaseClick x (1 + sum of upgrade bonuses) x PrestigeMultiplier
+ * x FrenzyMultiplier`.
+ *
+ * `extraBonus` is for callers with a bonus the tree does not know about; the
+ * Insight tree's own click nodes are read from state.
+ */
+export function clickYield(state: GameState, extraBonus = 0, frenzyMultiplier = 1): number {
+  const bonus = effectsOf(state).clickBonus + extraBonus;
   return BASE_CLICK_YIELD * (1 + bonus) * prestigeMultiplier(state.appliedSqp) * frenzyMultiplier;
 }
 

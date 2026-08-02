@@ -31,13 +31,14 @@ const SECONDS_PER_HOUR = 3600;
  * continuous: 1.0 up to the full-rate cutoff, linear down to the floor, flat
  * thereafter.
  */
-export function offlineEfficiencyAt(hours: number): number {
+export function offlineEfficiencyAt(hours: number, floor = OFFLINE_MIN_EFFICIENCY): number {
+  const min = Math.min(1, Math.max(0, floor));
   if (hours <= OFFLINE_FULL_RATE_HOURS) return 1;
-  if (hours >= OFFLINE_TAPER_END_HOURS) return OFFLINE_MIN_EFFICIENCY;
+  if (hours >= OFFLINE_TAPER_END_HOURS) return min;
 
   const taperSpan = OFFLINE_TAPER_END_HOURS - OFFLINE_FULL_RATE_HOURS;
   const into = hours - OFFLINE_FULL_RATE_HOURS;
-  return 1 - (1 - OFFLINE_MIN_EFFICIENCY) * (into / taperSpan);
+  return 1 - (1 - min) * (into / taperSpan);
 }
 
 /**
@@ -47,12 +48,12 @@ export function offlineEfficiencyAt(hours: number): number {
  * Example: 24 hours away yields 20 productive hours - 8 at full rate plus 16
  * tapering, which average 75%.
  */
-export function effectiveOfflineHours(hours: number): number {
+export function effectiveOfflineHours(hours: number, floor = OFFLINE_MIN_EFFICIENCY): number {
   if (!(hours > 0)) return 0;
 
   const full = OFFLINE_FULL_RATE_HOURS;
   const end = OFFLINE_TAPER_END_HOURS;
-  const min = OFFLINE_MIN_EFFICIENCY;
+  const min = Math.min(1, Math.max(0, floor));
   const taperSpan = end - full;
 
   if (hours <= full) return hours;
@@ -67,9 +68,9 @@ export function effectiveOfflineHours(hours: number): number {
 }
 
 /** Average efficiency across the whole away period. Useful for UI copy. */
-export function averageOfflineEfficiency(hours: number): number {
+export function averageOfflineEfficiency(hours: number, floor = OFFLINE_MIN_EFFICIENCY): number {
   if (!(hours > 0)) return 0;
-  return effectiveOfflineHours(hours) / hours;
+  return effectiveOfflineHours(hours, floor) / hours;
 }
 
 /**
@@ -79,9 +80,13 @@ export function averageOfflineEfficiency(hours: number): number {
  * the future - clock skew, or a player fiddling with the system clock) grant
  * nothing rather than a negative or enormous amount, per ADR-0004.
  */
-export function offlineManaEarned(manaPerSecond: number, awaySeconds: number): number {
+export function offlineManaEarned(
+  manaPerSecond: number,
+  awaySeconds: number,
+  floor = OFFLINE_MIN_EFFICIENCY
+): number {
   if (!(awaySeconds > 0) || !(manaPerSecond > 0)) return 0;
   const clamped = Math.min(awaySeconds, OFFLINE_MAX_SECONDS);
   const hours = clamped / SECONDS_PER_HOUR;
-  return manaPerSecond * effectiveOfflineHours(hours) * SECONDS_PER_HOUR;
+  return manaPerSecond * effectiveOfflineHours(hours, floor) * SECONDS_PER_HOUR;
 }

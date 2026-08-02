@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "savedAt": 1770000600000,
+  "state": {
+    "mana": 8400,
+    "lifetimeMana": 260000,
+    "owned": [30, 14, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "season": 1,
+    "capstonesCleared": [],
+    "appliedSqp": 0,
+    "prestigeCount": 0,
+    "elapsedSeconds": 2100,
+    "kitchenGarden": {
+      "slots": 4,
+      "capacityPerSlot": 1,
+      "surfaceYieldMult": 1,
+      "activeFraction": 1
+    },
+    "frenzy": { "meter": 0.6, "remainingSeconds": 0 },
+    "insight": 3,
+    "lifetimeInsight": 8,
+    "purchasedNodes": ["s1-click-1", "s1-gen-3"],
+    "claimedMilestones": ["m-water-10", "m-mana-1k", "m-water-25", "m-sprout-10"]
+  }
+}

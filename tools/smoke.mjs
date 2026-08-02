@@ -96,6 +96,40 @@ check(
   `owned=${await ownedOfTier1()}`
 );
 
+// --- 4b. Insight and the tree (§3) --------------------------------------------
+// The first milestone is owning 10 Watering Cans, which costs ~240 Mana. Ring
+// the Bell until that is affordable, then buy up to ten.
+const bell = page.locator('[data-testid="bell"]');
+for (let i = 0; i < 320; i++) await bell.click();
+
+const tierOne = page.locator('[data-testid="generator-1"]');
+for (let i = 0; i < 12; i++) {
+  if (Number(await tierOne.getAttribute('data-owned')) >= 10) break;
+  if (!(await tierOne.isEnabled())) break;
+  await tierOne.click();
+}
+const ownedTierOne = Number(await tierOne.getAttribute('data-owned'));
+check(ownedTierOne >= 10, 'can reach the first milestone by playing', `owned=${ownedTierOne}`);
+// The store publishes to React on a 100ms cadence, so the milestone award can
+// land a frame after the purchase that triggered it. Wait for the UI rather
+// than racing it.
+await page
+  .locator('[data-testid="insight"]')
+  .filter({ hasNotText: /^0 / })
+  .waitFor({ timeout: 3000 })
+  .catch(() => {});
+const insightText = (await page.locator('[data-testid="insight"]').textContent()) ?? '';
+check(!insightText.startsWith('0 '), 'reaching a milestone awards Insight', insightText.trim());
+
+const firstNode = page.locator('[data-testid="node-s1-click-1"]');
+check(await firstNode.isVisible(), 'the Insight tree renders its first node');
+await firstNode.click();
+check((await firstNode.getAttribute('data-owned')) === 'true', 'buying a node marks it purchased');
+
+await page.locator('[data-testid="tab-milestones"]').click();
+check(await page.locator('[data-testid="milestones"]').isVisible(), 'the milestone list renders');
+await page.locator('[data-testid="tab-tree"]').click();
+
 // --- 5. Passive production accrues --------------------------------------------
 const beforeIdle = (await readSave())?.state.mana ?? 0;
 await page.waitForTimeout(3000);
@@ -108,12 +142,19 @@ check(
 
 // --- 6. The save survives a reload --------------------------------------------
 check((await readSave()) !== null, 'the game writes a save');
+const ownedBeforeReload = Number(await ownedOfTier1());
 await page.reload({ waitUntil: 'networkidle' });
+const ownedAfterReload = Number(await ownedOfTier1());
 check(
-  (await ownedOfTier1()) === '1',
+  ownedAfterReload === ownedBeforeReload && ownedAfterReload >= 10,
   'generators survive a reload',
-  `owned=${await ownedOfTier1()}`
+  `${ownedBeforeReload} -> ${ownedAfterReload}`
 );
+
+const nodesAfterReload = await page
+  .locator('[data-testid="node-s1-click-1"]')
+  .getAttribute('data-owned');
+check(nodesAfterReload === 'true', 'purchased Insight nodes survive a reload');
 
 // --- 7. Offline progress (§7) -------------------------------------------------
 // Rewinding `savedAt` from the running page does not work: reloading fires
@@ -142,14 +183,15 @@ check(await dialog.isVisible(), 'returning after time away shows the offline rep
 // figure on disk reflects it.
 const manaAfterAway = (await readSave())?.state.mana ?? 0;
 
-// One Tier-1 generator yields 0.1/s, so 4 hours inside the 100% window is 1440
-// Mana. Assert the magnitude, not just "more" - a broken taper would still be
-// "more".
-const expectedOffline = 0.1 * OFFLINE_HOURS * 3600;
+// Assert the magnitude, not just "more" - a broken taper would still be "more".
+// Derived from what is actually owned rather than hard-coded, so the check stays
+// honest if the playing above changes.
+const rateAtSave = 0.1 * ownedAfterReload;
+const expectedOffline = rateAtSave * OFFLINE_HOURS * 3600;
 const gained = manaAfterAway - manaBeforeAway;
 check(
   gained > expectedOffline * 0.5,
-  `${OFFLINE_HOURS}h away credits roughly ${expectedOffline} Mana`,
+  `${OFFLINE_HOURS}h away credits roughly ${expectedOffline.toFixed(0)} Mana`,
   `gained ${gained.toFixed(0)}`
 );
 

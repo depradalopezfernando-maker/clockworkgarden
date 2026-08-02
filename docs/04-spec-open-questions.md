@@ -8,17 +8,18 @@ resolution. Items 1, 2, 3 and 6 were **decided by the designer on 2026-08-02** a
 are recorded in "Decisions taken" below — those four blocked Phase 1, which is now
 unblocked. The rest remain open but block only later phases.
 
-| #   | Severity    | Area   | One-line                                                          | Status                  |
-| --- | ----------- | ------ | ----------------------------------------------------------------- | ----------------------- |
-| 1   | **BLOCKER** | §6.2   | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases               | **RESOLVED**            |
-| 2   | **BLOCKER** | §2a    | Kitchen Garden yield is self-referential and diverges             | **RESOLVED**            |
-| 3   | Major       | §4     | Prestige spans 1.18× → 368,000×; first prestige is worthless      | **RESOLVED**            |
-| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed | open — blocks Phase 5   |
-| 5   | Medium      | §2     | "Insight skill unlock" gates are unmapped to specific nodes       | open — Phase 3          |
-| 6   | Medium      | §2/§8  | Nothing defines what actually advances a Season                   | **RESOLVED**            |
-| 7   | Medium      | §2a/§7 | Kitchen Garden behaviour while offline is unspecified             | open — Phase 4          |
-| 8   | Minor       | §2a    | Slot cost curve is too shallow to be a real decision late         | open — Phase 4          |
-| 9   | Minor       | —      | Save/load, versioning, and migration are absent from the spec     | **RESOLVED** (ADR-0004) |
+| #   | Severity    | Area   | One-line                                                                | Status                       |
+| --- | ----------- | ------ | ----------------------------------------------------------------------- | ---------------------------- |
+| 1   | **BLOCKER** | §6.2   | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases                     | **RESOLVED**                 |
+| 2   | **BLOCKER** | §2a    | Kitchen Garden yield is self-referential and diverges                   | **RESOLVED**                 |
+| 3   | Major       | §4     | Prestige spans 1.18× → 368,000×; first prestige is worthless            | **RESOLVED**                 |
+| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed       | open — blocks Phase 5        |
+| 5   | Medium      | §2     | "Insight skill unlock" gates are unmapped to specific nodes             | **RESOLVED** (Phase 3)       |
+| 6   | Medium      | §2/§8  | Nothing defines what actually advances a Season                         | **RESOLVED**                 |
+| 7   | Medium      | §2a/§7 | Kitchen Garden behaviour while offline is unspecified                   | open — Phase 4               |
+| 8   | Minor       | §2a    | Slot cost curve is too shallow to be a real decision late               | open — Phase 4               |
+| 9   | Minor       | —      | Save/load, versioning, and migration are absent from the spec           | **RESOLVED** (ADR-0004)      |
+| 10  | Medium      | §4     | "in-progress Insight" is ambiguous — does prestige wipe banked Insight? | open — decide before Phase 5 |
 
 ---
 
@@ -392,6 +393,35 @@ first version. Retrofitting versioning after playtesters have saves is
 significantly more expensive.
 
 **Decision needed:** Confirm no anti-tamper requirement.
+
+---
+
+## 10. Medium — does prestige wipe banked Insight?
+
+**Spec (§4):** "What resets: current Mana, Garden Plots owned, **in-progress
+Insight**."
+
+**The ambiguity:** "in-progress Insight" has two readings.
+
+- **Reading A** — unspent Insight is wiped on every reset.
+- **Reading B** — only _progress toward the next milestone_ is lost; banked
+  Insight survives. (Under the current model there is no such partial progress
+  to lose, so this reading makes the clause a no-op.)
+
+**Currently implemented: Reading B.** Banked Insight survives a reset.
+
+**Why:** wiping savings punishes exactly the planning the tree is meant to
+reward — a player holding 20 Insight for an expensive node loses it for taking
+the reset the game is nudging them toward. That runs against §9's anti-frustration
+guardrails. Reading A would also make the optimal play "always spend down before
+resetting", which is busywork rather than a decision.
+
+**Related and NOT ambiguous:** claimed milestones and purchased nodes must
+survive a reset. If claims reset, every prestige re-pays the same Insight and
+§3's "not just buy everything eventually" design collapses into an Insight farm.
+Guarded by a test.
+
+**Decision needed:** confirm Reading B, or ask for A and accept the consequence.
 
 ---
 

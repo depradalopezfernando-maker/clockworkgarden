@@ -8,9 +8,11 @@
  * as a parameter and stays deterministic.
  */
 
-import { MAX_CATCHUP_SECONDS, SIM_TICK_SECONDS } from '@content/balance';
+import { MAX_CATCHUP_SECONDS, OFFLINE_MIN_EFFICIENCY, SIM_TICK_SECONDS } from '@content/balance';
 import { advance, clickBell, type ClickResult } from '@sim/tick';
 import { buy as buyGenerator } from '@sim/economy';
+import { purchaseNode as purchaseInsightNode } from '@sim/insight';
+import { effectsOf } from '@sim/insight';
 import { totalManaPerSecond } from '@sim/economy';
 import { offlineManaEarned } from '@sim/offline';
 import { initialState, type GameState } from '@sim/state';
@@ -120,7 +122,10 @@ export class GameStore {
     const nowMs = this.clock.now();
     const awaySeconds = (nowMs - result.save.savedAt) / 1000;
     const rate = totalManaPerSecond(this.state);
-    const manaEarned = offlineManaEarned(rate, awaySeconds);
+    // The Insight tree can raise §7's floor, so offline pays out at the rate
+    // this particular build earned.
+    const floor = OFFLINE_MIN_EFFICIENCY + effectsOf(this.state).offlineFloorBonus;
+    const manaEarned = offlineManaEarned(rate, awaySeconds, floor);
 
     if (manaEarned > 0) {
       this.state = {
@@ -229,6 +234,14 @@ export class GameStore {
 
   buy(tier: number): boolean {
     const next = buyGenerator(this.state, tier);
+    if (next === this.state) return false;
+    this.state = next;
+    this.publish();
+    return true;
+  }
+
+  purchaseNode(nodeId: string): boolean {
+    const next = purchaseInsightNode(this.state, nodeId);
     if (next === this.state) return false;
     this.state = next;
     this.publish();

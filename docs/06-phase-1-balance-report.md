@@ -158,6 +158,37 @@ Stated plainly, because a green report is easy to over-read.
 
 ---
 
+## 7a. Phase 3 addendum — re-fitted against real Insight gates (2026-08-02)
+
+Phase 3 replaced the placeholder Insight gates with the real tree, which changed
+the economy twice over: eight generator tiers now cost Insight to open, and the
+tree's production nodes multiply output.
+
+| Constant                    | Phase 1 | Phase 3 |
+| --------------------------- | ------: | ------: |
+| `PRESTIGE_SQP_COEFFICIENT`  |      35 |      20 |
+| `PRESTIGE_SQP_REFERENCE`    |     5e4 |     1e4 |
+| Tree production bonus total |       — |    +56% |
+
+Result: **9.12h / 7.58h / 6.08h**, resets 2/3/4, first prestige ×1.78. All three
+archetypes still inside 6–10 hours.
+
+Three things worth carrying forward:
+
+- **The tree's production bonuses are a balance parameter.** They were authored
+  at +110% total, which pulled casual and active _below_ the 6-hour floor. Halved
+  to +56%. These are invented numbers, not spec values, so they are the right
+  thing to move when the economy needs slowing.
+- **The active archetype now has ~5 minutes of margin** above the 6-hour floor
+  (6.08h). Thin. Phase 4 will very likely need another re-fit.
+- **The simulated Insight economy is more generous than the real one will be.**
+  The harness skips Kitchen Garden and cosmetic nodes because it cannot price
+  systems that do not exist yet. When Phase 4 lands, roughly 166 Insight of
+  Kitchen Garden nodes start competing for the same pool. Expect the tree to get
+  materially tighter and re-run `npm run fit`.
+
+---
+
 ## 8. Recommended follow-ups
 
 1. **Design the Season 1 and 2 capstones** (`docs/04` item 4). Now the largest

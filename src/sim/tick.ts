@@ -10,6 +10,8 @@
 
 import { totalManaPerSecond, clickYield } from './economy';
 import { addFrenzyClick, frenzyMultiplier, tickFrenzy } from './frenzy';
+import { claimMilestones } from './milestones';
+import { effectsOf } from './insight';
 import type { GameState } from './state';
 
 /** Advance the world by `dt` seconds of engaged play. */
@@ -24,13 +26,17 @@ export function advance(state: GameState, dt: number): GameState {
   // more complexity than it buys.
   const earned = totalManaPerSecond(state) * frenzyMultiplier(frenzy) * dt;
 
-  return {
+  const advanced: GameState = {
     ...state,
     frenzy,
     mana: state.mana + earned,
     lifetimeMana: state.lifetimeMana + earned,
     elapsedSeconds: state.elapsedSeconds + dt,
   };
+
+  // Milestones are checked every tick. The common case awards nothing and
+  // returns the same reference, so this costs one array scan and no allocation.
+  return claimMilestones(advanced).state;
 }
 
 export interface ClickResult {
@@ -50,18 +56,16 @@ export interface ClickResult {
  * which reads as a bug to a player.
  */
 export function clickBell(state: GameState): ClickResult {
-  const frenzy = addFrenzyClick(state.frenzy);
+  const frenzy = addFrenzyClick(state.frenzy, effectsOf(state).frenzyBonusSeconds);
   const triggeredFrenzy = frenzy.remainingSeconds > state.frenzy.remainingSeconds;
   const gained = clickYield(state, 0, frenzyMultiplier(frenzy));
 
-  return {
-    state: {
-      ...state,
-      frenzy,
-      mana: state.mana + gained,
-      lifetimeMana: state.lifetimeMana + gained,
-    },
-    gained,
-    triggeredFrenzy,
+  const clicked: GameState = {
+    ...state,
+    frenzy,
+    mana: state.mana + gained,
+    lifetimeMana: state.lifetimeMana + gained,
   };
+
+  return { state: claimMilestones(clicked).state, gained, triggeredFrenzy };
 }
