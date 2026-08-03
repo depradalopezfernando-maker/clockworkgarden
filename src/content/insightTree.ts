@@ -169,6 +169,18 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     requires: ['s1-kg-slots-1'],
     effect: { kind: 'satchel-capacity', amount: 10 },
   },
+  {
+    // MOVED from Season 2 by option (c) in docs/07 §2. Capacity is the only
+    // Kitchen Garden lever that scales with the hours a player is actually
+    // there, and behind a Season 2 gate it arrived too late to be one.
+    id: 's1-kg-raised',
+    name: 'Raised Garden Box',
+    description: 'Three plants per slot, planted in one dig-and-cover cycle.',
+    season: 1,
+    cost: 4,
+    requires: ['s1-kg-terracotta'],
+    effect: { kind: 'kg-surface', surface: 'raised-garden-box' },
+  },
 
   // ===========================================================================
   // Season 2 — Summer
@@ -244,15 +256,6 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     cost: 4,
     requires: ['s1-kg-terracotta'],
     effect: { kind: 'kg-surface', surface: 'stone-parterre' },
-  },
-  {
-    id: 's2-kg-raised',
-    name: 'Raised Garden Box',
-    description: 'Three plants per slot, planted in one dig-and-cover cycle.',
-    season: 2,
-    cost: 5,
-    requires: ['s1-kg-terracotta'],
-    effect: { kind: 'kg-surface', surface: 'raised-garden-box' },
   },
   {
     id: 's2-auto-dig-1',
@@ -367,6 +370,20 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     effect: { kind: 'kg-automation', step: 'dig', level: 2 },
   },
   {
+    // MOVED from Season 4 by option (c). At Season 4 the highest-capacity
+    // surface existed for minutes, not hours - the campaign ends shortly after
+    // Season 4 begins. Its prerequisite was the Greenhouse Bed, which is a
+    // Frost-immunity node and has nothing to do with capacity; it now hangs off
+    // automation, which is what the surface's built-in Level 2 actually extends.
+    id: 's3-kg-trellis',
+    name: 'Clockwork Trellis',
+    description: 'Five plants per slot, with automation pre-installed.',
+    season: 3,
+    cost: 12,
+    requires: ['s3-auto-dig-2', 's1-kg-raised'],
+    effect: { kind: 'kg-surface', surface: 'clockwork-trellis' },
+  },
+  {
     id: 's3-kg-day-2',
     name: 'Long Afternoons',
     description: 'Day Length rises to 60 seconds.',
@@ -430,17 +447,8 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     description: 'A surface immune to Frost Dormancy.',
     season: 4,
     cost: 10,
-    requires: ['s2-kg-raised'],
+    requires: ['s1-kg-raised'],
     effect: { kind: 'kg-surface', surface: 'greenhouse-bed' },
-  },
-  {
-    id: 's4-kg-trellis',
-    name: 'Clockwork Trellis',
-    description: 'Five plants per slot, with automation pre-installed.',
-    season: 4,
-    cost: 16,
-    requires: ['s4-kg-greenhouse', 's3-auto-dig-2'],
-    effect: { kind: 'kg-surface', surface: 'clockwork-trellis' },
   },
   {
     id: 's4-kg-slots-4',

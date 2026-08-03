@@ -136,6 +136,29 @@ rule('4. Kitchen Garden share (§10 item 10, decision D2)');
     'full build-out lands inside the target band'
   );
   check(full < 0.5, 'never becomes the majority of income (keeps the §7 cut viable)');
+
+  // Full build-out is the CEILING, and on its own it is a flattering number: it
+  // was reachable only in the closing minutes of Season 4. What §10 item 10
+  // actually asks is what the garden is worth while the player is there, so
+  // report the realised share too, and gate on it.
+  console.log('');
+  console.log('  realised in play      Seasons 1-2   whole run   at the end');
+  for (const r of results) {
+    console.log(
+      `  ${r.archetype.padEnd(20)}` +
+        `${(r.kitchenGardenShareEarly * 100).toFixed(1)}%`.padStart(11) +
+        `${(r.kitchenGardenShareTimeAverage * 100).toFixed(1)}%`.padStart(12) +
+        `${(r.kitchenGardenShareAtEnd * 100).toFixed(1)}%`.padStart(13)
+    );
+  }
+  check(
+    results.every((r) => r.kitchenGardenShareTimeAverage >= 0.05),
+    'the garden is worth something across the run, not only at full build-out'
+  );
+  check(
+    results.every((r) => r.kitchenGardenShareAtEnd >= 0.15),
+    'a finished garden is a substantial share of income'
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -13,9 +13,13 @@ Everything through Season 1 works end to end: Bell, generators, Growth Frenzy,
 the Insight tree, milestones, the full Kitchen Garden (§2a), the First Bloom
 capstone, the prestige loop, onboarding, versioned saves, offline progress.
 
-**Read `docs/07-phase-4-kitchen-garden-report.md` §2 before Phase 5.** The
-Kitchen Garden supplies ~3.5% of income in real play, not the ~1/3 D2 targets,
-and the fix is a design choice awaiting the designer.
+**The Kitchen Garden question is settled** (2026-08-03). Option (c) was chosen:
+the two capacity surfaces moved a Season earlier. Applying it exposed a **Day
+Time deadlock that froze the garden permanently** — Night began only at exactly
+zero, so a Day that stranded an unspendable remainder never ended. The garden
+now realises 8.1% of income across the run and 32.4% at the end, up from 2.9%
+and 3.5%. `PRESTIGE_SQP_COEFFICIENT` re-fitted 26 -> 24 to absorb it.
+See `docs/07-phase-4-kitchen-garden-report.md` §5.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
@@ -82,10 +86,11 @@ Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
 **Still open, and they gate later phases — ask, do not guess:** the Season 2 and
-3 capstones (block Phases 7 and 8; Season 1's is decided — D4a); how to
-make the Kitchen Garden matter (`docs/07` §2); whether prestige wipes banked
-Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen Garden
-behaviour (`docs/04` item 7 — crops currently grow on engaged-play time only).
+3 capstones (block Phases 7 and 8; Season 1's is decided — D4a); whether prestige
+wipes banked Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen
+Garden behaviour (`docs/04` item 7 — crops currently grow on engaged-play time
+only). How to make the Kitchen Garden matter is **settled** — option (c),
+`docs/07` §5.
 
 ---
 

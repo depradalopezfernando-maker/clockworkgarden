@@ -4,3 +4,8 @@ coverage/
 *.local
 .DS_Store
 .vite/
+
+# smoke/screenshot output
+smoke.png
+out.png
+*.screenshot.png

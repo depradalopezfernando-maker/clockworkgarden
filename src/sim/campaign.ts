@@ -37,6 +37,7 @@ import {
   canPerform,
   clearPlot,
   kitchenGardenIncomeShare,
+  PENDING_STEP,
   performStep,
   slotCap,
   slotCost,
@@ -179,6 +180,18 @@ export interface CampaignResult {
   readonly firstPrestigeOfferedMultiplier: number;
   readonly finalMultiplier: number;
   readonly kitchenGardenShareAtEnd: number;
+  /**
+   * Kitchen Garden share of income averaged over ENGAGED PLAY TIME, not measured
+   * at the end.
+   *
+   * This is the number §10 item 10 actually asks for, and its absence is what
+   * let Phase 4 ship a subsystem that hit its target at full build-out while
+   * being worth ~2% for the hours a player is really there. A share that only
+   * arrives in the last minutes of Season 4 is not a strategic layer.
+   */
+  readonly kitchenGardenShareTimeAverage: number;
+  /** Share averaged over Seasons 1-2 alone — the half of the run most players see. */
+  readonly kitchenGardenShareEarly: number;
   readonly finalManaPerSecond: number;
   readonly lifetimeMana: number;
   /** Phase 3: how much of the Insight tree a playthrough actually affords. */
@@ -223,6 +236,13 @@ export function simulateCampaign(
   let firstPrestigeOfferedMultiplier = 0;
   const tendCarry = { value: 0 };
 
+  // Time-weighted Kitchen Garden share. Sampled every step rather than read at
+  // the end, because the end is the one moment the garden looks good.
+  let shareWeighted = 0;
+  let shareSeconds = 0;
+  let shareWeightedEarly = 0;
+  let shareSecondsEarly = 0;
+
   for (let step = 0; step < maxSteps; step++) {
     if (isCampaignComplete(state)) break;
 
@@ -241,6 +261,18 @@ export function simulateCampaign(
       lifetimeMana: state.lifetimeMana + earned,
       elapsedSeconds: state.elapsedSeconds + stepSeconds,
     };
+
+    const share = kitchenGardenIncomeShare(
+      state.kitchenGarden,
+      { levels: levelsOf(state), season: state.season, nowSeconds: state.elapsedSeconds },
+      kitchenGardenBaseFraction
+    );
+    shareWeighted += share * stepSeconds;
+    shareSeconds += stepSeconds;
+    if (state.season <= 2) {
+      shareWeightedEarly += share * stepSeconds;
+      shareSecondsEarly += stepSeconds;
+    }
 
     // Award Insight (§3). This loop does not go through `advance()` because it
     // models Frenzy as an average uptime rather than a meter, so anything
@@ -371,6 +403,8 @@ export function simulateCampaign(
       { levels: levelsOf(state), season: state.season, nowSeconds: state.elapsedSeconds },
       kitchenGardenBaseFraction
     ),
+    kitchenGardenShareTimeAverage: shareSeconds > 0 ? shareWeighted / shareSeconds : 0,
+    kitchenGardenShareEarly: shareSecondsEarly > 0 ? shareWeightedEarly / shareSecondsEarly : 0,
     finalManaPerSecond: gardenPlotManaPerSecond(state),
     lifetimeMana: state.lifetimeMana,
     lifetimeInsight: state.lifetimeInsight,
@@ -420,6 +454,7 @@ function tendKitchenGarden(
     hasShortNight: effects.kgDayLengthStep >= 2,
     satchelBonus: effects.satchelBonus,
     nowSeconds: now,
+    levels,
   });
 
   let mana = state.mana;
@@ -445,11 +480,23 @@ function tendKitchenGarden(
     }
   }
 
-  // Upgrade a bare plot to the best surface unlocked and affordable.
+  // Upgrade a plot to the best surface unlocked and affordable.
+  //
+  // This deliberately upgrades plots that are already GROWN, not only bare ones.
+  // `applySurface` resets the plot (§2a lists a surface change as one of the
+  // three things that force a replant), so the old policy - bare plots only -
+  // meant a plot that had been cycled once was stuck on its surface forever.
+  // Every plot a player owned before unlocking a better surface stayed Bare
+  // Soil for the rest of the run, and only newly-broken ground ever got the
+  // upgrade. No real player does that, and it made the whole surface branch
+  // near-invisible to the harness: it is the main reason Phase 4 measured the
+  // Kitchen Garden at ~3.5%. Bare plots are still preferred, because upgrading
+  // one costs no standing crop.
   const best = bestUnlockedSurface(state.purchasedNodes);
   if (best) {
     const upgradeCost = SURFACES[best].applyCostMultiplier * seasonTierOneCost(state.season);
-    const index = kg.plots.findIndex((p) => p.stage === 'bare' && p.surface !== best);
+    const bare = kg.plots.findIndex((p) => p.stage === 'bare' && p.surface !== best);
+    const index = bare >= 0 ? bare : kg.plots.findIndex((p) => p.surface !== best);
     if (index >= 0 && mana >= upgradeCost) {
       mana -= upgradeCost;
       kg = applySurface(kg, index, best);
@@ -457,19 +504,32 @@ function tendKitchenGarden(
   }
 
   // Work the cycle, as far as attention and Day Time allow.
+  //
+  // Every workable plot is tried, not just the first. The old loop took the
+  // first non-grown plot and gave up on the whole garden if that one plot could
+  // not progress - so a single plot waiting on a Cover it could not afford
+  // stalled all nineteen others. A player looking at a garden works whichever
+  // bed is ready.
   carry.value += tendingRate * dt;
   while (carry.value >= 1) {
     carry.value -= 1;
-    const index = kg.plots.findIndex((p) => p.stage !== 'grown' && p.stage !== 'growing');
-    if (index < 0) break;
 
     let progressed = false;
-    for (const step of CYCLE) {
-      if (!canPerform(kg, index, step, context)) break;
-      const outcome = performStep(kg, index, step, context);
-      if (!outcome.performed) break;
-      kg = outcome.kg;
-      progressed = true;
+    for (let index = 0; index < kg.plots.length && !progressed; index++) {
+      // Resume from the step this plot is actually waiting on. The loop used to
+      // start every plot at `dig`, so a plot left half-worked - dug but not
+      // planted, planted but not covered - failed the stage check on its first
+      // step and was never touched again.
+      const pending = PENDING_STEP[kg.plots[index]!.stage];
+      if (!pending) continue;
+
+      for (const step of CYCLE.slice(CYCLE.indexOf(pending))) {
+        if (!canPerform(kg, index, step, context)) break;
+        const outcome = performStep(kg, index, step, context);
+        if (!outcome.performed) break;
+        kg = outcome.kg;
+        progressed = true;
+      }
     }
     if (!progressed) break;
   }

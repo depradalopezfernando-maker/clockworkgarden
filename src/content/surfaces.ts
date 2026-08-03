@@ -10,9 +10,15 @@
  *   Bare Soil Plot     Start       1.00x   1.00x   1         free forever
  *   Terracotta Pot     S1 Insight  0.75x   0.85x   1         rapid early cycling
  *   Stone Parterre     S2 Insight  1.30x   1.50x   1         rewards patience
- *   Raised Garden Box  S2 Insight  1.00x   1.00x   3         one cycle plants all
+ *   Raised Garden Box  S1 Insight  1.00x   1.00x   3         one cycle plants all
  *   Greenhouse Bed     S4 Insight  1.00x   1.10x   1         immune to Frost
- *   Clockwork Trellis  S4 Insight  1.00x   1.20x   5         automation built in
+ *   Clockwork Trellis  S3 Insight  1.00x   1.20x   5         automation built in
+ *
+ * The two CAPACITY surfaces moved a Season earlier than §2a places them - the
+ * Raised Garden Box from S2 to S1, the Clockwork Trellis from S4 to S3 - by
+ * option (c) in `docs/07` §2. As written they arrived after the hours a player
+ * spends with the garden, and the subsystem measured ~2.5% of income rather
+ * than the ~1/3 decision D2 targets. Yields and capacities are untouched.
  */
 
 export type SurfaceId =
@@ -125,7 +131,7 @@ export function surfaceById(id: string): Surface {
 export const SURFACE_UNLOCK_NODE: Readonly<Partial<Record<SurfaceId, string>>> = {
   'terracotta-pot': 's1-kg-terracotta',
   'stone-parterre': 's2-kg-stone',
-  'raised-garden-box': 's2-kg-raised',
+  'raised-garden-box': 's1-kg-raised',
   'greenhouse-bed': 's4-kg-greenhouse',
-  'clockwork-trellis': 's4-kg-trellis',
+  'clockwork-trellis': 's3-kg-trellis',
 };

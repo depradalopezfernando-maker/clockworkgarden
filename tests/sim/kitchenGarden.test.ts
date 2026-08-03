@@ -10,6 +10,7 @@ import {
   fullBuildOut,
   initialKitchenGarden,
   kitchenGardenMultiplier,
+  PENDING_STEP,
   performStep,
   plotUnits,
   satchelCapacity,
@@ -48,11 +49,12 @@ const ctx = (nowSeconds = 0, levels: AutomationLevels = MANUAL, season = 1) => (
   season,
   nowSeconds,
 });
-const tickCtx = (nowSeconds = 0) => ({
+const tickCtx = (nowSeconds = 0, levels: AutomationLevels = MANUAL) => ({
   dayLengthStep: 0,
   hasShortNight: false,
   satchelBonus: 0,
   nowSeconds,
+  levels,
 });
 
 const CYCLE: readonly PlotStep[] = ['dig', 'plant', 'cover'];
@@ -417,5 +419,123 @@ describe('D2 — yield stays bounded and non-recursive', () => {
     const m = kitchenGardenMultiplier(kg, ctx(1e9, MANUAL, 4));
     expect(Number.isFinite(m)).toBe(true);
     expect(m).toBeLessThan(1);
+  });
+});
+
+describe('§2a — a Day that cannot buy anything is over (the deadlock)', () => {
+  // Day Time is spend-only and steps cost whole seconds, so a Day can strand a
+  // remainder smaller than the cheapest pending action. Night used to begin only
+  // at exactly zero, so that remainder never drained: no Night, no refill, and
+  // the Kitchen Garden locked up FOREVER with Day Time still on the clock.
+  //
+  // It is not a corner case, it is the ordinary Season 1 build. Buying "Longer
+  // Mornings" and no automation gives a 45-second Day against steps costing 2
+  // seconds each: 22 steps spend 44, and the last second can never buy anything.
+
+  it('the ordinary Season 1 build strands a remainder — the precondition', () => {
+    const day = DAY_LENGTH_SECONDS_BY_UPGRADE[1]!;
+    expect(day % AUTOMATION_STEP_SECONDS[0]).toBe(1);
+  });
+
+  /** A garden whose every pending step costs more Day Time than is left. */
+  function stranded(): KitchenGardenState {
+    return { ...initialKitchenGarden(), dayTimeRemaining: 1 };
+  }
+
+  it('cannot afford any pending step', () => {
+    const kg = stranded();
+    for (let i = 0; i < kg.plots.length; i++) {
+      expect(canPerform(kg, i, 'dig', ctx(0, MANUAL)), `plot ${i}`).toBe(false);
+    }
+  });
+
+  it('starts Night instead of stalling forever', () => {
+    const ticked = tickKitchenGarden(stranded(), 1, tickCtx(1, MANUAL));
+    expect(ticked.nightRemaining).toBeGreaterThan(0);
+    expect(ticked.dayTimeRemaining).toBe(0);
+  });
+
+  it('recovers a full Day, so the garden can be worked again', () => {
+    let kg = tickKitchenGarden(stranded(), 1, tickCtx(1, MANUAL));
+    kg = tickKitchenGarden(kg, NIGHT_DURATION_SECONDS, tickCtx(10, MANUAL));
+    expect(kg.nightRemaining).toBe(0);
+    expect(kg.dayTimeRemaining).toBe(DAY_LENGTH_SECONDS_BY_UPGRADE[0]);
+    expect(canPerform(kg, 0, 'dig', ctx(10, MANUAL))).toBe(true);
+  });
+
+  it('does NOT force Night when the remainder can still buy something', () => {
+    // Only the unspendable case ends the Day early. Two seconds still pays for
+    // a manual Dig, so the Day continues.
+    const kg = { ...stranded(), dayTimeRemaining: 2 };
+    expect(tickKitchenGarden(kg, 1, tickCtx(1, MANUAL)).nightRemaining).toBe(0);
+  });
+
+  it('does NOT force Night when only cheaper automated steps remain affordable', () => {
+    // A player with Assisted Digging can still spend a 1-second remainder.
+    const kg = stranded();
+    expect(tickKitchenGarden(kg, 1, tickCtx(1, LEVEL_1)).nightRemaining).toBe(0);
+  });
+
+  it('does NOT force Night on a garden with nothing pending', () => {
+    // Every plot growing or grown means no action is being denied. Ending the
+    // Day here would burn the player's budget while they were away from it.
+    let kg = initialKitchenGarden();
+    for (let i = 0; i < kg.plots.length; i++) {
+      for (const step of CYCLE) kg = performStep(kg, i, step, ctx(0, LEVEL_2)).kg;
+    }
+    kg = { ...kg, dayTimeRemaining: 1 };
+    expect(kg.plots.every((p) => p.stage === 'growing')).toBe(true);
+    expect(tickKitchenGarden(kg, 1, tickCtx(1, LEVEL_2)).nightRemaining).toBe(0);
+  });
+
+  it('never strands a garden, for any Day length and any automation mix', () => {
+    // The property, not the instance. Whatever the player has bought, a garden
+    // left alone must always become workable again.
+    for (let dayStep = 0; dayStep < DAY_LENGTH_SECONDS_BY_UPGRADE.length; dayStep++) {
+      for (const dig of [0, 1, 2] as const) {
+        for (const cover of [0, 1, 2] as const) {
+          const levels = { dig, plant: dig, cover };
+          const tick = (kg: KitchenGardenState, dt: number, now: number) =>
+            tickKitchenGarden(kg, dt, {
+              dayLengthStep: dayStep,
+              hasShortNight: false,
+              satchelBonus: 0,
+              nowSeconds: now,
+              levels,
+            });
+
+          let kg = initialKitchenGarden();
+          kg = { ...kg, dayTimeRemaining: dayLengthSeconds(dayStep) };
+          let workedLate = 0;
+
+          // Work the garden as hard as possible for a simulated hour, harvesting
+          // as we go so there is always something pending. Without the clear,
+          // every plot ends up grown and the garden legitimately runs out of
+          // work - which is not the stall this is looking for.
+          //
+          // Only the LAST ten minutes are counted. A stalled garden works fine
+          // until it strands its remainder and then never moves again, so a
+          // total would hide the bug behind the healthy opening.
+          for (let t = 0; t < 3600; t++) {
+            kg = tick(kg, 1, t);
+            for (let i = 0; i < kg.plots.length; i++) {
+              if (kg.plots[i]!.stage === 'grown') kg = clearPlot(kg, i);
+              // Resume from the step this plot is waiting on. Always starting at
+              // `dig` would leave a half-worked plot untouched forever, and the
+              // test would blame the game for its own driver.
+              const pending = PENDING_STEP[kg.plots[i]!.stage];
+              if (!pending) continue;
+              for (const step of CYCLE.slice(CYCLE.indexOf(pending))) {
+                if (!canPerform(kg, i, step, ctx(t, levels))) break;
+                kg = performStep(kg, i, step, ctx(t, levels)).kg;
+                if (t >= 3000) workedLate++;
+              }
+            }
+          }
+
+          expect(workedLate, `day ${dayStep}, dig ${dig}, cover ${cover}`).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });

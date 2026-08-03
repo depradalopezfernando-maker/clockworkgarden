@@ -20,7 +20,7 @@ and game feel need human gates.
 | [04 — Open Design Questions](04-spec-open-questions.md)     | Audit findings, and the four decisions taken on 2026-08-02                                               |
 | [05 — Asset Pipeline](05-asset-pipeline.md)                 | CC0 sourcing, the palette lock, and a live network constraint                                            |
 | [06 — Phase 1 Balance Report](06-phase-1-balance-report.md) | Simulated campaign length, the fitted constants, and what the sim does not prove                         |
-| [07 — Phase 4 Report](07-phase-4-kitchen-garden-report.md)  | The Kitchen Garden as built, and why it contributes far less than intended                               |
+| [07 — Phase 4 Report](07-phase-4-kitchen-garden-report.md)  | The Kitchen Garden as built, why it contributed far less than intended, and the fix (§5)                 |
 | [08 — The Vertical Slice](08-vertical-slice.md)             | **How to play it and what to look for.** The human gate                                                  |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
@@ -72,24 +72,29 @@ Bell, generators, Growth Frenzy, the Insight tree, milestones, the full Kitchen
 Garden, versioned saves and offline progress — verified end to end in real
 Chromium by `npm run smoke`.
 
-`npm run ci` is green with **306 tests plus 34 browser smoke checks**, and the
+`npm run ci` is green with **314 tests plus 34 browser smoke checks**, and the
 economy has been simulated end to end: **all three player archetypes finish
-inside §8's 6–10 hour target** (9.88h / 8.15h / 6.22h). Method and caveats in
+inside §8's 6–10 hour target** (9.68h / 7.96h / 6.19h). Method and caveats in
 [06 — Phase 1 Balance Report](06-phase-1-balance-report.md); the latest numbers
 and the Kitchen Garden finding are in
 [07 — Phase 4 Report](07-phase-4-kitchen-garden-report.md).
 
 The simulation found a defect no amount of reading would have caught: the first
 prestige was worth **×1.00 — nothing** — because the spec's SQP reference sat
-above the lifetime Mana a player holds when prestige unlocks. Now ×1.88.
+above the lifetime Mana a player holds when prestige unlocks. Now ×1.94.
+
+It later found a second one the same way: the Kitchen Garden could **deadlock
+permanently** on an unspendable remainder of Day Time. See
+[07](07-phase-4-kitchen-garden-report.md) §5.2.
 
 Next steps, in order:
 
 1. **Play the vertical slice for ninety minutes** and decide go/no-go on Seasons
    2–4. [Doc 08](08-vertical-slice.md) lists the four questions.
-2. **Decide how the Kitchen Garden should matter** — it supplies ~3.5% of income
-   in real play rather than the ~⅓ decision D2 targets. Five options in
-   [07](07-phase-4-kitchen-garden-report.md) §2.
+2. ~~Decide how the Kitchen Garden should matter.~~ **Done (2026-08-03)** —
+   option (c). Applying it exposed a Day Time deadlock that had been freezing the
+   garden outright; realised income share went 2.9% → 8.1% across the run and
+   3.5% → 32.4% at the end. [07](07-phase-4-kitchen-garden-report.md) §5.
 3. **Resolve 3D asset access before Phase 6.** `kenney.nl` is currently blocked by
    this environment's network policy — either widen it or commit the CC0 packs to
    `assets/vendor/`. UI icons are already available via npm. Nothing before Phase 6

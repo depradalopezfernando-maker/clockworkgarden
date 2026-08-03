@@ -74,8 +74,13 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * successive prestiges - which is what the player's reset decision compares
  * against - is K-independent. Reset count is set by player behaviour and by the
  * span of lifetime Mana across the campaign. See docs/06-phase-1-balance-report.md.
+ *
+ * Re-fitted 26 -> 24 when the Kitchen Garden started paying what it was designed
+ * to pay (docs/07 §2). Fixing the Day Time deadlock roughly doubled real Kitchen
+ * Garden income, which shortened every campaign; the active archetype fell to
+ * 5.88h, just under §8's floor. K is the pacing knob, so K absorbed it.
  */
-export const PRESTIGE_SQP_COEFFICIENT = 26;
+export const PRESTIGE_SQP_COEFFICIENT = 24;
 /**
  * SIM. The lifetime Mana at which SQP starts accruing.
  *

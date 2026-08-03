@@ -3,6 +3,13 @@
 **Date:** 2026-08-02 · **Status:** built and playable; **one design question needs you**
 **Reproduce:** `npm run simulate` · **Re-fit:** `npm run fit`
 
+> **Update, 2026-08-03 — §2 is resolved.** Option (c) was chosen and applied, and
+> applying it turned up the real cause: a **deadlock that froze the Kitchen
+> Garden permanently**, plus two harness defects that hid it. The garden now
+> realises **8.1% of income across the run and 32.4% at the end**, up from 2.9%
+> and 3.5%. See [§5](#5-the-fix-2026-08-03). The rest of this document is the
+> original Phase 4 report, left as written.
+
 §2a is implemented in full — no scope cut taken. Grid and slots, the per-plot
 Dig → Plant → Cover state machine, Perfect Planting, six surfaces, the Seed
 Satchel, the spend-only Day/Night budget, and three automation steps at two
@@ -87,6 +94,9 @@ gates content. That is a structural relationship, not a coefficient.
 change that puts the garden in front of the player while they can still use it,
 and it does not touch a decision already taken.
 
+**Chosen: (c).** Applied 2026-08-03 — see [§5](#5-the-fix-2026-08-03). It is no
+longer thin, so (b) is not needed.
+
 ---
 
 ## 3. Also worth knowing
@@ -118,3 +128,106 @@ and it does not touch a decision already taken.
   vertical-slice go/no-go.
 - **`docs/04` item 8 — slot costs go trivial late.** Unchanged from the original
   audit; the 1.15 curve is too shallow to be a real decision by Season 4.
+
+---
+
+## 5. The fix (2026-08-03)
+
+Option (c) was chosen. Applying it uncovered why §2's numbers were so low: the
+subsystem was not merely under-tuned, it was **broken in three separate ways**,
+and the balance harness could not see any of them.
+
+### 5.1 What (c) itself did
+
+The two capacity surfaces moved a Season earlier. Yields and capacities are
+untouched — only the gate.
+
+| Surface           | Capacity | Was      | Now      |
+| ----------------- | -------: | -------- | -------- |
+| Raised Garden Box |       ×3 | Season 2 | Season 1 |
+| Clockwork Trellis |       ×5 | Season 4 | Season 3 |
+
+The Trellis previously hung off the Greenhouse Bed, which is a Frost-immunity
+node with nothing to do with capacity. It now hangs off Automatic Digging, which
+is what its built-in Level 2 automation actually extends.
+
+On its own, (c) moved the realised share from **2.9% to 4.1%**. Worth doing, and
+nowhere near a fix. That gap is what prompted looking harder.
+
+### 5.2 The deadlock — a real, shipped, player-facing bug
+
+**Day Time is spend-only, and Night began only at exactly zero.** Steps cost a
+whole number of seconds, so a Day can strand a remainder smaller than anything
+the player can buy. That remainder never drained, so Night never came, so the
+Day never refilled, and **the Kitchen Garden froze permanently** — with the HUD
+cheerfully reporting the leftover second or two of Day.
+
+It is not a corner case. It is the ordinary Season 1 build:
+
+```
+Longer Mornings, no automation:  45s Day ÷ 2s per step = 22 steps, 1s stranded
+```
+
+A player who bought one Day Length node and no automation would lose their
+Kitchen Garden for the rest of the run. In the simulated campaign the garden
+locked up part-way through Season 3 and never recovered — which is most of what
+the original "~3.5%" was measuring.
+
+The rule is now: **a Day that cannot pay for a single pending action is over.**
+Plots that are growing or grown are not pending anything, so a garden with
+nothing to do does not force Night on itself. `dayIsSpent` in
+`src/sim/kitchenGarden.ts`; six tests, including a property sweep over every Day
+length × automation mix that asserts a garden is still workable an hour later.
+
+### 5.3 Two harness defects that hid it
+
+Neither is a game bug, but both made the simulation flatter the design's
+problems by measuring a player nobody would recognise:
+
+1. **Plots were never re-surfaced once grown.** The upgrade policy only touched
+   plots in stage `bare`, and a plot that has been cycled is never bare again.
+   So every plot a player owned _before_ unlocking a better surface stayed Bare
+   Soil forever, and only newly-broken ground got the upgrade. This is why (c)
+   looked so weak: moving the Raised Garden Box to Season 1 does nothing if the
+   plots that exist in Season 1 can never receive it.
+2. **A half-worked plot stalled the whole garden.** The tend loop took the first
+   non-grown plot, always started its cycle at `dig`, and gave up on the entire
+   garden if that plot could not progress. A plot left `dug` failed the stage
+   check on its first step and was never touched again — while nineteen workable
+   plots sat beside it.
+
+### 5.4 Where it lands
+
+| Measure              | Before | After |
+| -------------------- | -----: | ----: |
+| Seasons 1–2          |   2.5% |  4.3% |
+| Whole run (time-avg) |   2.9% |  8.1% |
+| At the end           |   3.5% | 32.4% |
+| Full S4 build-out    |  32.4% | 32.4% |
+
+D2's ~⅓ target is now **actually reached in play** rather than only in a
+synthetic full build-out — casual and active both finish at 32.4%. The idle
+archetype ends at 19.4%, because it never buys the Trellis; that is a build
+choice, which is what a strategic layer is supposed to produce.
+
+The early game is still modest at ~4%, and that is honest: a Season 1 player has
+four plots. The garden grows into significance rather than starting there.
+
+### 5.5 Consequences
+
+- **`PRESTIGE_SQP_COEFFICIENT` re-fitted 26 → 24.** A Kitchen Garden that pays
+  what it was designed to pay shortens every campaign; the active archetype fell
+  to 5.88h, just under §8's floor. K is the pacing knob, so K absorbed it.
+  Campaigns are now 9.68h / 7.96h / 6.19h.
+- **`npm run simulate` now reports the realised share and gates on it.** Full
+  build-out alone is a flattering number — it was the only one being checked,
+  and it passed throughout, while the garden was frozen solid. Two new checks:
+  ≥5% across the run, ≥15% at the end.
+- **`CampaignResult` gained `kitchenGardenShareTimeAverage` and
+  `kitchenGardenShareEarly`.** The absence of a time-weighted measure is what
+  let a subsystem hit its target on paper while being worth ~2% in play.
+
+### 5.6 Still open after this
+
+`docs/04` item 7 — **offline Kitchen Garden behaviour** — is unchanged and still
+yours. Crops grow on engaged-play seconds only.

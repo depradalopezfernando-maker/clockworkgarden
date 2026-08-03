@@ -230,6 +230,7 @@ export class GameStore {
           hasShortNight: effects.kgDayLengthStep >= 2,
           satchelBonus: effects.satchelBonus,
           nowSeconds: this.state.elapsedSeconds,
+          levels: levelsOf(this.state),
         }),
       };
 

@@ -156,6 +156,15 @@ const REQUIRED_STAGE: Readonly<Record<PlotStep, PlotStage>> = {
   cover: 'planted',
 };
 
+/** The step a plot is waiting on. `null` once it is growing or grown. */
+export const PENDING_STEP: Readonly<Record<PlotStage, PlotStep | null>> = {
+  bare: 'dig',
+  dug: 'plant',
+  planted: 'cover',
+  growing: null,
+  grown: null,
+};
+
 export interface KitchenGardenContext {
   readonly levels: AutomationLevels;
   readonly season: number;
@@ -290,6 +299,39 @@ export interface KitchenGardenTickContext {
   readonly hasShortNight: boolean;
   readonly satchelBonus: number;
   readonly nowSeconds: number;
+  /**
+   * The player's automation levels, needed to tell whether the Day Time left on
+   * the clock can still buy anything. See `dayIsSpent`.
+   */
+  readonly levels: AutomationLevels;
+}
+
+/**
+ * Whether the Day is over.
+ *
+ * Not simply `dayTimeRemaining <= 0`. Day Time is spend-only and steps cost a
+ * whole number of seconds, so a Day can strand a REMAINDER smaller than any
+ * action the player could take: 45 seconds of Day spending 4 per cycle leaves 1
+ * second, and a Cover that costs 2 can never be afforded. Night used to begin
+ * only at exactly zero, so that last second never drained, Night never came,
+ * the Day never refilled — and the Kitchen Garden locked up permanently, with
+ * the HUD cheerfully reporting "1s of Day left".
+ *
+ * A Day that cannot pay for a single pending action is finished. Plots that are
+ * growing or grown are not pending anything, so a garden with nothing to do
+ * does not force Night on itself.
+ */
+export function dayIsSpent(kg: KitchenGardenState, levels: AutomationLevels): boolean {
+  if (kg.dayTimeRemaining <= 0) return true;
+
+  let anyPending = false;
+  for (const plot of kg.plots) {
+    const step = PENDING_STEP[plot.stage];
+    if (!step) continue;
+    anyPending = true;
+    if (kg.dayTimeRemaining >= stepCostSeconds(plot, step, levels)) return false;
+  }
+  return anyPending;
 }
 
 /**
@@ -314,8 +356,11 @@ export function tickKitchenGarden(
     if (nightRemaining === 0) {
       dayTimeRemaining = dayLengthSeconds(context.dayLengthStep);
     }
-  } else if (dayTimeRemaining <= 0) {
+  } else if (dayIsSpent(kg, context.levels)) {
     nightRemaining = nightLengthSeconds(context.hasShortNight);
+    // Drop the unspendable remainder so the HUD does not show Day Time left
+    // during Night, and so nothing downstream reads it as spendable.
+    dayTimeRemaining = 0;
   }
 
   // Seeds regenerate on real time, capped.
