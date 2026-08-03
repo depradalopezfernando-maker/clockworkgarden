@@ -3,16 +3,32 @@ import { effectsOf, levelsOf } from '@sim/insight';
 import {
   canPerform,
   dayLengthSeconds,
+  plotUnits,
   satchelCapacity,
   slotCap,
   slotCost,
   type Plot,
   type PlotStep,
 } from '@sim/kitchenGarden';
+import { gardenPlotManaPerSecond, kitchenGardenShare } from '@sim/economy';
+import { KITCHEN_GARDEN_BASE_FRACTION } from '@content/balance';
 import { seasonTierOneCost } from '@content/generators';
 import { surfaceById } from '@content/surfaces';
 import type { GameState } from '@sim/state';
-import { formatNumber, formatSeconds } from './format';
+import { formatNumber, formatRate, formatSeconds } from './format';
+
+/**
+ * The garden's contribution, as a percentage of Garden Plot income (D2).
+ *
+ * One decimal, not `formatPercent`'s whole numbers: a single Bare Soil plot is
+ * worth 0.4%, and rounding that to "0%" tells the player their plot does
+ * nothing. Four of them are worth 1.6%, which whole numbers render as "2%" —
+ * the same as three. The small end is exactly where this readout has to work.
+ */
+function formatContribution(share: number): string {
+  if (share <= 0) return '+0%';
+  return `+${(share * 100).toFixed(share < 0.1 ? 1 : 0)}%`;
+}
 
 /**
  * The Kitchen Garden (§2a).
@@ -36,6 +52,14 @@ export function KitchenGardenPanel({ state }: { state: GameState }) {
   const dayFraction = Math.max(0, Math.min(1, kg.dayTimeRemaining / dayLength));
   const night = kg.nightRemaining > 0;
 
+  // What the garden is actually worth right now. Without this the subsystem is
+  // invisible: each Bare Soil plot adds 0.4% of Garden Plot income, so a player
+  // covering their second and third plots sees the HUD rate not move at all and
+  // concludes only one plot produces.
+  const share = kitchenGardenShare(state);
+  const contribution = gardenPlotManaPerSecond(state) * share;
+  const growing = kg.plots.filter((p) => p.stage === 'grown').length;
+
   return (
     <section className="panel panel--wide">
       <div className="tabs">
@@ -47,6 +71,19 @@ export function KitchenGardenPanel({ state }: { state: GameState }) {
           {kg.seeds}/{satchelCapacity(effects.satchelBonus)} Seeds
         </span>
       </div>
+
+      <p className="footnote" data-testid="kg-contribution">
+        {growing === 0 ? (
+          'No crop is producing yet. Every grown plot adds to your Garden Plots.'
+        ) : (
+          <>
+            <b>
+              {growing} plot{growing === 1 ? '' : 's'} producing
+            </b>{' '}
+            · {formatContribution(share)} to Garden Plots · +{formatRate(contribution)}
+          </>
+        )}
+      </p>
 
       <div className="meter">
         <div className="meter__label">
@@ -154,6 +191,9 @@ function PlotCard({
   if (plot.stage === 'grown') {
     const stale = plot.plantedSeason !== state.season;
     const perfect = plot.perfectUntil > state.elapsedSeconds;
+    // Per-plot contribution, so a player can see each plot pulling its weight
+    // rather than inferring it from a HUD rate that barely moves.
+    const own = plotUnits(plot, context) * KITCHEN_GARDEN_BASE_FRACTION;
     return (
       <button
         type="button"
@@ -161,10 +201,11 @@ function PlotCard({
         onClick={() => gameStore.kitchenGardenClear(index)}
         data-testid={`kg-plot-${index}`}
         data-stage="grown"
+        data-contribution={own.toFixed(4)}
       >
         <span className="generator__name">{surface.name}</span>
         <span className="generator__detail">
-          {stale ? 'Last Season — replant' : perfect ? 'Perfect Planting ×2' : 'Producing'}
+          {stale ? 'Last Season — replant' : `${formatContribution(own)}${perfect ? ' · ×2' : ''}`}
         </span>
       </button>
     );

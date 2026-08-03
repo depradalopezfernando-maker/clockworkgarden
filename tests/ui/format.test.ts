@@ -111,3 +111,25 @@ describe('formatSeconds and formatPercent', () => {
     expect(formatPercent(1)).toBe('100%');
   });
 });
+
+describe('rates must not hide the Kitchen Garden', () => {
+  // A single Bare Soil plot adds 0.4% of Garden Plot income. With 50 Watering
+  // Cans that is 5.00/s -> 5.02/s, and `formatRate` renders BOTH as "5/s".
+  // Covering a second and third plot moved nothing on screen, so the garden
+  // read as "only one plot produces". The rate readout is not the place to fix
+  // that - three significant figures is right for a HUD - so the Kitchen Garden
+  // panel states its own contribution instead. This test records WHY.
+  it('genuinely cannot distinguish one plot from two at HUD precision', () => {
+    expect(formatRate(5.02)).toBe(formatRate(5.04));
+  });
+
+  it('and that is why a percentage readout is needed at one decimal', () => {
+    // Whole percentages collapse the small end, which is the end that matters:
+    // a player's FIRST grown plot is worth 0.4% and would render as "0%" -
+    // indistinguishable from having no garden at all.
+    expect(Math.round(0.004 * 100)).toBe(Math.round(0));
+    // One decimal keeps them distinct.
+    expect((0.004 * 100).toFixed(1)).toBe('0.4');
+    expect((0.004 * 100).toFixed(1)).not.toBe((0).toFixed(1));
+  });
+});
