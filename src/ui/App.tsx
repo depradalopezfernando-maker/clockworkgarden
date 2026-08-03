@@ -9,6 +9,8 @@ import { formatDuration, formatNumber, formatRate, formatSeconds } from './forma
 import { SEASON_NAMES, themeVariables } from './theme';
 import { InsightPanel } from './InsightPanel';
 import { KitchenGardenPanel } from './KitchenGardenPanel';
+import { SeasonPanel } from './SeasonPanel';
+import { Tutorial } from './Tutorial';
 import { useGameRuntime, useGameState, useGameStatus } from './useGame';
 import './styles.css';
 
@@ -55,6 +57,8 @@ export function App() {
 
         <FrenzyMeter meter={state.frenzy.meter} remainingSeconds={state.frenzy.remainingSeconds} />
 
+        <Tutorial state={state} />
+
         <p className="footnote">
           {frenzyActive
             ? 'All production doubled while the Frenzy lasts.'
@@ -67,7 +71,13 @@ export function App() {
         <GeneratorList state={state} />
       </section>
 
-      <InsightPanel state={state} />
+      {/* Season and Insight share a column: both are short, and left as
+          separate grid children they pushed Insight onto its own row and left
+          two thirds of the viewport empty. */}
+      <div className="column">
+        <SeasonPanel state={state} />
+        <InsightPanel state={state} />
+      </div>
 
       <KitchenGardenPanel state={state} />
 

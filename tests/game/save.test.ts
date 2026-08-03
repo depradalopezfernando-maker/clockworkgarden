@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { CURRENT_SAVE_VERSION, decodeSave, deserialize, encodeSave, serialize } from '@game/save';
 import { initialState } from '@sim/state';
+import { initialCapstone } from '@sim/capstone';
+import { canPrestige } from '@sim/prestige';
 import { TIER_COUNT } from '@content/generators';
 import v1Fixture from '../fixtures/saves/v1.json';
 import v2Fixture from '../fixtures/saves/v2.json';
+import v3Fixture from '../fixtures/saves/v3.json';
 
 /**
  * ADR-0004. Every version ships with a FROZEN fixture of that format and a test
@@ -42,6 +45,43 @@ describe('round-tripping the current version', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.save.state.lifetimeMana / 1.234e28).toBeCloseTo(1, 12);
+  });
+});
+
+describe('the frozen v3 fixture still loads after the v4 migration', () => {
+  it('keeps every plot mid-cycle — a growing crop is not reset by the migration', () => {
+    const result = deserialize(JSON.stringify(v3Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.migratedFrom).toBe(3);
+
+    const plots = result.save.state.kitchenGarden.plots;
+    expect(plots).toHaveLength(5);
+    expect(plots.map((p) => p.stage)).toEqual(['growing', 'grown', 'dug', 'bare', 'planted']);
+    expect(plots[0]?.grownAt).toBe(5446);
+    expect(plots[0]?.surface).toBe('raised-garden-box');
+    expect(plots[1]?.plantedSeason).toBe(1);
+    expect(result.save.state.kitchenGarden.seeds).toBe(3);
+    expect(result.save.state.kitchenGarden.dayTimeRemaining).toBe(18);
+  });
+
+  it('adds a capstone with no attempt in progress', () => {
+    // v3 predates the capstone entirely. A returning player must not resume into
+    // an armed attempt they never started.
+    const result = deserialize(JSON.stringify(v3Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.state.capstone).toEqual(initialCapstone());
+  });
+
+  it('does not make the player re-fight a Season they already cleared', () => {
+    const result = deserialize(JSON.stringify(v3Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.state.capstonesCleared).toEqual([1]);
+    expect(result.save.state.season).toBe(2);
+    // Season 1 cleared means prestige stays unlocked across the migration.
+    expect(canPrestige(result.save.state)).toBe(true);
   });
 });
 

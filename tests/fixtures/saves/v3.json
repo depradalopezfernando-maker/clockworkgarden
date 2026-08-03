@@ -1,0 +1,77 @@
+{
+  "version": 3,
+  "savedAt": 1770004200000,
+  "state": {
+    "mana": 41200,
+    "lifetimeMana": 1840000,
+    "owned": [64, 41, 23, 12, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "season": 2,
+    "capstonesCleared": [1],
+    "appliedSqp": 0,
+    "prestigeCount": 0,
+    "elapsedSeconds": 5400,
+    "kitchenGarden": {
+      "plots": [
+        {
+          "surface": "raised-garden-box",
+          "stage": "growing",
+          "digAt": 5320,
+          "plantAt": 5324,
+          "coverAt": 5326,
+          "grownAt": 5446,
+          "perfectUntil": 5384,
+          "plantedSeason": 2
+        },
+        {
+          "surface": "terracotta-pot",
+          "stage": "grown",
+          "digAt": 5100,
+          "plantAt": 5104,
+          "coverAt": 5106,
+          "grownAt": 5226,
+          "perfectUntil": -1,
+          "plantedSeason": 1
+        },
+        {
+          "surface": "bare-soil",
+          "stage": "dug",
+          "digAt": 5390,
+          "plantAt": -1,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 0
+        },
+        {
+          "surface": "bare-soil",
+          "stage": "bare",
+          "digAt": -1,
+          "plantAt": -1,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 0
+        },
+        {
+          "surface": "stone-parterre",
+          "stage": "planted",
+          "digAt": 5370,
+          "plantAt": 5376,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 2
+        }
+      ],
+      "seeds": 3,
+      "dayTimeRemaining": 18,
+      "nightRemaining": 0,
+      "seedProgress": 0.4
+    },
+    "frenzy": { "meter": 0.25, "remainingSeconds": 0 },
+    "insight": 5,
+    "lifetimeInsight": 21,
+    "purchasedNodes": ["s1-click-1", "s1-gen-3", "s1-gen-4"],
+    "claimedMilestones": ["m-water-10", "m-mana-1k", "m-water-25", "m-sprout-10", "m-mana-100k"]
+  }
+}

@@ -9,8 +9,9 @@
  */
 
 import { totalManaPerSecond, clickYield } from './economy';
-import { addFrenzyClick, frenzyMultiplier, tickFrenzy } from './frenzy';
+import { addFrenzyClick, frenzyMultiplier, isFrenzyActive, tickFrenzy } from './frenzy';
 import { claimMilestones } from './milestones';
+import { clearPlaceholderCapstone, progressCapstone } from './capstone';
 import { effectsOf } from './insight';
 import type { GameState } from './state';
 
@@ -36,7 +37,22 @@ export function advance(state: GameState, dt: number): GameState {
 
   // Milestones are checked every tick. The common case awards nothing and
   // returns the same reference, so this costs one array scan and no allocation.
-  return claimMilestones(advanced).state;
+  let next = claimMilestones(advanced).state;
+
+  // The capstone attempt watches the rate the PLAYER sees - Frenzy included.
+  // Pass whether a Frenzy was live at ANY point in this step, not just at its
+  // end: a window that opens and closes inside one step would otherwise leave
+  // the attempt armed forever.
+  const frenziedDuringStep = isFrenzyActive(state.frenzy) || isFrenzyActive(frenzy);
+  next = progressCapstone(
+    next,
+    totalManaPerSecond(next) * frenzyMultiplier(frenzy),
+    frenziedDuringStep
+  ).state;
+
+  // Seasons 2-4 have no designed capstone yet, so readiness alone advances them
+  // (docs/04 item 4). Season 1 goes through the real challenge above.
+  return clearPlaceholderCapstone(next);
 }
 
 export interface ClickResult {

@@ -6,10 +6,12 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Phase 4 complete. Phase 5 is next — prestige loop, Season 1 capstone, and the
-VERTICAL SLICE human gate.** Playable in a browser: Bell, generators, Growth
-Frenzy, the Insight tree, milestones, the full Kitchen Garden (§2a), versioned
-saves, offline progress.
+**Phase 5 complete. THE VERTICAL SLICE IS READY TO PLAY — the next step is a
+human gate, not a phase.** `npm run dev`, then ninety minutes unassisted.
+
+Everything through Season 1 works end to end: Bell, generators, Growth Frenzy,
+the Insight tree, milestones, the full Kitchen Garden (§2a), the First Bloom
+capstone, the prestige loop, onboarding, versioned saves, offline progress.
 
 **Read `docs/07-phase-4-kitchen-garden-report.md` §2 before Phase 5.** The
 Kitchen Garden supplies ~3.5% of income in real play, not the ~1/3 D2 targets,
@@ -27,6 +29,7 @@ src/content/generators.ts         the 20-tier table (§2), transcribed
 src/content/insightTree.ts        50 nodes (§3). Eight of them open generator tiers
 src/content/milestones.ts         37 milestones — the ONLY source of Insight
 src/content/surfaces.ts           the six Kitchen Garden surfaces (§2a)
+src/sim/capstone.ts               First Bloom (D4a); S2-S4 are placeholders
 src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
 src/game/                         runtime: store + loop + versioned saves
 src/ui/                           React shell, HUD, formatting
@@ -39,10 +42,14 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 Start here: `docs/README.md`. Verify with `npm run ci`.
 Latest balance numbers: `docs/06-phase-1-balance-report.md`.
 
-**Phase 5's job:** the prestige loop end to end, the Season 1 capstone
-("First Bloom" — fully specified in `docs/04` D4a, ready to build), and the
-first-15-minutes tutorial. Then a human plays it for ninety minutes and decides
-whether Seasons 2-4 are worth building.
+**The gate:** play it for ninety minutes and answer four questions —
+is the core loop satisfying? Does Frenzy feel worth chasing? Does the Kitchen
+Garden read as meaningful or as busywork (§10 item 10)? Does the first prestige
+feel like a reward? See `docs/08-vertical-slice.md`.
+
+**Do not start Phase 6 or 7 before that verdict.** The whole point of stopping
+here is to find out the design does not work while only ~5 sessions are sunk
+into Seasons 2-4 rather than all of them.
 
 ---
 

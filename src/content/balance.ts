@@ -97,6 +97,28 @@ export const PRESTIGE_BONUS_PER_SQP = 0.02; // SPEC §4  (+2% per SQP)
 /** SIM. Phase 1 fits PRESTIGE_SQP_COEFFICIENT until natural play lands here. */
 export const TARGET_PRESTIGE_RESETS = { min: 4, max: 5 } as const;
 
+// ---------------------------------------------------------------------------
+// Season 1 capstone — "First Bloom"  ·  DECISION D4a
+// ---------------------------------------------------------------------------
+
+/**
+ * HUMAN. Mana/sec that must be reached DURING a Growth Frenzy to clear Season 1.
+ *
+ * Calibrated against the simulation, not picked: at the moment the capstone
+ * becomes available every archetype sits at ~890 Mana/sec (the readiness gate is
+ * own-count based, so they all arrive in the same build state and only the clock
+ * differs). A Frenzy doubles that to ~1780.
+ *
+ * 1200 therefore sits ABOVE what idling delivers and BELOW what one Frenzy
+ * delivers, which is the whole point: the capstone genuinely tests §5 rather
+ * than being a production threshold in a costume, and a normally-built player
+ * clears it first try with ~45% headroom.
+ *
+ * Tagged HUMAN because it is a feel number. The Phase 5 playtest is the only
+ * place it can honestly be judged. See docs/04 D4a.
+ */
+export const S1_CAPSTONE_TARGET_RATE = 1200;
+
 /** SPEC §4. Prestige unlocks after the Season 1 capstone; never required. */
 export const PRESTIGE_UNLOCK_SEASON = 1;
 

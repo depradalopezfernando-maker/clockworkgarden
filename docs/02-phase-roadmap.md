@@ -174,7 +174,20 @@ asserted.
 
 ---
 
-## Phase 5 — Prestige, Season 1 Capstone → **VERTICAL SLICE** ⭐
+## Phase 5 — Prestige, Season 1 Capstone → **VERTICAL SLICE** ⭐ ✅ BUILT (2026-08-02, 1 session)
+
+**Built and verified; the gate itself is yours.** 306 tests plus 34 browser
+smoke checks, which drive a real First Bloom attempt, clear it, advance to
+Season 2, unlock prestige, confirm it, reset, and check the Kitchen Garden
+survived.
+
+**→ `npm run dev`, ninety minutes. See `docs/08-vertical-slice.md`.**
+
+One real bug found and fixed: a Frenzy that began and ended inside a single tick
+left a capstone attempt armed forever, because `advance` ticks the meter before
+the capstone sees it. Rare at 10 Hz, routine on the catch-up path.
+
+Original plan follows.
 
 **Sessions: 2–3** · Entry: Phase 4 · **HUMAN GATE**
 

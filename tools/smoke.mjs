@@ -65,6 +65,17 @@ const readSave = async () => {
   return raw ? JSON.parse(raw) : null;
 };
 
+/**
+ * Dismiss the offline report if it is up.
+ *
+ * Any reload with real production credits some Mana, and the modal then
+ * intercepts every click behind it. Harmless in play; fatal to a script.
+ */
+const dismissOffline = async () => {
+  const dialog = page.locator('[data-testid="offline-dismiss"]');
+  if (await dialog.isVisible().catch(() => false)) await dialog.click();
+};
+
 const ownedOfTier1 = () => page.locator('[data-testid="generator-1"]').getAttribute('data-owned');
 
 console.log(`\nDriving ${url}\n`);
@@ -77,6 +88,11 @@ await page.reload({ waitUntil: 'networkidle' });
 check(await page.locator('[data-testid="bell"]').isVisible(), 'the Bell renders');
 check(await page.locator('[data-testid="generators"]').isVisible(), 'the generator list renders');
 check((await ownedOfTier1()) === '0', 'a fresh game owns nothing');
+check(await page.locator('[data-testid="tutorial"]').isVisible(), 'onboarding greets a new player');
+check(
+  (await page.locator('[data-testid="tutorial"]').getAttribute('data-step')) === 'ring',
+  'onboarding starts by asking for the first Bell ring'
+);
 
 // --- 2. The Bell earns Mana ---------------------------------------------------
 for (let i = 0; i < 15; i++) await page.locator('[data-testid="bell"]').click();
@@ -157,7 +173,104 @@ check(
   `${dayBefore}s -> ${dayAfter}s`
 );
 
+// --- 4d. Onboarding, capstone and prestige (Phase 5) --------------------------
+// Prestige must be locked until Season 1 is cleared (§4).
+check(
+  !(await page.locator('[data-testid="prestige-open"]').isVisible()),
+  'Turning the Soil is locked before the Season 1 capstone'
+);
+
+// Reach the capstone by handing the player the build the gate asks for, then
+// play First Bloom for real: arm it, ring up a Frenzy, and clear on the rate.
+// Editing localStorage then reloading does NOT work: `pagehide` fires first and
+// the game saves over the edit. An init script runs after that unload-save and
+// before the app boots. A one-shot sentinel keeps it from re-applying on every
+// later navigation.
+await context.addInitScript((key) => {
+  const flag = '__cg_smoke_grant__';
+  if (localStorage.getItem(flag) === null) return;
+  localStorage.removeItem(flag);
+  const raw = localStorage.getItem(key);
+  if (!raw) return;
+  const save = JSON.parse(raw);
+  save.state.owned = [200, 100, 60, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  save.state.mana = 1e6;
+  save.savedAt = Date.now();
+  localStorage.setItem(key, JSON.stringify(save));
+}, SAVE_KEY);
+
+await page.evaluate(() => localStorage.setItem('__cg_smoke_grant__', '1'));
+await page.reload({ waitUntil: 'networkidle' });
+await dismissOffline();
+
+check(
+  await page.locator('[data-testid="capstone"]').isVisible(),
+  'the capstone offers itself once ready'
+);
+await page.locator('[data-testid="capstone-arm"]').click();
+check(
+  await page.locator('[data-testid="capstone-peak"]').isVisible(),
+  'arming shows the First Bloom progress meter'
+);
+
+// Ring up a Frenzy - the attempt clears on rate during the window.
+for (let i = 0; i < 22; i++) await page.locator('[data-testid="bell"]').click();
+await page.waitForTimeout(400);
+
+const seasonText = (await page.locator('.hud__season').textContent()) ?? '';
+check(
+  seasonText.includes('Season 2'),
+  'clearing First Bloom advances to Season 2',
+  seasonText.trim()
+);
+
+check(
+  await page.locator('[data-testid="prestige-open"]').isVisible(),
+  'clearing the capstone unlocks Turning the Soil'
+);
+
+// Prestige asks before it wipes anything.
+await page.locator('[data-testid="prestige-open"]').click();
+check(
+  await page.locator('[data-testid="prestige-confirm"]').isVisible(),
+  'Turning the Soil confirms before resetting'
+);
+await page.locator('[data-testid="prestige-cancel"]').click();
+check(
+  (await page.locator('[data-testid="generator-1"]').getAttribute('data-owned')) === '200',
+  'cancelling keeps every generator'
+);
+
+await page.locator('[data-testid="prestige-open"]').click();
+await page.locator('[data-testid="prestige-confirm"]').click();
+await page.waitForTimeout(300);
+check(
+  (await page.locator('[data-testid="generator-1"]').getAttribute('data-owned')) === '0',
+  'Turning the Soil resets Garden Plots'
+);
+check(
+  (await page.locator('[data-testid="kg-plots"]').isVisible()) &&
+    (await page.locator('[data-testid="kg-plot-0"]').isVisible()),
+  'the Kitchen Garden survives the reset (§4)'
+);
+
 // --- 5. Passive production accrues --------------------------------------------
+// Rebuild a little after the reset so there is something to accrue.
+await context.addInitScript((key) => {
+  const flag = '__cg_smoke_rebuild__';
+  if (localStorage.getItem(flag) === null) return;
+  localStorage.removeItem(flag);
+  const raw = localStorage.getItem(key);
+  if (!raw) return;
+  const save = JSON.parse(raw);
+  save.state.owned[0] = 10;
+  save.savedAt = Date.now();
+  localStorage.setItem(key, JSON.stringify(save));
+}, SAVE_KEY);
+await page.evaluate(() => localStorage.setItem('__cg_smoke_rebuild__', '1'));
+await page.reload({ waitUntil: 'networkidle' });
+await dismissOffline();
+
 const beforeIdle = (await readSave())?.state.mana ?? 0;
 await page.waitForTimeout(3000);
 const afterIdle = (await readSave())?.state.mana ?? 0;

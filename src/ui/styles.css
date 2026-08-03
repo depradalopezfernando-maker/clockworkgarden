@@ -406,6 +406,13 @@ body {
   grid-column: 1 / -1;
 }
 
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
 .meter__fill--night {
   background: var(--season-shadow);
 }
@@ -455,4 +462,62 @@ body {
 .plot--add {
   border-style: dashed;
   justify-content: center;
+}
+
+/* --- Season capstone, prestige, onboarding ------------------------------- */
+
+.tutorial {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--season-accent) 14%, transparent);
+  border-left: 3px solid var(--season-accent);
+  border-radius: 0 6px 6px 0;
+}
+
+.capstone,
+.prestige {
+  padding: 0.85rem;
+  margin-bottom: 0.75rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+
+.prestige {
+  margin-bottom: 0;
+}
+
+.capstone {
+  border-color: var(--season-accent);
+}
+
+.capstone__title {
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+  color: var(--season-accent);
+}
+
+.capstone__flavour {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ui-text-muted);
+}
+
+.capstone__failed {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ui-negative);
+}
+
+.prestige__confirm {
+  margin-top: 0.5rem;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

@@ -5,19 +5,13 @@
  * a number or a new state; nothing reads a clock or a global.
  */
 
-import {
-  CAPSTONE_GATE_COUNT,
-  CAPSTONE_GATE_TIER,
-  GENERATOR_TIERS,
-  TIER_COUNT,
-  tierAt,
-  type UnlockGate,
-} from '@content/generators';
+import { GENERATOR_TIERS, TIER_COUNT, tierAt, type UnlockGate } from '@content/generators';
 import { BASE_CLICK_YIELD } from '@content/balance';
 import { ownedOf, type GameState } from './state';
 import { prestigeMultiplier } from './prestige';
 import { kitchenGardenMultiplier } from './kitchenGarden';
 import { effectsOf, levelsOf } from './insight';
+import { isCapstoneReady } from './capstone';
 
 // ---------------------------------------------------------------------------
 // Costs
@@ -212,25 +206,21 @@ export function buy(state: GameState, tier: number): GameState {
 // ---------------------------------------------------------------------------
 
 /**
- * Whether the current Season's capstone challenge is available.
+ * Whether the player has built enough to attempt this Season's capstone.
  *
- * PHASE 1 PLACEHOLDER: gated on owning 10 of the Season's fourth tier. The
- * Season 1 and 2 capstones are undesigned (docs/04 item 4); Phase 5 replaces
- * this with the real challenge.
+ * Re-exported from `capstone.ts`, which owns capstone logic since Phase 5.
  */
-export function isCapstoneAvailable(state: GameState): boolean {
-  if (state.capstonesCleared.includes(state.season)) return false;
-  const gateTier = CAPSTONE_GATE_TIER[state.season];
-  if (gateTier === undefined) return false;
-  return ownedOf(state, gateTier) >= CAPSTONE_GATE_COUNT;
-}
+export { isCapstoneReady, isCapstoneReady as isCapstoneAvailable } from './capstone';
 
 /**
- * Clear the current Season's capstone. Seasons advance ONLY here (D6) - never on
- * elapsed time. §8's timeline is a prediction the simulation validates.
+ * Clear the current Season's capstone unconditionally once ready.
+ *
+ * Kept for Seasons 2-4, whose capstones are undesigned (`docs/04` item 4).
+ * Season 1 goes through the real "First Bloom" challenge in `capstone.ts` and
+ * must NOT use this path.
  */
 export function clearCapstone(state: GameState): GameState {
-  if (!isCapstoneAvailable(state)) return state;
+  if (!isCapstoneReady(state)) return state;
   return {
     ...state,
     capstonesCleared: [...state.capstonesCleared, state.season],

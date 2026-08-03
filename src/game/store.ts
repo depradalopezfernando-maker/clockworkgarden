@@ -12,6 +12,8 @@ import { MAX_CATCHUP_SECONDS, OFFLINE_MIN_EFFICIENCY, SIM_TICK_SECONDS } from '@
 import { advance, clickBell, type ClickResult } from '@sim/tick';
 import { buy as buyGenerator } from '@sim/economy';
 import { purchaseNode as purchaseInsightNode } from '@sim/insight';
+import { armCapstone } from '@sim/capstone';
+import { canPrestige, prestige as turnTheSoil } from '@sim/prestige';
 import { levelsOf } from '@sim/insight';
 import {
   addSlot,
@@ -316,6 +318,32 @@ export class GameStore {
     const kg = applySurface(this.state.kitchenGarden, plotIndex, surface);
     if (kg === this.state.kitchenGarden) return false;
     this.state = { ...this.state, mana: this.state.mana - cost, kitchenGarden: kg };
+    this.publish();
+    return true;
+  }
+
+  /** Begin a capstone attempt — the next Growth Frenzy is the challenge (D4a). */
+  armCapstone(): boolean {
+    const next = armCapstone(this.state);
+    if (next === this.state) return false;
+    this.state = next;
+    this.publish();
+    return true;
+  }
+
+  /**
+   * "Turn the Soil" (§4, renamed per D6 to stop colliding with Season change).
+   *
+   * Deliberately has no confirmation of its own - the UI asks first. A store
+   * method that silently wipes the player's generators would be a bad thing to
+   * have one typo away from any caller.
+   */
+  turnTheSoil(): boolean {
+    if (!canPrestige(this.state)) return false;
+    const next = turnTheSoil(this.state);
+    if (next === this.state) return false;
+    this.state = next;
+    this.save();
     this.publish();
     return true;
   }

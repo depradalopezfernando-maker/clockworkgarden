@@ -19,10 +19,11 @@ import {
 } from '@content/balance';
 import { DEFAULT_SURFACE, surfaceById } from '@content/surfaces';
 import { emptyPlot, type KitchenGardenState, type Plot } from '@sim/kitchenGarden';
+import { initialCapstone, type CapstoneState } from '@sim/capstone';
 import { nodeById } from '@content/insightTree';
 import { MILESTONES } from '@content/milestones';
 
-export const CURRENT_SAVE_VERSION = 3;
+export const CURRENT_SAVE_VERSION = 4;
 export const SAVE_KEY = 'clockwork-garden:save';
 
 export interface SaveFile {
@@ -100,6 +101,22 @@ const MIGRATIONS: Readonly<Record<number, (raw: unknown) => unknown>> = {
       },
     };
   },
+  /**
+   * v3 -> v4 (Phase 5): Season capstones became a real challenge (D4a).
+   *
+   * A returning player starts with no attempt in progress. Cleared capstones
+   * live in `capstonesCleared` and are untouched, so nobody re-fights a Season
+   * they already finished.
+   */
+  3: (raw) => {
+    const envelope = (raw ?? {}) as Record<string, unknown>;
+    const state = (envelope['state'] ?? {}) as Record<string, unknown>;
+    return {
+      ...envelope,
+      version: 4,
+      state: { ...state, capstone: initialCapstone() },
+    };
+  },
 };
 
 export function serialize(state: GameState, nowMs: number): SaveFile {
@@ -159,6 +176,23 @@ function reviveState(raw: unknown): GameState {
     // build has since removed or renamed.
     purchasedNodes: stringIds(r['purchasedNodes']).filter((id) => nodeById(id) !== undefined),
     claimedMilestones: stringIds(r['claimedMilestones']).filter((id) => MILESTONE_IDS.has(id)),
+    capstone: reviveCapstone(r['capstone']),
+  };
+}
+
+function reviveCapstone(raw: unknown): CapstoneState {
+  const base = initialCapstone();
+  if (typeof raw !== 'object' || raw === null) return base;
+  const c = raw as Record<string, unknown>;
+  const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  return {
+    // An attempt never survives a reload: resuming mid-Frenzy from a save would
+    // hand the player a window they did not earn.
+    armed: false,
+    attemptPeakRate: 0,
+    sawFrenzy: false,
+    attempts: Math.max(0, Math.floor(num(c['attempts'], 0))),
+    lastFailed: c['lastFailed'] === true,
   };
 }
 

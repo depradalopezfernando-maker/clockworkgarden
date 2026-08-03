@@ -53,6 +53,7 @@ import {
 } from './prestige';
 import { availableNodes, effectsOf, levelsOf, purchaseNode } from './insight';
 import { claimMilestones } from './milestones';
+import { capstoneTargetRate, hasDesignedChallenge } from './capstone';
 import { initialState, ownedOf, type GameState } from './state';
 
 /**
@@ -305,6 +306,13 @@ export function simulateCampaign(
     }
 
     // --- Capstone, and therefore Season advancement (D6) --------------------
+    //
+    // Season 1 now has a real challenge (D4a): reach a target rate during a
+    // Frenzy. The harness models Frenzy as an average uptime rather than a
+    // meter, so it cannot "play" First Bloom - instead it clears once the
+    // player's rate WITH a full Frenzy would beat the target, which is the same
+    // condition a real attempt tests. Seasons 2-4 keep the readiness-only
+    // placeholder until they are designed.
     if (capstoneTimer > 0) {
       capstoneTimer -= stepSeconds;
       if (capstoneTimer <= 0) {
@@ -315,7 +323,11 @@ export function simulateCampaign(
         }
       }
     } else if (isCapstoneAvailable(state)) {
-      capstoneTimer = CAPSTONE_DURATION_SECONDS;
+      const clearable =
+        !hasDesignedChallenge(state.season) ||
+        totalManaPerSecond(state, kitchenGardenBaseFraction) * FRENZY_MULTIPLIER >=
+          capstoneTargetRate(state.season);
+      if (clearable) capstoneTimer = CAPSTONE_DURATION_SECONDS;
     }
 
     // Snapshot what the very first prestige is WORTH the moment it unlocks,

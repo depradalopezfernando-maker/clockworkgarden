@@ -8,6 +8,7 @@
 import { TIER_COUNT } from '@content/generators';
 import { initialFrenzy, type FrenzyState } from './frenzy';
 import { initialKitchenGarden, type KitchenGardenState } from './kitchenGarden';
+import { initialCapstone, type CapstoneState } from './capstone';
 
 export type { KitchenGardenState };
 export { initialKitchenGarden };
@@ -68,6 +69,9 @@ export interface GameState {
    * exactly what §3's milestone design exists to prevent.
    */
   readonly claimedMilestones: readonly string[];
+
+  /** §2/§8 Season capstone attempt state. Decision D4a. */
+  readonly capstone: CapstoneState;
 }
 
 export function initialState(): GameState {
@@ -86,6 +90,7 @@ export function initialState(): GameState {
     lifetimeInsight: 0,
     purchasedNodes: [],
     claimedMilestones: [],
+    capstone: initialCapstone(),
   };
 }
 

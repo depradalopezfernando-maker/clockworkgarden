@@ -10,3 +10,8 @@ read data the current code invented.
 When the schema changes: bump `CURRENT_SAVE_VERSION`, add a migration keyed by
 the version it upgrades _from_, add `v<N>.json` here, and leave every existing
 file untouched.
+
+`v3.json` was written to the v3 schema during Phase 5 rather than captured from a
+running v3 build — Phase 4 shipped the v3 schema without freezing a fixture, and
+the gap was found before anyone had a v3 save. Every other file here is a
+verbatim capture. From v4 on, capture at ship time.
