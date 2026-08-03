@@ -425,6 +425,66 @@ Guarded by a test.
 
 ---
 
+## D4a — Season 1 capstone: "First Bloom" (decided 2026-08-02)
+
+**Shape.** A timed Growth Frenzy challenge. Reach a target Mana/sec _during a
+single Frenzy window_. This follows §6's pattern — each Season's capstone tests
+that Season's own mechanic, as The Long Night tests Frost — and Frenzy (§5) is
+the only mechanic Season 1 has.
+
+**Target: 1,200 Mana/sec, measured during Frenzy.**
+
+Calibrated against the simulation rather than picked. At the moment the capstone
+becomes available, every archetype sits at the _same_ production, because the
+gate is own-count based and they all arrive in the same build state — only the
+clock differs:
+
+| Archetype | Reaches capstone at | Mana/sec | During Frenzy (×2) |
+| --------- | ------------------: | -------: | -----------------: |
+| idle      |               1.41h |      893 |              1,787 |
+| casual    |               1.01h |      893 |              1,787 |
+| active    |               0.65h |      885 |              1,770 |
+
+1,200 sits **above** the ~890 a player holds passively and **below** the ~1,780 a
+Frenzy delivers. Two consequences, both wanted:
+
+- You **cannot** clear it by idling — the Frenzy is what carries you, so the
+  capstone genuinely tests §5 rather than being a production threshold wearing a
+  costume.
+- A player who has bought generators at a normal pace clears it **first try**,
+  with roughly 45% headroom.
+
+One number serves all three archetypes, which is a happy consequence of the
+own-count gate.
+
+**On failure: retry immediately, no penalty, no cooldown.** §9 lists enforced
+waits as a known genre failure mode, and §6.3 frames capstones as difficulty
+spikes rather than hard gates. A player who misses keeps playing, grows stronger,
+and clears it next attempt.
+
+**Difficulty stance:** clearable first try by an idle player who has built
+normally. The capstone is a ceremony marking the Season's end, not a wall.
+
+**Implementation notes for Phase 5:**
+
+- `S1_CAPSTONE_TARGET_RATE = 1200` goes in `balance.ts` tagged **HUMAN** — it is
+  a feel number and the Phase 5 playtest is the only place it can honestly be
+  judged.
+- Replaces the Phase 1 placeholder in `src/content/generators.ts`
+  (`CAPSTONE_GATE_TIER` / `CAPSTONE_GATE_COUNT`), which gates on owning 10 of the
+  Season's fourth tier.
+- The capstone is _available_ on the existing own-count gate and _cleared_ by
+  hitting the rate target — so the challenge cannot be attempted before the
+  player has the generators to stand a chance.
+- Re-run `npm run simulate` afterwards: changing what clears Season 1 moves every
+  downstream Season boundary.
+
+**Still open:** the Season 2 and Season 3 capstones. Proposals in item 4 below
+("The Great Pollination" and "The Grand Harvest") remain unreviewed, and Season 2
+blocks Phase 7 rather than Phase 5.
+
+---
+
 ## Decision status
 
 | #   | Decision                                           | Blocks  | Status                     |

@@ -39,8 +39,8 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 Start here: `docs/README.md`. Verify with `npm run ci`.
 Latest balance numbers: `docs/06-phase-1-balance-report.md`.
 
-**Phase 5's job:** the prestige loop end to end, the Season 1 capstone (§4 and
-`docs/04` item 4 — **still undesigned, ask before building**), and the
+**Phase 5's job:** the prestige loop end to end, the Season 1 capstone
+("First Bloom" — fully specified in `docs/04` D4a, ready to build), and the
 first-15-minutes tutorial. Then a human plays it for ninety minutes and decides
 whether Seasons 2-4 are worth building.
 
@@ -61,6 +61,9 @@ D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 35, REF = 5
     LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
 D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
     simulation validates, not a trigger. Prestige is renamed ("Turn the Soil").
+D4a Season 1 capstone = "First Bloom": reach 1200 Mana/sec DURING a Growth
+    Frenzy. Retry instantly on failure, no penalty. Calibrated so a normally
+    built player clears it first try but cannot clear it by idling.
 ```
 
 K and REF were **fitted in Phase 1** (`npm run fit`). REF is not the spec's 1e6:
@@ -71,8 +74,8 @@ unlocks, so 1e6 made the first reset worth exactly nothing. See
 Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
-**Still open, and they gate later phases — ask, do not guess:** Season 1 and 2
-capstones are undesigned (blocks Phase 5, the vertical-slice go/no-go); how to
+**Still open, and they gate later phases — ask, do not guess:** the Season 2 and
+3 capstones (block Phases 7 and 8; Season 1's is decided — D4a); how to
 make the Kitchen Garden matter (`docs/07` §2); whether prestige wipes banked
 Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen Garden
 behaviour (`docs/04` item 7 — crops currently grow on engaged-play time only).
