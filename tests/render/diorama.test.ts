@@ -44,29 +44,36 @@ describe('the diorama registry covers the game', () => {
   });
 });
 
-describe.runIf(existsSync(PACK))('every referenced model exists in the pack', () => {
-  const available = new Set(
-    readdirSync(PACK)
+/**
+ * Read a directory of .glb stems, lazily.
+ *
+ * INSIDE the `it`, never in the describe body. `describe.runIf` skips RUNNING
+ * the tests but vitest still executes the callback to collect them, so a
+ * `readdirSync` at describe level throws during collection on any machine
+ * without the pack — which is every CI runner, since the packs are fetched and
+ * gitignored rather than committed.
+ */
+const stemsIn = (dir: string) =>
+  new Set(
+    readdirSync(dir)
       .filter((f) => f.endsWith('.glb'))
       .map((f) => f.replace(/\.glb$/, ''))
   );
 
+describe.runIf(existsSync(PACK))('every referenced model exists in the pack', () => {
   it('names no model the pack does not ship', () => {
+    const available = stemsIn(PACK);
     expect(referencedModels().filter((name) => !available.has(name))).toEqual([]);
   });
 
   it('includes the ground tile', () => {
-    expect(available.has(GROUND_MODEL.model)).toBe(true);
+    expect(stemsIn(PACK).has(GROUND_MODEL.model)).toBe(true);
   });
 });
 
 describe.runIf(existsSync(STAGED))('staging copies exactly what is referenced', () => {
   it('serves every referenced model and nothing else', () => {
-    const staged = readdirSync(STAGED)
-      .filter((f) => f.endsWith('.glb'))
-      .map((f) => f.replace(/\.glb$/, ''))
-      .sort();
-    expect(staged).toEqual(referencedModels());
+    expect([...stemsIn(STAGED)].sort()).toEqual(referencedModels());
   });
 });
 
