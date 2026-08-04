@@ -78,6 +78,23 @@ const dismissOffline = async () => {
 
 const ownedOfTier1 = () => page.locator('[data-testid="generator-1"]').getAttribute('data-owned');
 
+/**
+ * Ring the Bell `times` in one round trip.
+ *
+ * Clicking through Playwright costs a few hundred milliseconds each once the
+ * page is doing real work, and §5's meter DRAINS at 0.02/s against 0.05 a
+ * click - so twenty-two slow clicks fill it to 0.78 and no Frenzy ever starts.
+ * That is a fact about the test harness, not about the game: a human ringing a
+ * bell twenty times does it in seconds. Dispatching from inside the page keeps
+ * the real click handler in the loop while removing the latency that was
+ * quietly testing Playwright instead of the Frenzy.
+ */
+const ringBell = (times) =>
+  page.evaluate((n) => {
+    const bell = document.querySelector('[data-testid="bell"]');
+    for (let i = 0; i < n; i++) bell?.click();
+  }, times);
+
 console.log(`\nDriving ${url}\n`);
 
 // --- 1. Loads clean -----------------------------------------------------------
@@ -95,12 +112,12 @@ check(
 );
 
 // --- 2. The Bell earns Mana ---------------------------------------------------
-for (let i = 0; i < 15; i++) await page.locator('[data-testid="bell"]').click();
+await ringBell(15);
 const afterClicks = (await readSave())?.state.mana ?? 0;
 check(afterClicks >= 15, 'ringing the Bell 15 times earns at least 15 Mana', `${afterClicks}`);
 
 // --- 3. Growth Frenzy triggers (§5) -------------------------------------------
-for (let i = 0; i < 10; i++) await page.locator('[data-testid="bell"]').click();
+await ringBell(10);
 const bellText = (await page.locator('[data-testid="bell"]').textContent()) ?? '';
 check(bellText.includes('Frenzy'), 'filling the meter triggers a Growth Frenzy', bellText.trim());
 
@@ -207,6 +224,19 @@ check(
   await page.locator('[data-testid="capstone"]').isVisible(),
   'the capstone offers itself once ready'
 );
+// Wait out any Frenzy still running from the earlier steps before arming.
+// An attempt ends when the Frenzy that carried it ends (D4a), so arming into
+// the tail of one means the window shuts a moment later and the attempt fails
+// before the bell has been rung. Harmless in the game - retrying is free - but
+// it made this test depend on how fast the page happened to be.
+await page
+  .waitForFunction(
+    () => !(document.querySelector('[data-testid="bell"]')?.textContent ?? '').includes('Frenzy'),
+    undefined,
+    { timeout: 30_000 }
+  )
+  .catch(() => {});
+
 await page.locator('[data-testid="capstone-arm"]').click();
 check(
   await page.locator('[data-testid="capstone-peak"]').isVisible(),
@@ -214,8 +244,19 @@ check(
 );
 
 // Ring up a Frenzy - the attempt clears on rate during the window.
-for (let i = 0; i < 22; i++) await page.locator('[data-testid="bell"]').click();
-await page.waitForTimeout(400);
+await ringBell(22);
+
+// Poll rather than sleep. The capstone clears on a TICK, and how soon that tick
+// lands depends on what else the main thread is doing - once the 3D garden
+// started loading three.js and 37 models, a fixed 400ms wait became a coin
+// flip. Waiting for the outcome is both faster and not a flake.
+await page
+  .waitForFunction(
+    () => (document.querySelector('.hud__season')?.textContent ?? '').includes('Season 2'),
+    undefined,
+    { timeout: 8000 }
+  )
+  .catch(() => {});
 
 const seasonText = (await page.locator('.hud__season').textContent()) ?? '';
 check(
@@ -350,6 +391,23 @@ const mobileOverflow = await page.evaluate(
   () => document.documentElement.scrollWidth - document.documentElement.clientWidth
 );
 check(mobileOverflow <= 0, 'no horizontal overflow at 390px wide', `overflow=${mobileOverflow}px`);
+
+// --- The 3D garden --------------------------------------------------------
+//
+// Headless Chromium has no GPU here, so this exercises the FALLBACK on purpose:
+// `createGardenView` returns a NullGardenView and the panel mounts empty. The
+// roadmap requires the 2D build stay runnable, and this is what keeps that a
+// tested claim rather than an assertion in a document.
+check(
+  (await page.locator('[data-testid="garden-canvas"]').count()) === 1,
+  'the garden panel mounts'
+);
+check(
+  await page.evaluate(
+    () => document.querySelectorAll('[data-testid="garden-canvas"] canvas').length <= 1
+  ),
+  'one canvas, or none where WebGL is unavailable'
+);
 
 check(consoleErrors.length === 0, 'no console errors', consoleErrors.join(' | '));
 

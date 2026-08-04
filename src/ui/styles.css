@@ -576,3 +576,28 @@ body {
   opacity: 0.4;
   cursor: default;
 }
+
+/* The 3D diorama. A fixed height so the isometric framing is stable, and it
+   never grows tall enough to push the panels below the fold. */
+.panel--diorama {
+  padding: 0;
+  overflow: hidden;
+}
+
+.garden-canvas {
+  display: block;
+  width: 100%;
+  height: 340px;
+}
+
+.garden-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 640px) {
+  .garden-canvas {
+    height: 240px;
+  }
+}

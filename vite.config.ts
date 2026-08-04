@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react';
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 export default defineConfig({
+  build: {
+    // three.js is ~570KB and lives in its own dynamically-imported chunk, so a
+    // player without WebGL never downloads it. The default 500KB warning has
+    // nothing useful to say about that.
+    chunkSizeWarningLimit: 700,
+  },
   plugins: [react()],
   resolve: {
     alias: {

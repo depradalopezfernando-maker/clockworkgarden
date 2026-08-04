@@ -6,8 +6,13 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
-**Phase 5 complete. THE VERTICAL SLICE IS READY TO PLAY — the next step is a
-human gate, not a phase.** `npm run dev`, then ninety minutes unassisted.
+**Phase 6 IN PROGRESS — the 3D garden renders.** Session 1 of 4-6 built the
+pipeline end to end: three.js behind a `GardenView` interface, a fixed isometric
+camera, glTF import with palette recolour and outlines, and a live diorama that
+reacts to owned counts, plot stages, Season and Frenzy. What is done and what is
+not: `docs/10-phase-6-presentation.md`.
+
+Phases 0-5 are complete and the vertical slice plays.
 
 Everything through Season 1 works end to end: Bell, generators, Growth Frenzy,
 the Insight tree, milestones, the full Kitchen Garden (§2a), the First Bloom
@@ -40,6 +45,9 @@ src/sim/capstone.ts               First Bloom (D4a); S2-S4 are placeholders
 src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
 src/game/                         runtime: store + loop + versioned saves
 src/ui/                           React shell, HUD, formatting
+src/render/                       three.js diorama behind a GardenView interface
+src/content/diorama.ts            model registry + Kenney material -> palette role
+tools/stage-models.ts             copies ONLY the referenced models into public/
 tools/simulate.ts                 the balance report. Run it after any content change
 tools/fit.ts                      sweeps constants against the pacing targets
 tools/smoke.mjs                   drives the built app in Chromium end to end
@@ -61,9 +69,8 @@ is the core loop satisfying? Does Frenzy feel worth chasing? Does the Kitchen
 Garden read as meaningful or as busywork (§10 item 10)? Does the first prestige
 feel like a reward? See `docs/08-vertical-slice.md`.
 
-**Do not start Phase 6 or 7 before that verdict.** The whole point of stopping
-here is to find out the design does not work while only ~5 sessions are sunk
-into Seasons 2-4 rather than all of them.
+**Phase 6 was cleared to start on 2026-08-04.** Phase 7 (Seasons 2-4) is still
+gated on the same verdict.
 
 ---
 
@@ -140,6 +147,16 @@ expensive.
 10 Hz is 288,000 ticks; closed-form integration over §7's taper is instant and
 testable.
 
+**7. Nothing outside `src/render/` imports three.js.** The UI holds a
+`GardenView`; `src/render/index.ts` decides whether that is WebGL or the null
+implementation. That is what keeps the 2D build a real, runnable target - and
+three.js is dynamically imported, so a player without WebGL never downloads
+570KB they cannot use.
+
+**8. Models are not committed.** `npm run assets` fetches the CC0 packs (pinned
+by URL and SHA-256) and stages ONLY the models the registry references into the
+gitignored `public/models/` - 37 files, 0.42MB, out of 329 and 10.5MB.
+
 **6. Protect the invariants.** These encode the design's promises. Full list and
 rationale in `docs/03-technical-architecture.md` §8:
 
@@ -202,6 +219,7 @@ Phases 5, 6, 11, and 12 have human gates for exactly these reasons.
 
 ```
 npm run ci          typecheck + lint + format:check + test + build   (the gate)
+npm run assets      fetch the CC0 packs AND stage the models the game uses
 npm test            vitest run
 npm run dev         vite dev server
 npm run audit:spec  re-derive the economy's properties from the tier table

@@ -14,6 +14,7 @@ import { GENERATOR_TIERS, tierAt, type UnlockGate } from '@content/generators';
 import { formatDuration, formatNumber, formatRate, formatSeconds } from './format';
 import { SEASON_NAMES, themeVariables } from './theme';
 import { InsightPanel } from './InsightPanel';
+import { GardenCanvas } from './GardenCanvas';
 import { KitchenGardenPanel } from './KitchenGardenPanel';
 import { SeasonPanel } from './SeasonPanel';
 import { Tutorial } from './Tutorial';
@@ -89,6 +90,13 @@ export function App() {
         <SeasonPanel state={state} />
         <InsightPanel state={state} />
       </div>
+
+      {/* The diorama spans the full width above the Kitchen Garden: it is the
+          view OF the garden, so it reads as the thing the panels describe
+          rather than as one panel among them. */}
+      <section className="panel panel--wide panel--diorama">
+        <GardenCanvas state={state} />
+      </section>
 
       <KitchenGardenPanel state={state} />
 

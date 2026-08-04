@@ -22,7 +22,9 @@
     "simulate": "vite-node tools/simulate.ts",
     "fit": "vite-node tools/fit.ts",
     "smoke": "node tools/smoke.mjs",
-    "assets:fetch": "NODE_USE_ENV_PROXY=1 node tools/fetch-assets.mjs"
+    "assets:fetch": "NODE_USE_ENV_PROXY=1 node tools/fetch-assets.mjs",
+    "assets:stage": "vite-node tools/stage-models.ts",
+    "assets": "npm run assets:fetch && npm run assets:stage"
   },
   "repository": {
     "type": "git",
@@ -38,6 +40,7 @@
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@types/three": "^0.180.0",
     "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
@@ -54,6 +57,7 @@
   },
   "dependencies": {
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "three": "^0.180.0"
   }
 }

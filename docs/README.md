@@ -73,7 +73,7 @@ Bell, generators, Growth Frenzy, the Insight tree, milestones, the full Kitchen
 Garden, versioned saves and offline progress — verified end to end in real
 Chromium by `npm run smoke`.
 
-`npm run ci` is green with **323 tests plus 34 browser smoke checks**, and the
+`npm run ci` is green with **341 tests plus 36 browser smoke checks**, and the
 economy has been simulated end to end: **all three player archetypes finish
 inside §8's 6–10 hour target** (9.68h / 7.96h / 6.19h). Method and caveats in
 [06 — Phase 1 Balance Report](06-phase-1-balance-report.md); the latest numbers
