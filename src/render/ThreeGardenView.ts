@@ -5,11 +5,14 @@
  * tiers stand in rows behind; Kitchen Garden plots sit in a grid at the front,
  * one per slot, showing the stage that plot is actually in.
  *
- * PERFORMANCE. The scene is reconciled, never rebuilt: `update` diffs the
- * snapshot against what is already standing and adds or removes only the
- * difference. Props are capped per tier (`MAX_PROPS_PER_TIER`) because a player
- * with 400 Watering Cans does not want 400 draw calls, and cannot see 400 pots
- * at this camera angle anyway — the count is on the HUD, the diorama is a mood.
+ * EVERYTHING IS INSTANCED. Each model gets one `PropPool`, and placing props
+ * writes matrices rather than touching the scene graph. Drawn as individual
+ * meshes the full build-out cost ~670 draw calls, 162 of them the ground alone;
+ * pooled it is ~100 however much the player owns.
+ *
+ * Props are still capped per tier — no longer for performance, but because a
+ * player with 400 Watering Cans cannot see 400 pots at this camera angle. The
+ * count is on the HUD; the diorama is a mood.
  */
 
 import {
@@ -32,10 +35,11 @@ import {
 import { EDGE_TREATMENT, SEASON_PALETTES } from '@content/palette';
 import { seasonKeyFor } from '@ui/theme';
 import { materialPalette } from './materialPalette';
-import { instantiate, loadTemplate, type RolePalette } from './models';
-import type { GardenSnapshot, GardenView } from './GardenView';
+import { footprintScale, loadTemplate, type RolePalette } from './models';
+import { describeTemplate, PropPool, type Placement } from './instancing';
+import type { GardenSnapshot, GardenStats, GardenView } from './GardenView';
 
-/** Above this the diorama stops adding props; the HUD carries the real count. */
+/** Copies of one tier the diorama shows. Beyond this the HUD carries it. */
 const MAX_PROPS_PER_TIER = 5;
 
 /** Ground tiles are exactly 1x1 in the pack, so they tile at 1.0 with no seam. */
@@ -47,6 +51,10 @@ const BOARD = 4;
 /** How wide a prop is drawn, so a pot and a statue read as comparable objects. */
 const PROP_FOOTPRINT = 0.62;
 const PLOT_FOOTPRINT = 0.8;
+const TREE_FOOTPRINT = 0.95;
+
+const TREE_COUNT = 7;
+const MAX_PLOTS = 20;
 
 export class ThreeGardenView implements GardenView {
   readonly active = true;
@@ -58,17 +66,16 @@ export class ThreeGardenView implements GardenView {
   private frame = 0;
   private resizeObserver: ResizeObserver | null = null;
 
-  private readonly props = new Group();
-  private readonly plots = new Group();
-  private readonly scenery = new Group();
-
+  private readonly world = new Group();
   private key: DirectionalLight | null = null;
   private palette: RolePalette | null = null;
 
-  /** What is currently standing, so `update` can diff rather than rebuild. */
-  private standing = new Map<number, number>();
-  private plotStages: string[] = [];
+  /** One pool per model, rebuilt when the Season repaints everything. */
+  private pools = new Map<string, PropPool>();
   private season = 0;
+
+  /** Last placement per pool, so an unchanged snapshot writes no matrices. */
+  private placed = new Map<string, string>();
 
   async mount(container: HTMLElement): Promise<void> {
     this.container = container;
@@ -92,7 +99,7 @@ export class ThreeGardenView implements GardenView {
     camera.lookAt(0, 0, 0);
     this.camera = camera;
 
-    this.scene.add(this.props, this.plots, this.scenery);
+    this.scene.add(this.world);
 
     this.key = new DirectionalLight(0xffffff, 2.1);
     this.key.position.set(6, 12, 4);
@@ -116,31 +123,43 @@ export class ThreeGardenView implements GardenView {
 
     if (snapshot.season !== this.season) {
       this.season = snapshot.season;
-      this.palette = materialPalette(SEASON_PALETTES[seasonKeyFor(snapshot.season)]);
-      this.applySeason(snapshot.season);
-      // Every standing prop is the wrong colour now. Drop and let the diff
-      // below rebuild them in the new Season's palette.
-      this.clear(this.props);
-      this.clear(this.plots);
-      this.standing.clear();
-      this.plotStages = [];
+      const palette = SEASON_PALETTES[seasonKeyFor(snapshot.season)];
+      this.palette = materialPalette(palette);
+      this.scene.background = new Color(palette.sky);
+      this.scene.fog = new Fog(new Color(palette.sky), 34, 62);
+      // Every pool holds materials in the old Season's colours.
+      this.disposePools();
+      void this.placeScenery(snapshot.season);
     }
 
     if (this.key) this.key.intensity = snapshot.frenzied ? 3.1 : 2.1;
 
-    void this.reconcileTiers(snapshot.owned);
-    void this.reconcilePlots(snapshot.plotStages);
+    void this.placeTiers(snapshot.owned);
+    void this.placePlots(snapshot.plotStages);
   }
 
   dispose(): void {
     cancelAnimationFrame(this.frame);
     this.resizeObserver?.disconnect();
-    this.clear(this.props);
-    this.clear(this.plots);
-    this.clear(this.scenery);
+    this.disposePools();
     this.renderer?.dispose();
     this.renderer?.domElement.remove();
     this.renderer = null;
+  }
+
+  /**
+   * What the last frame actually cost, straight from three.js.
+   *
+   * Measured, not derived from the pool count: the point of a perf budget is to
+   * catch the case where the code creates fewer objects than it draws.
+   */
+  stats(): GardenStats | null {
+    if (!this.renderer) return null;
+    return {
+      calls: this.renderer.info.render.calls,
+      triangles: this.renderer.info.render.triangles,
+      pools: this.pools.size,
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -163,127 +182,137 @@ export class ThreeGardenView implements GardenView {
     this.camera.updateProjectionMatrix();
   }
 
-  private applySeason(season: number): void {
-    const palette = SEASON_PALETTES[seasonKeyFor(season)];
-    this.scene.background = new Color(palette.sky);
-    this.scene.fog = new Fog(new Color(palette.sky), 34, 62);
-    this.clear(this.scenery);
-    void this.buildScenery(season);
-  }
-
-  private async buildScenery(season: number): Promise<void> {
-    const palette = this.palette;
-    if (!palette) return;
-
-    const ground = await this.spawn(GROUND_MODEL, palette);
-    if (ground) {
-      for (let x = -BOARD; x <= BOARD; x++) {
-        for (let z = -BOARD; z <= BOARD; z++) {
-          const tile = x === -BOARD && z === -BOARD ? ground : ground.clone(true);
-          tile.position.set(x * TILE, 0, z * TILE);
-          this.scenery.add(tile);
-        }
-      }
-    }
-
-    // Trees line the BACK rim only. Ringing the board puts them between the
-    // camera and the plots, and the plots are the part the player is reading.
-    const trees = SEASON_SCENERY[season] ?? [];
-    for (let i = 0; i < 7; i++) {
-      const entry = trees[i % trees.length];
-      if (!entry) continue;
-      const tree = await this.spawn(entry, palette, { footprint: 0.95 });
-      if (!tree) continue;
-      // Deterministic placement - no RNG, so the same state is the same picture.
-      const t = Math.PI + (i / 6) * Math.PI;
-      tree.position.set(Math.cos(t) * (BOARD - 0.9), 0, Math.sin(t) * (BOARD - 0.9) - 0.6);
-      tree.rotation.y = t;
-      this.scenery.add(tree);
-    }
-  }
-
-  private async reconcileTiers(owned: readonly number[]): Promise<void> {
-    const palette = this.palette;
-    if (!palette) return;
-
-    for (let tier = 1; tier <= owned.length; tier++) {
-      const want = Math.min(owned[tier - 1] ?? 0, MAX_PROPS_PER_TIER);
-      const have = this.standing.get(tier) ?? 0;
-      if (want === have) continue;
-
-      if (want < have) {
-        for (const child of [...this.props.children]) {
-          if (child.userData['tier'] === tier && (child.userData['index'] as number) >= want) {
-            this.props.remove(child);
-          }
-        }
-        this.standing.set(tier, want);
-        continue;
-      }
-
-      const entry = TIER_MODELS[tier];
-      if (!entry) continue;
-      for (let index = have; index < want; index++) {
-        const prop = await this.spawn(entry, palette, { footprint: PROP_FOOTPRINT });
-        if (!prop) continue;
-        // Four rows of five tiers, running back from the plots. Each tier owns
-        // a cell; its copies cluster inside that cell rather than spreading.
-        const row = Math.floor((tier - 1) / 5);
-        const column = (tier - 1) % 5;
-        prop.position.set(
-          (column - 2) * 1.5 + ((index % 3) - 1) * 0.32,
-          0,
-          -1.1 - row * 1.05 - Math.floor(index / 3) * 0.32
-        );
-        prop.rotation.y = ((tier * 37 + index * 53) % 360) * (Math.PI / 180);
-        prop.userData['tier'] = tier;
-        prop.userData['index'] = index;
-        this.props.add(prop);
-      }
-      this.standing.set(tier, want);
-    }
-  }
-
-  private async reconcilePlots(stages: readonly string[]): Promise<void> {
-    const palette = this.palette;
-    if (!palette) return;
-
-    const unchanged =
-      stages.length === this.plotStages.length && stages.every((s, i) => s === this.plotStages[i]);
-    if (unchanged) return;
-
-    this.clear(this.plots);
-    this.plotStages = [...stages];
-
-    for (let i = 0; i < stages.length; i++) {
-      const entry = PLOT_STAGE_MODELS[stages[i] ?? 'bare'];
-      if (!entry) continue;
-      const plot = await this.spawn(entry, palette, { footprint: PLOT_FOOTPRINT });
-      if (!plot) continue;
-      const column = i % 5;
-      const row = Math.floor(i / 5);
-      plot.position.set((column - 2) * TILE, 0, 1.3 + row * TILE);
-      this.plots.add(plot);
-    }
-  }
-
-  private async spawn(
+  /**
+   * Get or build the pool for a model.
+   *
+   * `InstancedMesh` capacity is fixed at construction, so the key includes it —
+   * asking for more copies than the pool was built for rebuilds it rather than
+   * silently dropping the extras.
+   */
+  private async pool(
     entry: DioramaModel,
-    palette: RolePalette,
-    options: { footprint?: number } = {}
-  ): Promise<Group | null> {
+    capacity: number,
+    footprint: number
+  ): Promise<PropPool | null> {
+    const palette = this.palette;
+    if (!palette) return null;
+
+    const key = `${entry.model}:${capacity}`;
+    const existing = this.pools.get(key);
+    if (existing) return existing;
+
     try {
       const template = await loadTemplate(entry.model);
-      return instantiate(template, palette, { scale: entry.scale ?? 1, ...options });
+      const scale = footprintScale(template, footprint) * (entry.scale ?? 1);
+      const pool = new PropPool(describeTemplate(template), palette, capacity, this.world, scale);
+      this.pools.set(key, pool);
+      return pool;
     } catch {
-      // A missing model must never take the game down with it. The staging
-      // script and a test both guard against this; the catch is for the case
-      // where someone runs a dev build without staging.
+      // A missing model must never take the game down. The staging script and a
+      // test both guard against this; the catch is for a dev build run without
+      // staging.
       return null;
     }
   }
 
-  private clear(group: Group): void {
-    for (const child of [...group.children]) group.remove(child);
+  private async placeScenery(season: number): Promise<void> {
+    const tiles: Placement[] = [];
+    for (let x = -BOARD; x <= BOARD; x++) {
+      for (let z = -BOARD; z <= BOARD; z++) {
+        tiles.push({ x: x * TILE, z: z * TILE });
+      }
+    }
+    const ground = await this.pool(GROUND_MODEL, tiles.length, TILE);
+    if (ground) this.commit('ground', ground, tiles);
+
+    // Trees line the BACK rim only. Ringing the board puts them between the
+    // camera and the plots, and the plots are what the player is reading.
+    const trees = SEASON_SCENERY[season] ?? [];
+    if (trees.length === 0) return;
+
+    const byModel = new Map<string, Placement[]>();
+    for (let i = 0; i < TREE_COUNT; i++) {
+      const entry = trees[i % trees.length]!;
+      // Deterministic placement - no RNG, so the same state is the same picture.
+      const t = Math.PI + (i / (TREE_COUNT - 1)) * Math.PI;
+      const list = byModel.get(entry.model) ?? [];
+      list.push({
+        x: Math.cos(t) * (BOARD - 0.9),
+        z: Math.sin(t) * (BOARD - 0.9) - 0.6,
+        rotationY: t,
+      });
+      byModel.set(entry.model, list);
+    }
+
+    for (const entry of trees) {
+      const spots = byModel.get(entry.model);
+      if (!spots) continue;
+      const pool = await this.pool(entry, TREE_COUNT, TREE_FOOTPRINT);
+      if (pool) this.commit(`tree-${entry.model}`, pool, spots);
+    }
+  }
+
+  private async placeTiers(owned: readonly number[]): Promise<void> {
+    if (!this.palette) return;
+
+    for (let tier = 1; tier <= owned.length; tier++) {
+      const entry = TIER_MODELS[tier];
+      if (!entry) continue;
+
+      const want = Math.min(owned[tier - 1] ?? 0, MAX_PROPS_PER_TIER);
+      const spots: Placement[] = [];
+      for (let index = 0; index < want; index++) {
+        // Four rows of five tiers, running back from the plots. Each tier owns a
+        // cell; its copies cluster inside that cell rather than spreading.
+        const row = Math.floor((tier - 1) / 5);
+        const column = (tier - 1) % 5;
+        spots.push({
+          x: (column - 2) * 1.5 + ((index % 3) - 1) * 0.32,
+          z: -1.1 - row * 1.05 - Math.floor(index / 3) * 0.32,
+          rotationY: ((tier * 37 + index * 53) % 360) * (Math.PI / 180),
+        });
+      }
+
+      // Build the pool even at zero, so the Season's models are all resident
+      // before the player buys anything and a purchase never stutters.
+      const pool = await this.pool(entry, MAX_PROPS_PER_TIER, PROP_FOOTPRINT);
+      if (pool) this.commit(`tier-${tier}`, pool, spots);
+    }
+  }
+
+  private async placePlots(stages: readonly string[]): Promise<void> {
+    if (!this.palette) return;
+
+    // One pool per STAGE, holding every plot currently in that stage. A plot
+    // changing stage moves between two pools rather than rebuilding anything.
+    const byStage = new Map<string, Placement[]>();
+    for (const stage of Object.keys(PLOT_STAGE_MODELS)) byStage.set(stage, []);
+
+    for (let i = 0; i < stages.length; i++) {
+      const list = byStage.get(stages[i] ?? 'bare');
+      if (!list) continue;
+      list.push({ x: ((i % 5) - 2) * TILE, z: 1.3 + Math.floor(i / 5) * TILE });
+    }
+
+    for (const [stage, spots] of byStage) {
+      const entry = PLOT_STAGE_MODELS[stage];
+      if (!entry) continue;
+      const pool = await this.pool(entry, MAX_PLOTS, PLOT_FOOTPRINT);
+      if (pool) this.commit(`plot-${stage}`, pool, spots);
+    }
+  }
+
+  /** Write matrices only when the placement actually changed. */
+  private commit(key: string, pool: PropPool, spots: readonly Placement[]): void {
+    const signature = spots.map((s) => `${s.x},${s.z},${s.rotationY ?? 0}`).join('|');
+    if (this.placed.get(key) === signature) return;
+    this.placed.set(key, signature);
+    pool.place(spots);
+  }
+
+  private disposePools(): void {
+    for (const pool of this.pools.values()) pool.dispose();
+    this.pools.clear();
+    this.placed.clear();
   }
 }

@@ -27,6 +27,16 @@ const url = process.argv[2] ?? 'http://localhost:4173/';
 const SAVE_KEY = 'clockwork-garden:save';
 const OFFLINE_HOURS = 4;
 
+/**
+ * Draw calls the diorama may cost at full build-out.
+ *
+ * Everything repeated is instanced, so the number is set by how many DISTINCT
+ * models are on screen, not by how much the player owns. Before instancing the
+ * same scene cost ~670 - the ground alone was 162 - so this ceiling is what
+ * stops that coming back.
+ */
+const DRAW_CALL_BUDGET = 160;
+
 let failures = 0;
 const check = (ok, label, detail = '') => {
   if (!ok) failures++;
@@ -408,6 +418,22 @@ check(
   ),
   'one canvas, or none where WebGL is unavailable'
 );
+
+// The draw-call budget, MEASURED off three.js rather than counted from what the
+// code meant to create. Null here means the fallback view, which draws nothing -
+// that is the expected result on a runner with no GPU, and it is checked above.
+{
+  const stats = await page.evaluate(() => window.__garden?.stats() ?? null);
+  if (stats) {
+    check(
+      stats.calls <= DRAW_CALL_BUDGET,
+      `draw calls within budget`,
+      `${stats.calls} / ${DRAW_CALL_BUDGET}`
+    );
+  } else {
+    console.log('  [skip] draw-call budget — no WebGL on this runner');
+  }
+}
 
 check(consoleErrors.length === 0, 'no console errors', consoleErrors.join(' | '));
 
