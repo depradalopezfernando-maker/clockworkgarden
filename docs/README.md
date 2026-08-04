@@ -22,6 +22,7 @@ and game feel need human gates.
 | [06 — Phase 1 Balance Report](06-phase-1-balance-report.md) | Simulated campaign length, the fitted constants, and what the sim does not prove                         |
 | [07 — Phase 4 Report](07-phase-4-kitchen-garden-report.md)  | The Kitchen Garden as built, why it contributed far less than intended, and the fix (§5)                 |
 | [08 — The Vertical Slice](08-vertical-slice.md)             | **How to play it and what to look for.** The human gate                                                  |
+| [09 — Playtest Revisions](09-playtest-revisions.md)         | **What the first real play session changed**, and the one pacing decision it needs                       |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
 
@@ -72,7 +73,7 @@ Bell, generators, Growth Frenzy, the Insight tree, milestones, the full Kitchen
 Garden, versioned saves and offline progress — verified end to end in real
 Chromium by `npm run smoke`.
 
-`npm run ci` is green with **314 tests plus 34 browser smoke checks**, and the
+`npm run ci` is green with **323 tests plus 34 browser smoke checks**, and the
 economy has been simulated end to end: **all three player archetypes finish
 inside §8's 6–10 hour target** (9.68h / 7.96h / 6.19h). Method and caveats in
 [06 — Phase 1 Balance Report](06-phase-1-balance-report.md); the latest numbers

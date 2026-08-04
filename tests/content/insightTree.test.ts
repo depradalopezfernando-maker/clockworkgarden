@@ -8,42 +8,63 @@ import {
 } from '@content/insightTree';
 import { MILESTONES, TOTAL_INSIGHT_AVAILABLE } from '@content/milestones';
 import { PENDING_EFFECT_KINDS } from '@sim/insight';
-import { GENERATOR_TIERS, TIER_COUNT } from '@content/generators';
+import { GENERATOR_TIERS, GENERATOR_UNLOCK_OWNED, TIER_COUNT } from '@content/generators';
 import { INSIGHT_TREE_NODE_TARGET } from '@content/balance';
 
-describe('docs/04 item 5 — every "Insight skill unlock" gate has a real node', () => {
-  const insightGatedTiers = GENERATOR_TIERS.filter((t) => t.unlock.kind === 'insight-node').map(
-    (t) => t.tier
-  );
-
-  const unlockNodeTiers = INSIGHT_TREE.filter((n) => n.effect.kind === 'unlock-generator').map(
-    (n) => (n.effect.kind === 'unlock-generator' ? n.effect.tier : -1)
-  );
-
-  it('the spec gates exactly eight tiers on Insight', () => {
-    expect(insightGatedTiers).toEqual([3, 4, 8, 9, 13, 14, 18, 19]);
-  });
-
-  it('each of those tiers has exactly one node that unlocks it', () => {
-    for (const tier of insightGatedTiers) {
-      const matches = unlockNodeTiers.filter((t) => t === tier);
-      expect(matches, `tier ${tier}`).toHaveLength(1);
+describe('no Insight node gates progression — the soft-lock fix', () => {
+  // A playtester spent their Insight on click power and the Kitchen Garden and
+  // found the next generator tier unreachable, with no way to earn the Insight
+  // back. Access must never be purchasable; only strength.
+  it('no tier gates on Insight in any form', () => {
+    for (const t of GENERATOR_TIERS) {
+      expect(t.unlock.kind, `tier ${t.tier}`).not.toBe('insight-node');
     }
   });
 
-  it('no node unlocks a tier that is NOT Insight-gated', () => {
-    // The other direction. A node opening a capstone- or Season-gated tier would
-    // let a player skip content entirely.
-    for (const tier of unlockNodeTiers) {
-      expect(insightGatedTiers, `tier ${tier}`).toContain(tier);
+  it('every tier is reachable with Mana alone, from a tree bought at random', () => {
+    // The property that makes soft-locking impossible: unlock gates read only
+    // owned counts, lifetime Mana, Seasons and capstones - never `purchasedNodes`.
+    const serialised = JSON.stringify(GENERATOR_TIERS.map((t) => t.unlock));
+    expect(serialised).not.toContain('insight');
+    expect(serialised).not.toContain('node');
+  });
+
+  it('the eight formerly Insight-gated tiers now gate on the previous tier', () => {
+    for (const tier of [3, 4, 8, 9, 13, 14, 18, 19]) {
+      const gate = GENERATOR_TIERS[tier - 1]!.unlock;
+      expect(gate, `tier ${tier}`).toEqual({
+        kind: 'own-count',
+        tier: tier - 1,
+        count: GENERATOR_UNLOCK_OWNED,
+      });
     }
   });
 
-  it('every unlocked tier exists', () => {
-    for (const tier of unlockNodeTiers) {
-      expect(tier).toBeGreaterThanOrEqual(1);
-      expect(tier).toBeLessThanOrEqual(TIER_COUNT);
+  it('per-tier production nodes point at tiers that exist', () => {
+    for (const node of INSIGHT_TREE) {
+      if (node.effect.kind !== 'tier-production') continue;
+      expect(node.effect.tier, node.id).toBeGreaterThanOrEqual(1);
+      expect(node.effect.tier, node.id).toBeLessThanOrEqual(TIER_COUNT);
+      expect(node.effect.amount, node.id).toBeGreaterThan(0);
     }
+  });
+
+  it('gives most tiers a production ladder rather than one flat global bonus', () => {
+    // §3's "several levels" - the tree should offer real choices about WHICH
+    // plots to invest in, not just "+8% to everything" repeated.
+    const tiers = new Set(
+      INSIGHT_TREE.filter((n) => n.effect.kind === 'tier-production').map((n) =>
+        n.effect.kind === 'tier-production' ? n.effect.tier : -1
+      )
+    );
+    expect(tiers.size).toBeGreaterThanOrEqual(8);
+    // At least some tiers have more than one level.
+    const counts = new Map<number, number>();
+    for (const n of INSIGHT_TREE) {
+      if (n.effect.kind !== 'tier-production') continue;
+      counts.set(n.effect.tier, (counts.get(n.effect.tier) ?? 0) + 1);
+    }
+    expect([...counts.values()].filter((c) => c > 1).length).toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -133,14 +154,16 @@ describe('the tree is a set of choices, not a shopping list (§3)', () => {
     expect(coverage).toBeLessThan(0.95);
   });
 
-  it('affords the whole generator-unlock chain with room to spare', () => {
-    // These gate progression outright. If the unlock chain alone consumed the
-    // entire Insight budget, every other branch would be decorative.
-    const unlockCost = INSIGHT_TREE.filter((n) => n.effect.kind === 'unlock-generator').reduce(
-      (sum, n) => sum + n.cost,
-      0
-    );
-    expect(unlockCost).toBeLessThan(TOTAL_INSIGHT_AVAILABLE * 0.6);
+  it('no single branch can consume the whole budget', () => {
+    // Nothing here gates progression any more, so there is no chain a player
+    // MUST buy. The remaining risk is the opposite: one branch so expensive
+    // that taking it leaves every other branch decorative.
+    const byKind = new Map<string, number>();
+    for (const n of INSIGHT_TREE)
+      byKind.set(n.effect.kind, (byKind.get(n.effect.kind) ?? 0) + n.cost);
+    for (const [kind, cost] of byKind) {
+      expect(cost, kind).toBeLessThan(TOTAL_INSIGHT_AVAILABLE * 0.8);
+    }
   });
 });
 
@@ -170,10 +193,10 @@ describe('milestones', () => {
     expect(kinds.has('capstone-cleared')).toBe(true);
   });
 
-  it('award enough early Insight to open the Season 1 unlock chain', () => {
-    // Tier 3 gates on s1-gen-3, which needs s1-click-1 first. If the earliest
-    // milestones cannot pay for that chain, the game stalls at Tier 2 - which is
-    // exactly what happened before the harness claimed milestones at all.
+  it('award enough early Insight for the opening of the tree to be affordable', () => {
+    // Nothing gates progression now, so this is about FEEL rather than being
+    // stuck: a player who reaches the first few milestones should be able to
+    // buy something they can see, not save for twenty minutes.
     const earlyReward = MILESTONES.filter(
       (m) =>
         (m.condition.kind === 'own-count' && m.condition.tier <= 2) ||
@@ -182,8 +205,8 @@ describe('milestones', () => {
 
     const chainCost =
       (nodeById('s1-click-1')?.cost ?? 0) +
-      (nodeById('s1-gen-3')?.cost ?? 0) +
-      (nodeById('s1-gen-4')?.cost ?? 0);
+      (nodeById('s1-yield-1')?.cost ?? 0) +
+      (nodeById('s1-yield-3')?.cost ?? 0);
 
     expect(earlyReward).toBeGreaterThanOrEqual(chainCost);
   });
@@ -195,7 +218,7 @@ describe('no node silently does nothing', () => {
     // exist. That is fine; going UNNOTICED is not. Adding an effect kind
     // without wiring it fails here.
     const applied: NodeEffect['kind'][] = [
-      'unlock-generator',
+      'tier-production',
       'click-bonus',
       'production-bonus',
       'offline-floor',

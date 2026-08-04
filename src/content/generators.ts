@@ -15,19 +15,33 @@
 /**
  * How a tier becomes purchasable.
  *
- * `insight-node` is a placeholder until Phase 3 authors the real tree
- * (docs/04-spec-open-questions.md item 5) - eight tiers currently gate on
- * "Insight skill unlock" with no node behind it. The simulation approximates it
- * with `proxyOwnedOfPreviousTier` until then.
+ * NO TIER GATES ON INSIGHT. §2 originally put eight tiers behind "Insight skill
+ * unlock", and Phase 3 built real nodes for them - but a skill tree that gates
+ * progression outright can SOFT-LOCK the player: spend your Insight on click
+ * power and the Kitchen Garden, and the next tier becomes unaffordable with no
+ * way back, because Insight only arrives from milestones you can no longer
+ * reach. A playtester hit exactly that.
+ *
+ * Progression now gates on owning enough of the PREVIOUS tier, which is always
+ * recoverable: Mana keeps accruing, so the gate always opens eventually. Insight
+ * buys strength, never access. See docs/09.
  */
 export type UnlockGate =
   | { readonly kind: 'start' }
   | { readonly kind: 'own-count'; readonly tier: number; readonly count: number }
   | { readonly kind: 'lifetime-mana'; readonly amount: number }
   | { readonly kind: 'any'; readonly gates: readonly UnlockGate[] }
-  | { readonly kind: 'insight-node'; readonly proxyOwnedOfPreviousTier: number }
   | { readonly kind: 'capstone-clear'; readonly season: number }
   | { readonly kind: 'season-start'; readonly season: number };
+
+/**
+ * How many of the previous tier open the next one.
+ *
+ * Ten matches the count the balance harness used as a proxy for the old Insight
+ * gates all through Phases 1-5, so the pacing this produces is the pacing every
+ * balance report was already measuring.
+ */
+export const GENERATOR_UNLOCK_OWNED = 10;
 
 export interface GeneratorTier {
   /** 1-based tier index, matching the spec's table. */
@@ -76,7 +90,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 1_200,
     costMult: 1.11,
     baseYield: 8,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 2, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 4,
@@ -85,7 +99,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 9_000,
     costMult: 1.11,
     baseYield: 55,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 3, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 5,
@@ -123,7 +137,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 22_000_000,
     costMult: 1.11,
     baseYield: 125_000,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 7, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 9,
@@ -132,7 +146,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 150_000_000,
     costMult: 1.11,
     baseYield: 850_000,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 8, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 10,
@@ -170,7 +184,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 3.3e11,
     costMult: 1.11,
     baseYield: 1.9e9,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 12, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 14,
@@ -179,7 +193,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 2.3e12,
     costMult: 1.11,
     baseYield: 1.3e10,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 13, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 15,
@@ -217,7 +231,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 5.2e15,
     costMult: 1.11,
     baseYield: 2.9e13,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 17, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 19,
@@ -226,7 +240,7 @@ export const GENERATOR_TIERS: readonly GeneratorTier[] = [
     baseCost: 3.6e16,
     costMult: 1.11,
     baseYield: 2e14,
-    unlock: { kind: 'insight-node', proxyOwnedOfPreviousTier: 10 },
+    unlock: { kind: 'own-count', tier: 18, count: GENERATOR_UNLOCK_OWNED },
   },
   {
     tier: 20,

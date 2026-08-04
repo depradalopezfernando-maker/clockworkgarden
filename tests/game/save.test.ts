@@ -7,6 +7,7 @@ import { TIER_COUNT } from '@content/generators';
 import v1Fixture from '../fixtures/saves/v1.json';
 import v2Fixture from '../fixtures/saves/v2.json';
 import v3Fixture from '../fixtures/saves/v3.json';
+import v4Fixture from '../fixtures/saves/v4.json';
 
 /**
  * ADR-0004. Every version ships with a FROZEN fixture of that format and a test
@@ -45,6 +46,34 @@ describe('round-tripping the current version', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.save.state.lifetimeMana / 1.234e28).toBeCloseTo(1, 12);
+  });
+});
+
+describe('the frozen v4 fixture still loads after the v5 migration', () => {
+  it('remaps the renamed generator nodes instead of dropping them', () => {
+    // v5 turned the eight `unlock-generator` nodes into per-tier production
+    // nodes and renamed them. Dropping the old ids as "unknown" would silently
+    // confiscate every Insight point a player had spent on them.
+    const result = deserialize(JSON.stringify(v4Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.migratedFrom).toBe(4);
+    expect(result.save.state.purchasedNodes).toEqual([
+      's1-click-1',
+      's1-yield-3',
+      's1-yield-4',
+      's2-yield-8',
+    ]);
+  });
+
+  it('keeps the rest of the save untouched', () => {
+    const result = deserialize(JSON.stringify(v4Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.state.mana).toBe(41200);
+    expect(result.save.state.capstone.attempts).toBe(2);
+    expect(result.save.state.capstone.lastFailed).toBe(true);
+    expect(result.save.state.capstone.armed).toBe(false);
   });
 });
 
@@ -93,7 +122,9 @@ describe('the frozen v2 fixture still loads after the v3 migration', () => {
     expect(result.migratedFrom).toBe(2);
     expect(result.save.state.insight).toBe(3);
     expect(result.save.state.lifetimeInsight).toBe(8);
-    expect(result.save.state.purchasedNodes).toEqual(['s1-click-1', 's1-gen-3']);
+    // s1-gen-3 was renamed s1-yield-3 in v5; the migration remaps it rather
+    // than dropping it, so the player keeps the Insight they spent.
+    expect(result.save.state.purchasedNodes).toEqual(['s1-click-1', 's1-yield-3']);
     expect(result.save.state.claimedMilestones).toHaveLength(4);
   });
 

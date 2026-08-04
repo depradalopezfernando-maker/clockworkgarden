@@ -8,10 +8,11 @@ import {
   purchaseNode,
 } from '@sim/insight';
 import { claimMilestones, isConditionMet, milestoneProgress, newlyEarned } from '@sim/milestones';
-import { isTierUnlocked, clickYield, gardenPlotManaPerSecond } from '@sim/economy';
+import { isTierUnlocked, clickYield, gardenPlotManaPerSecond, recordUnlocks } from '@sim/economy';
 import { prestige } from '@sim/prestige';
 import { initialState, type GameState } from '@sim/state';
 import { MILESTONES } from '@content/milestones';
+import { INSIGHT_TREE } from '@content/insightTree';
 import { TIER_COUNT } from '@content/generators';
 
 const withInsight = (insight: number, purchased: string[] = [], season = 1): GameState => ({
@@ -30,7 +31,7 @@ describe('purchasing', () => {
 
   it('refuses a node whose prerequisites are unmet', () => {
     const rich = withInsight(999);
-    expect(canPurchaseNode(rich, 's1-gen-4')).toBe(false);
+    expect(canPurchaseNode(rich, 's1-yield-4')).toBe(false);
   });
 
   it('refuses a node from a future Season', () => {
@@ -78,8 +79,11 @@ describe('effects', () => {
     expect(effects.productionBonus).toBeCloseTo(0.14, 6);
   });
 
-  it('collects unlocked tiers', () => {
-    expect(aggregateEffects(['s1-gen-3', 's1-gen-4']).unlockedTiers).toEqual(new Set([3, 4]));
+  it('collects per-tier production bonuses, summing levels of the same ladder', () => {
+    const effects = aggregateEffects(['s1-yield-3', 's1-yield-3b', 's1-yield-4']);
+    expect(effects.tierProduction.get(3)).toBeCloseTo(0.55, 6);
+    expect(effects.tierProduction.get(4)).toBeCloseTo(0.25, 6);
+    expect(effects.tierProduction.get(5)).toBeUndefined();
   });
 
   it('ignores node ids this build no longer knows', () => {
@@ -113,12 +117,49 @@ describe('effects', () => {
   });
 });
 
+/** Ten of every early tier — enough to satisfy the own-count unlock gates. */
+function withTenOfEachEarlyTier(): number[] {
+  const owned = new Array<number>(TIER_COUNT).fill(0);
+  for (let i = 0; i < 5; i++) owned[i] = 10;
+  return owned;
+}
+
 describe('the tree drives real systems', () => {
-  it('an unlock node actually opens its generator tier', () => {
-    const locked = withInsight(0);
-    expect(isTierUnlocked(locked, 3)).toBe(false);
-    const unlocked = withInsight(0, ['s1-gen-3']);
-    expect(isTierUnlocked(unlocked, 3)).toBe(true);
+  it('NO node opens a generator tier — Insight buys strength, never access', () => {
+    // The soft-lock fix. Buying every node in the tree must not unlock a single
+    // tier that owned counts would not have unlocked anyway.
+    const bare = withInsight(0);
+    const everything = withInsight(
+      0,
+      INSIGHT_TREE.map((n) => n.id)
+    );
+    for (let tier = 1; tier <= TIER_COUNT; tier++) {
+      expect(isTierUnlocked(everything, tier), `tier ${tier}`).toBe(isTierUnlocked(bare, tier));
+    }
+  });
+
+  it('a per-tier node raises only its own tier', () => {
+    // Only the early tiers are owned. Filling all twenty puts total output past
+    // 1e16, where a 0.5/s difference is smaller than one float64 ulp and the
+    // assertion measures rounding rather than the effect (ADR-0001).
+    const owned = new Array<number>(TIER_COUNT).fill(0);
+    owned[0] = 10; // ten Watering Cans, 0.1/s each
+    owned[1] = 10; // ten Sprout Beds, 1/s each
+
+    const base = { ...withInsight(0), owned };
+    const boostTier1 = { ...withInsight(0, ['s1-yield-1']), owned };
+    const boostTier2 = { ...withInsight(0, ['s1-yield-2']), owned };
+
+    expect(gardenPlotManaPerSecond(boostTier1) - gardenPlotManaPerSecond(base)).toBeCloseTo(
+      10 * 0.1 * 0.5,
+      6
+    );
+    // The same node does nothing for a different tier - that is the whole point
+    // of per-tier bonuses over "+8% to everything".
+    expect(gardenPlotManaPerSecond(boostTier2) - gardenPlotManaPerSecond(base)).toBeCloseTo(
+      10 * 1 * 0.4,
+      6
+    );
   });
 
   it('click nodes raise click yield', () => {
@@ -234,7 +275,12 @@ describe('prestige and the tree (§4)', () => {
   });
 
   it('generator tiers stay unlocked across a reset', () => {
-    const after = prestige(advanced);
+    // Prestige zeroes `owned`, and unlock gates read owned counts - so without
+    // the `tiersUnlocked` high-water mark a reset would confiscate access to
+    // every tier the player had opened.
+    const before = recordUnlocks({ ...advanced, owned: withTenOfEachEarlyTier() });
+    expect(isTierUnlocked(before, 3)).toBe(true);
+    const after = prestige(before);
     expect(after.owned.every((n) => n === 0)).toBe(true);
     expect(isTierUnlocked(after, 3)).toBe(true);
   });

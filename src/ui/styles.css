@@ -521,3 +521,10 @@ body {
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+/* The rate readout during a Growth Frenzy. It doubles, and it should look like
+   it doubled - the number moving with no explanation reads as a glitch. */
+.hud__rate--frenzy {
+  color: var(--frenzy, #ffd479);
+  font-weight: 700;
+}

@@ -3,19 +3,31 @@
  *
  * DATA ONLY. Purchase logic and effect aggregation live in `src/sim/insight.ts`.
  *
- * This file resolves `docs/04-spec-open-questions.md` item 5: eight generator
- * tiers unlock on "Insight skill unlock" in the spec's §2 table, with no node
- * behind them. Every one now points at a real node with real prerequisites, and
- * a test asserts the correspondence in both directions.
- *
- * §3 asks for ~45-55 nodes across: generator unlocks, click power, offline
+ * §3 asks for ~45-55 nodes across: generator strength, click power, offline
  * efficiency, Kitchen Garden progression, and purely cosmetic decorations.
+ *
+ * NOTHING IN THIS TREE GATES PROGRESSION. §2 put eight tiers behind "Insight
+ * skill unlock" and Phase 3 built nodes for them; a playtester then found the
+ * obvious failure: spend Insight on click power and the Kitchen Garden, and the
+ * next tier is unreachable, with no way to earn the Insight back. Tiers now gate
+ * on owning ten of the previous tier (`GENERATOR_UNLOCK_OWNED`), which Mana
+ * alone always opens, and those eight nodes became per-tier PRODUCTION ladders.
+ * The tree buys strength; it never buys access. See docs/09.
  */
 
 /** What buying a node does. */
 export type NodeEffect =
-  /** Opens a Garden Plot tier for purchase (§2's "Insight skill unlock" gates). */
-  | { readonly kind: 'unlock-generator'; readonly tier: number }
+  /**
+   * Additive production bonus for ONE Garden Plot tier: 0.25 means that tier
+   * produces +25%.
+   *
+   * Replaces `unlock-generator`. Tiers no longer gate on Insight at all — that
+   * could soft-lock a player who spent it elsewhere — so the tree buys strength
+   * instead of access, and per tier rather than only globally. A player leaning
+   * on Butterfly Swarms can pay to make Butterfly Swarms better, which is a
+   * decision; "+8% to everything" is not.
+   */
+  | { readonly kind: 'tier-production'; readonly tier: number; readonly amount: number }
   /** Additive to the click bonus: 1.0 means +100%. */
   | { readonly kind: 'click-bonus'; readonly amount: number }
   /** Additive to a global production multiplier: 0.1 means +10%. */
@@ -80,22 +92,22 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     effect: { kind: 'production-bonus', amount: 0.06 },
   },
   {
-    id: 's1-gen-3',
+    id: 's1-yield-3',
     name: 'Butterfly Husbandry',
-    description: 'Unlocks the Butterfly Swarm.',
+    description: 'Butterfly Swarms produce 25% more.',
     season: 1,
     cost: 2,
     requires: ['s1-click-1'],
-    effect: { kind: 'unlock-generator', tier: 3 },
+    effect: { kind: 'tier-production', tier: 3, amount: 0.25 },
   },
   {
-    id: 's1-gen-4',
+    id: 's1-yield-4',
     name: 'Gnome Diplomacy',
-    description: 'Unlocks the Garden Gnome Crew.',
+    description: 'Garden Gnome Crews produce 25% more.',
     season: 1,
     cost: 4,
-    requires: ['s1-gen-3'],
-    effect: { kind: 'unlock-generator', tier: 4 },
+    requires: ['s1-yield-3'],
+    effect: { kind: 'tier-production', tier: 4, amount: 0.25 },
   },
   {
     id: 's1-deeper-beds',
@@ -182,26 +194,57 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     effect: { kind: 'kg-surface', surface: 'raised-garden-box' },
   },
 
+  {
+    // Ladders for the tiers a Season 1 player actually owns. Cheap and
+    // immediately felt: the complaint these answer is that early Insight
+    // bought nothing you could see happen.
+    id: 's1-yield-1',
+    name: 'Steady Drip',
+    description: 'Watering Cans produce 50% more.',
+    season: 1,
+    cost: 2,
+    requires: ['s1-click-1'],
+    effect: { kind: 'tier-production', tier: 1, amount: 0.5 },
+  },
+  {
+    id: 's1-yield-2',
+    name: 'Deep Roots',
+    description: 'Sprout Beds produce 40% more.',
+    season: 1,
+    cost: 3,
+    requires: ['s1-yield-1'],
+    effect: { kind: 'tier-production', tier: 2, amount: 0.4 },
+  },
+  {
+    id: 's1-yield-3b',
+    name: 'Nectar Trails',
+    description: 'Butterfly Swarms produce a further 30% more.',
+    season: 1,
+    cost: 5,
+    requires: ['s1-yield-3'],
+    effect: { kind: 'tier-production', tier: 3, amount: 0.3 },
+  },
+
   // ===========================================================================
   // Season 2 — Summer
   // ===========================================================================
   {
-    id: 's2-gen-8',
+    id: 's2-yield-8',
     name: 'Drone Choreography',
-    description: 'Unlocks the Pollinator Drone Swarm.',
+    description: 'Pollinator Drone Swarms produce 30% more.',
     season: 2,
     cost: 6,
-    requires: ['s1-gen-4'],
-    effect: { kind: 'unlock-generator', tier: 8 },
+    requires: ['s1-yield-4'],
+    effect: { kind: 'tier-production', tier: 8, amount: 0.3 },
   },
   {
-    id: 's2-gen-9',
+    id: 's2-yield-9',
     name: 'Nectar Chemistry',
-    description: 'Unlocks the Nectar Refinery.',
+    description: 'Nectar Refineries produce 30% more.',
     season: 2,
     cost: 9,
-    requires: ['s2-gen-8'],
-    effect: { kind: 'unlock-generator', tier: 9 },
+    requires: ['s2-yield-8'],
+    effect: { kind: 'tier-production', tier: 9, amount: 0.3 },
   },
   {
     id: 's2-sunlight',
@@ -276,26 +319,45 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     effect: { kind: 'kg-automation', step: 'plant', level: 1 },
   },
 
+  {
+    id: 's2-yield-8b',
+    name: 'Swarm Logistics',
+    description: 'Pollinator Drone Swarms produce a further 35% more.',
+    season: 2,
+    cost: 9,
+    requires: ['s2-yield-8'],
+    effect: { kind: 'tier-production', tier: 8, amount: 0.35 },
+  },
+  {
+    id: 's2-yield-9b',
+    name: 'Refined Nectar',
+    description: 'Nectar Refineries produce a further 35% more.',
+    season: 2,
+    cost: 12,
+    requires: ['s2-yield-9'],
+    effect: { kind: 'tier-production', tier: 9, amount: 0.35 },
+  },
+
   // ===========================================================================
   // Season 3 — Autumn
   // ===========================================================================
   {
-    id: 's3-gen-13',
-    name: 'Cider Craft',
-    description: 'Unlocks the Cider Press Guild.',
+    id: 's3-yield-13',
+    name: 'Loam Engineering',
+    description: 'Loam Reactors produce 35% more.',
     season: 3,
     cost: 12,
-    requires: ['s2-gen-9'],
-    effect: { kind: 'unlock-generator', tier: 13 },
+    requires: ['s2-yield-9'],
+    effect: { kind: 'tier-production', tier: 13, amount: 0.35 },
   },
   {
-    id: 's3-gen-14',
-    name: 'Sentinel Doctrine',
-    description: 'Unlocks the Scarecrow Sentinel Network.',
+    id: 's3-yield-14',
+    name: 'Canopy Mathematics',
+    description: 'Canopy Looms produce 35% more.',
     season: 3,
     cost: 16,
-    requires: ['s3-gen-13'],
-    effect: { kind: 'unlock-generator', tier: 14 },
+    requires: ['s3-yield-13'],
+    effect: { kind: 'tier-production', tier: 14, amount: 0.35 },
   },
   {
     id: 's3-barn-1',
@@ -393,26 +455,45 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     effect: { kind: 'kg-day-length', step: 2 },
   },
 
+  {
+    id: 's3-yield-13b',
+    name: 'Deep Loam',
+    description: 'Loam Reactors produce a further 40% more.',
+    season: 3,
+    cost: 15,
+    requires: ['s3-yield-13'],
+    effect: { kind: 'tier-production', tier: 13, amount: 0.4 },
+  },
+  {
+    id: 's3-yield-14b',
+    name: 'Woven Canopy',
+    description: 'Canopy Looms produce a further 40% more.',
+    season: 3,
+    cost: 18,
+    requires: ['s3-yield-14'],
+    effect: { kind: 'tier-production', tier: 14, amount: 0.4 },
+  },
+
   // ===========================================================================
   // Season 4 — Winter
   // ===========================================================================
   {
-    id: 's4-gen-18',
+    id: 's4-yield-18',
     name: 'Ember Metallurgy',
-    description: 'Unlocks the Ember Furnace Core.',
+    description: 'Ember Furnace Cores produce 40% more.',
     season: 4,
     cost: 20,
-    requires: ['s3-gen-14'],
-    effect: { kind: 'unlock-generator', tier: 18 },
+    requires: ['s3-yield-14'],
+    effect: { kind: 'tier-production', tier: 18, amount: 0.4 },
   },
   {
-    id: 's4-gen-19',
+    id: 's4-yield-19',
     name: 'Aurora Theory',
-    description: 'Unlocks the Aurora Conduit.',
+    description: 'Aurora Conduits produce 40% more.',
     season: 4,
     cost: 26,
-    requires: ['s4-gen-18'],
-    effect: { kind: 'unlock-generator', tier: 19 },
+    requires: ['s4-yield-18'],
+    effect: { kind: 'tier-production', tier: 19, amount: 0.4 },
   },
   {
     id: 's4-insulation-1',
@@ -534,6 +615,24 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     cost: 10,
     requires: ['cos-weathervane'],
     effect: { kind: 'cosmetic' },
+  },
+  {
+    id: 's4-yield-18b',
+    name: 'Banked Embers',
+    description: 'Ember Furnace Cores produce a further 45% more.',
+    season: 4,
+    cost: 30,
+    requires: ['s4-yield-18'],
+    effect: { kind: 'tier-production', tier: 18, amount: 0.45 },
+  },
+  {
+    id: 's4-yield-19b',
+    name: 'Aurora Resonance',
+    description: 'Aurora Conduits produce a further 45% more.',
+    season: 4,
+    cost: 34,
+    requires: ['s4-yield-19'],
+    effect: { kind: 'tier-production', tier: 19, amount: 0.45 },
   },
 ] as const;
 

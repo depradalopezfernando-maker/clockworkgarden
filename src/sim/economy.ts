@@ -71,10 +71,6 @@ export function isGateMet(state: GameState, gate: UnlockGate): boolean {
       return state.lifetimeMana >= gate.amount;
     case 'any':
       return gate.gates.some((g) => isGateMet(state, g));
-    case 'insight-node':
-      // Phase 3 replaced the proxy with a real tree edge. Handled in
-      // isTierUnlocked, which knows the tier being asked about.
-      return true;
     case 'capstone-clear':
       return state.capstonesCleared.includes(gate.season);
     case 'season-start':
@@ -83,14 +79,30 @@ export function isGateMet(state: GameState, gate: UnlockGate): boolean {
 }
 
 export function isTierUnlocked(state: GameState, tier: number): boolean {
-  const t = tierAt(tier);
-  if (t.unlock.kind === 'insight-node') {
-    // Phase 3: a real Insight node now opens this tier (docs/04 item 5, closed).
-    // Every one of the eight such tiers has a node; a test asserts the
-    // correspondence in both directions.
-    return effectsOf(state).unlockedTiers.has(tier);
+  // No Insight consultation: a tier's gate is a fact about the garden, never
+  // about how the player spent their Insight. That is what makes the soft-lock
+  // impossible rather than merely unlikely.
+  //
+  // `tiersUnlocked` is a high-water mark, so a tier the player has already
+  // opened stays open through a prestige that zeroed the owned counts feeding
+  // its gate.
+  return tier <= state.tiersUnlocked || isGateMet(state, tierAt(tier).unlock);
+}
+
+/**
+ * Raise the unlock high-water mark to match what is currently reachable.
+ *
+ * Called wherever the inputs to a gate can change - buying a generator,
+ * advancing the world, clearing a capstone. Returns the same reference when
+ * nothing moved, so the store does not republish on every tick.
+ */
+export function recordUnlocks(state: GameState): GameState {
+  let highest = state.tiersUnlocked;
+  for (let tier = highest + 1; tier <= TIER_COUNT; tier++) {
+    if (!isGateMet(state, tierAt(tier).unlock)) continue;
+    highest = tier;
   }
-  return isGateMet(state, t.unlock);
+  return highest === state.tiersUnlocked ? state : { ...state, tiersUnlocked: highest };
 }
 
 export function unlockedTiers(state: GameState): number[] {
@@ -114,11 +126,16 @@ export function unlockedTiers(state: GameState): number[] {
  * self-referential and diverge to infinity at full build-out.
  */
 export function gardenPlotManaPerSecond(state: GameState): number {
+  const insight = effectsOf(state);
   let base = 0;
   for (const t of GENERATOR_TIERS) {
-    base += (state.owned[t.tier - 1] ?? 0) * t.baseYield;
+    const owned = state.owned[t.tier - 1] ?? 0;
+    if (owned === 0) continue;
+    // Per-tier Insight bonuses apply to their own tier only, before the global
+    // multipliers. Additive within a tier, so two levels of the same ladder read
+    // as "+25% then +30%" rather than compounding into something unstateable.
+    base += owned * t.baseYield * (1 + (insight.tierProduction.get(t.tier) ?? 0));
   }
-  const insight = effectsOf(state);
   return base * prestigeMultiplier(state.appliedSqp) * (1 + insight.productionBonus);
 }
 
@@ -198,7 +215,9 @@ export function buy(state: GameState, tier: number): GameState {
 
   const nextOwned = state.owned.slice();
   nextOwned[tier - 1] = owned + 1;
-  return { ...state, mana: state.mana - cost, owned: nextOwned };
+  // Buying is the main way an own-count gate becomes satisfied, so record it
+  // here rather than waiting for the next tick to notice.
+  return recordUnlocks({ ...state, mana: state.mana - cost, owned: nextOwned });
 }
 
 // ---------------------------------------------------------------------------

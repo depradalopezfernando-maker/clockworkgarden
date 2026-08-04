@@ -13,13 +13,16 @@ Everything through Season 1 works end to end: Bell, generators, Growth Frenzy,
 the Insight tree, milestones, the full Kitchen Garden (§2a), the First Bloom
 capstone, the prestige loop, onboarding, versioned saves, offline progress.
 
-**The Kitchen Garden question is settled** (2026-08-03). Option (c) was chosen:
-the two capacity surfaces moved a Season earlier. Applying it exposed a **Day
-Time deadlock that froze the garden permanently** — Night began only at exactly
-zero, so a Day that stranded an unspendable remainder never ended. The garden
-now realises 8.1% of income across the run and 32.4% at the end, up from 2.9%
-and 3.5%. `PRESTIGE_SQP_COEFFICIENT` re-fitted 26 -> 24 to absorb it.
-See `docs/07-phase-4-kitchen-garden-report.md` §5.
+**The first play session happened (2026-08-04) and changed six things — see
+`docs/09-playtest-revisions.md`.** The most serious: Insight gated eight
+generator tiers, so spending it wrongly could **soft-lock the game**. Tiers now
+gate on owned counts; Insight buys strength, never access.
+
+**The Kitchen Garden question is settled.** Option (c) moved the two capacity
+surfaces a Season earlier and exposed a **Day Time deadlock that froze the garden
+permanently**. Option (d) then raised per-plot yield behind a soft cap. It now
+supplies ~25% of income across a run and 32.4% at the end, up from 2.9% and 3.5%.
+See `docs/07` §5 and `docs/09` §3.
 
 ```
 clockwork-garden-design-spec.md   the design (source of truth for WHAT)
@@ -30,8 +33,8 @@ tools/screenshot.mjs              drive the app, capture it, report layout probl
 src/content/balance.ts            EVERY tunable constant, with provenance tags
 src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
 src/content/generators.ts         the 20-tier table (§2), transcribed
-src/content/insightTree.ts        50 nodes (§3). Eight of them open generator tiers
-src/content/milestones.ts         37 milestones — the ONLY source of Insight
+src/content/insightTree.ts        59 nodes (§3). None of them gate progression
+src/content/milestones.ts         43 milestones — the ONLY source of Insight
 src/content/surfaces.ts           the six Kitchen Garden surfaces (§2a)
 src/sim/capstone.ts               First Bloom (D4a); S2-S4 are placeholders
 src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
@@ -44,7 +47,12 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 ```
 
 Start here: `docs/README.md`. Verify with `npm run ci`.
-Latest balance numbers: `docs/06-phase-1-balance-report.md`.
+Latest balance numbers: `docs/09-playtest-revisions.md`.
+
+**One design decision is open and blocks nothing but wants an answer:** the
+archetype spread (x1.65) has grown into §8's 6-10h band (ratio x1.67), so the
+`active` archetype finishes at 5.13h. Four options in `docs/09` §6; my read is
+accept it. `npm run simulate` reports it as `[KNOWN]` rather than failing.
 
 **The gate:** play it for ninety minutes and answer four questions —
 is the core loop satisfying? Does Frenzy feel worth chasing? Does the Kitchen
@@ -65,9 +73,9 @@ Full rationale in `docs/04-spec-open-questions.md`
 
 ```
 D1  BarnCapacity = max(500 × TotalManaPerSec, 2.5 × CostOfNextUnpurchasedTier)
-D2  PlotContribution = BaseFraction × mods × GardenPlotManaPerSec   // NOT total
-    BaseFraction = 0.004      // sim-fitted; target ~1/3 of income at full build
-D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 35, REF = 5e4
+D2  PlotContribution = softCap(BaseFraction × mods × GardenPlotManaPerSec)
+    BaseFraction = 0.0314, soft cap 0.55   // docs/09 §3; ~1/3 at full build-out
+D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 10, REF = 1e2
     PrestigeMultiplier = 1 + 0.02 × TotalSQP
     LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
 D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
@@ -77,10 +85,11 @@ D4a Season 1 capstone = "First Bloom": reach 1200 Mana/sec DURING a Growth
     built player clears it first try but cannot clear it by idling.
 ```
 
-K and REF were **fitted in Phase 1** (`npm run fit`). REF is not the spec's 1e6:
-the simulation found a player holds only ~9e5 lifetime Mana when prestige
-unlocks, so 1e6 made the first reset worth exactly nothing. See
-`docs/06-phase-1-balance-report.md` §2.
+K and REF are **fitted together** (`npm run fit`, and the 2D sweep in `docs/09`
+§6) — they pull against each other, because lowering K to lengthen the campaign
+also shrinks the first prestige. REF is not the spec's 1e6: a player holds only
+~9e5 lifetime Mana when prestige unlocks, so 1e6 made the first reset worth
+exactly nothing. See `docs/06` §2 and `docs/09` §6.
 
 Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
@@ -136,8 +145,11 @@ rationale in `docs/03-technical-architecture.md` §8:
 - Night never gates the Bell, Garden Plots, Frenzy, Pollination, or Festival
 - active play out-earns full automation
 - core cost multipliers stay inside 1.07–1.12
-- every "Insight skill unlock" tier has exactly one node, and no node opens a
-  tier that is not Insight-gated
+- NO generator tier gates on Insight. Tiers open on owning ten of the previous
+  tier; Insight buys strength, never access. Gating access on a spendable
+  currency soft-locks players who spend it elsewhere (docs/09 §1)
+- `tiersUnlocked` is a high-water mark: prestige zeroes `owned`, so without it a
+  reset would re-lock every tier the player had opened
 - claimed milestones survive prestige — otherwise every reset re-pays the same
   Insight and the tree becomes free
 - no Insight node silently does nothing: every effect kind is applied or listed

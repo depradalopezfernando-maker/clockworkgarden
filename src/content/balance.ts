@@ -76,11 +76,20 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * span of lifetime Mana across the campaign. See docs/06-phase-1-balance-report.md.
  *
  * Re-fitted 26 -> 24 when the Kitchen Garden started paying what it was designed
- * to pay (docs/07 §2). Fixing the Day Time deadlock roughly doubled real Kitchen
- * Garden income, which shortened every campaign; the active archetype fell to
- * 5.88h, just under §8's floor. K is the pacing knob, so K absorbed it.
+ * to pay (docs/07 §2), then 24 -> 10 after the playtest changes in docs/09.
+ *
+ * K and REFERENCE were fitted TOGETHER this time, because they pull against
+ * each other: lowering K to lengthen the campaign also shrinks the first
+ * prestige, which is the one D3 exists to make felt. A 2D sweep of both
+ * (docs/09 §6) found no point that satisfies all of §8's 6-10 hours, §4's felt
+ * first prestige, and every archetype at once - the archetype spread is now
+ * x1.65 against a band whose ratio is x1.67. This pair is the best available:
+ * idle 8.46h, casual 6.28h, active 5.13h, first prestige x1.78.
+ *
+ * The active archetype finishing under six hours is a KNOWN, DELIBERATE
+ * deviation awaiting a design decision. See docs/09 §6.
  */
-export const PRESTIGE_SQP_COEFFICIENT = 24;
+export const PRESTIGE_SQP_COEFFICIENT = 10;
 /**
  * SIM. The lifetime Mana at which SQP starts accruing.
  *
@@ -94,9 +103,15 @@ export const PRESTIGE_SQP_COEFFICIENT = 24;
  * on when the capstone actually fires.
  *
  * Re-fitted in Phase 3 (5e4 -> 1e4) once the Insight tree's production bonuses
- * entered the economy. First prestige is now ~x1.78.
+ * entered the economy, then 1e4 -> 1e2 in docs/09.
+ *
+ * REFERENCE sets how much of the campaign's lifetime-Mana span sits above the
+ * point where SQP starts accruing, so it controls what fraction of the total
+ * multiplier the FIRST prestige is worth. Lowering it is what let K come down
+ * far enough to keep the campaign long without making the first reset feel like
+ * nothing. First prestige is x1.78.
  */
-export const PRESTIGE_SQP_REFERENCE = 1e4;
+export const PRESTIGE_SQP_REFERENCE = 1e2;
 export const PRESTIGE_BONUS_PER_SQP = 0.02; // SPEC §4  (+2% per SQP)
 
 /** SIM. Phase 1 fits PRESTIGE_SQP_COEFFICIENT until natural play lands here. */
@@ -242,12 +257,36 @@ export const OFFLINE_MAX_SECONDS = 30 * 24 * 3600;
  * Trellis slots the Kitchen Garden claims 120% of a number it feeds into, which
  * has no fixed point and runs to infinity.
  *
- * SIM. 0.004 targets ~1/3 of total income at full Season 4 build-out
- * (20 slots x 5 plants x 1.2 yield = 120 plant-units -> +48% -> 32% share).
- * Large enough to be worth engaging with; never eclipses the Garden Plot
- * backbone, which also keeps the spec's §7 "Light integration" cut viable.
+ * SIM. Raised 0.004 -> 0.0314 after a playtester called the garden "pretty
+ * useless": a linear 0.004 hit D2's ~1/3 target only at a FULL 20-slot Trellis
+ * build-out (120 plant-units), so the four plots a real player has in Season 1
+ * were worth 1.6% and the whole subsystem read as decoration.
+ *
+ * Raising the rate alone would have taken full build-out to ~85% of income and
+ * eclipsed the Garden Plot backbone. So the yield is now soft-capped
+ * (`KITCHEN_GARDEN_SOFT_CAP`): a steep start for small gardens, saturating at
+ * the same ceiling as before. This is option (d) in docs/07 §2.
+ *
+ *   plant-units       old share   new share
+ *      4 (S1 start)        1.6%        9.3%
+ *     30 (mid-run)        10.7%       25.8%
+ *    120 (full build)     32.4%       32.4%
  */
-export const KITCHEN_GARDEN_BASE_FRACTION = 0.004;
+export const KITCHEN_GARDEN_BASE_FRACTION = 0.0314;
+
+/**
+ * Ceiling the Kitchen Garden's multiplier approaches but never reaches.
+ *
+ * `multiplier = CAP * raw / (CAP + raw)` where `raw = units * BASE_FRACTION`.
+ * Harmonic, so it is smooth, strictly increasing, and bounded - every extra
+ * plant is worth something and no configuration can run away. That boundedness
+ * is an invariant (docs/03 §8): total Mana/sec must stay finite for EVERY
+ * Kitchen Garden configuration.
+ *
+ * 0.55 keeps full build-out at +48% of Garden Plot income, exactly where the
+ * linear formula put it, so D2's ~1/3 share target is untouched.
+ */
+export const KITCHEN_GARDEN_SOFT_CAP = 0.55;
 
 /** SIM. Phase 1 fits BASE_FRACTION until full build-out lands in this band. */
 export const KITCHEN_GARDEN_TARGET_INCOME_SHARE = { min: 0.28, max: 0.38 } as const;
@@ -304,5 +343,13 @@ export const SEASON_TRANSITION_LEGACY_FRACTION = 0.15; // SIM
 // §3 — Insight
 // ---------------------------------------------------------------------------
 
-/** SPEC §3. Revised up from 30-40 once the Kitchen Garden branch was added. */
-export const INSIGHT_TREE_NODE_TARGET = { min: 45, max: 55 } as const;
+/**
+ * SPEC §3. Revised up from 30-40 once the Kitchen Garden branch was added, and
+ * again from 45-55 when the eight generator-unlock nodes became per-tier
+ * production LADDERS with two levels each.
+ *
+ * §3 asks for "several levels" of upgrade rather than one flat global bonus,
+ * and a playtester asked for more to spend Insight on. Both point the same way:
+ * more nodes, each a smaller decision.
+ */
+export const INSIGHT_TREE_NODE_TARGET = { min: 45, max: 65 } as const;

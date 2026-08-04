@@ -23,7 +23,7 @@ import { initialCapstone, type CapstoneState } from '@sim/capstone';
 import { nodeById } from '@content/insightTree';
 import { MILESTONES } from '@content/milestones';
 
-export const CURRENT_SAVE_VERSION = 4;
+export const CURRENT_SAVE_VERSION = 5;
 export const SAVE_KEY = 'clockwork-garden:save';
 
 export interface SaveFile {
@@ -41,7 +41,7 @@ export type LoadFailure = 'empty' | 'unparseable' | 'future-version' | 'corrupt'
 
 /**
  * Migrations, keyed by the version they upgrade FROM. Each is a pure function.
- * Loading a v1 save into a v4 build runs 1->2, 2->3, 3->4 in order.
+ * Loading a v1 save into a v5 build runs 1->2, 2->3, 3->4, 4->5 in order.
  *
  * Never edit a migration once it has shipped - players' saves depend on the
  * exact transformation. Add a new one instead.
@@ -117,6 +117,45 @@ const MIGRATIONS: Readonly<Record<number, (raw: unknown) => unknown>> = {
       state: { ...state, capstone: initialCapstone() },
     };
   },
+
+  /**
+   * v4 -> v5: generator tiers stopped gating on Insight.
+   *
+   * The eight `unlock-generator` nodes became per-tier PRODUCTION nodes and were
+   * renamed with them. Without this remap `reviveState` would drop the old ids
+   * as unknown and silently refund nothing - a player would lose every Insight
+   * point they had spent on them. The tiers those nodes used to open stay open
+   * regardless, because unlock gates now read owned counts.
+   */
+  4: (raw) => {
+    const envelope = (raw ?? {}) as Record<string, unknown>;
+    const state = (envelope['state'] ?? {}) as Record<string, unknown>;
+    const nodes = Array.isArray(state['purchasedNodes'])
+      ? (state['purchasedNodes'] as unknown[])
+      : [];
+    return {
+      ...envelope,
+      version: 5,
+      state: {
+        ...state,
+        purchasedNodes: nodes.map((id) =>
+          typeof id === 'string' ? (RENAMED_IN_V5[id] ?? id) : id
+        ),
+      },
+    };
+  },
+};
+
+/** Old node id -> new node id, for the v4 -> v5 rename. Never edit. */
+const RENAMED_IN_V5: Readonly<Record<string, string>> = {
+  's1-gen-3': 's1-yield-3',
+  's1-gen-4': 's1-yield-4',
+  's2-gen-8': 's2-yield-8',
+  's2-gen-9': 's2-yield-9',
+  's3-gen-13': 's3-yield-13',
+  's3-gen-14': 's3-yield-14',
+  's4-gen-18': 's4-yield-18',
+  's4-gen-19': 's4-yield-19',
 };
 
 export function serialize(state: GameState, nowMs: number): SaveFile {
@@ -160,6 +199,9 @@ function reviveState(raw: unknown): GameState {
     mana: Math.max(0, num(r['mana'], 0)),
     lifetimeMana: Math.max(0, num(r['lifetimeMana'], 0)),
     owned,
+    // High-water mark. Clamped to the tier count; a corrupt value must not
+    // unlock content, only fail closed.
+    tiersUnlocked: Math.min(TIER_COUNT, Math.max(0, Math.floor(num(r['tiersUnlocked'], 0)))),
     season: Math.min(4, Math.max(1, Math.floor(num(r['season'], 1)))),
     capstonesCleared,
     appliedSqp: Math.max(0, num(r['appliedSqp'], 0)),

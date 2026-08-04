@@ -32,8 +32,11 @@ export interface InsightEffects {
   readonly offlineFloorBonus: number;
   /** Added to §5's Frenzy duration, in seconds. */
   readonly frenzyBonusSeconds: number;
-  /** Generator tiers this build has opened. */
-  readonly unlockedTiers: ReadonlySet<number>;
+  /**
+   * Per-tier additive production bonus, keyed by tier. A tier absent from the
+   * map has no bonus. Read alongside `productionBonus`, which is global.
+   */
+  readonly tierProduction: ReadonlyMap<number, number>;
   /** Phase 4 reads these; recorded now so nothing is lost. */
   readonly kgSlotBonus: number;
   readonly kgSurfaces: ReadonlySet<string>;
@@ -50,7 +53,7 @@ const EMPTY: InsightEffects = {
   productionBonus: 0,
   offlineFloorBonus: 0,
   frenzyBonusSeconds: 0,
-  unlockedTiers: new Set(),
+  tierProduction: new Map(),
   kgSlotBonus: 0,
   kgSurfaces: new Set(),
   kgDayLengthStep: 0,
@@ -70,7 +73,7 @@ export function aggregateEffects(purchasedNodeIds: readonly string[]): InsightEf
   let satchelBonus = 0;
   let barnCapacityMultiplier = 1;
   let insulationSteps = 0;
-  const unlockedTiers = new Set<number>();
+  const tierProduction = new Map<number, number>();
   const kgSurfaces = new Set<string>();
 
   for (const id of purchasedNodeIds) {
@@ -79,8 +82,8 @@ export function aggregateEffects(purchasedNodeIds: readonly string[]): InsightEf
 
     const effect = node.effect;
     switch (effect.kind) {
-      case 'unlock-generator':
-        unlockedTiers.add(effect.tier);
+      case 'tier-production':
+        tierProduction.set(effect.tier, (tierProduction.get(effect.tier) ?? 0) + effect.amount);
         break;
       case 'click-bonus':
         clickBonus += effect.amount;
@@ -123,7 +126,7 @@ export function aggregateEffects(purchasedNodeIds: readonly string[]): InsightEf
     productionBonus,
     offlineFloorBonus,
     frenzyBonusSeconds,
-    unlockedTiers,
+    tierProduction,
     kgSlotBonus,
     kgSurfaces,
     kgDayLengthStep,

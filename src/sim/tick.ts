@@ -8,7 +8,7 @@
  * Pure. `dt` arrives as a parameter; nothing here reads a clock (ADR-0002).
  */
 
-import { totalManaPerSecond, clickYield } from './economy';
+import { recordUnlocks, totalManaPerSecond, clickYield } from './economy';
 import { addFrenzyClick, frenzyMultiplier, isFrenzyActive, tickFrenzy } from './frenzy';
 import { claimMilestones } from './milestones';
 import { clearPlaceholderCapstone, progressCapstone } from './capstone';
@@ -52,7 +52,9 @@ export function advance(state: GameState, dt: number): GameState {
 
   // Seasons 2-4 have no designed capstone yet, so readiness alone advances them
   // (docs/04 item 4). Season 1 goes through the real challenge above.
-  return clearPlaceholderCapstone(next);
+  // Lifetime Mana and Season gates can open a tier without a purchase, so the
+  // high-water mark is refreshed on every step too.
+  return recordUnlocks(clearPlaceholderCapstone(next));
 }
 
 export interface ClickResult {

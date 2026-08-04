@@ -28,6 +28,7 @@ import {
   KG_SLOT_COST_GROWTH,
   KG_STARTING_SLOTS,
   KITCHEN_GARDEN_BASE_FRACTION,
+  KITCHEN_GARDEN_SOFT_CAP,
   NIGHT_DURATION_SECONDS,
   NIGHT_DURATION_SECONDS_UPGRADED,
   PERFECT_PLANTING_DURATION_SECONDS,
@@ -461,7 +462,26 @@ export function kitchenGardenMultiplier(
   },
   baseFraction: number = KITCHEN_GARDEN_BASE_FRACTION
 ): number {
-  return totalPlantUnits(kg, context) * baseFraction;
+  return softCap(totalPlantUnits(kg, context) * baseFraction);
+}
+
+/**
+ * Diminishing returns on Kitchen Garden yield (option (d), docs/07 §2).
+ *
+ * `CAP * raw / (CAP + raw)`. Harmonic: smooth, strictly increasing, and
+ * asymptotic to CAP, so every extra plant is worth something and no
+ * configuration - however many slots, whatever surfaces - can make total
+ * Mana/sec unbounded. The invariant that used to hold because the formula was
+ * linear now holds because it saturates.
+ *
+ * The point is the SHAPE. A linear rate that lands a full 20-slot Trellis build
+ * on D2's ~1/3 makes a starting four-plot garden worth 1.6%, which is what a
+ * playtester correctly called useless. Front-loading the curve pays a small
+ * garden properly while leaving the ceiling exactly where D2 put it.
+ */
+export function softCap(raw: number): number {
+  if (!(raw > 0)) return 0;
+  return (KITCHEN_GARDEN_SOFT_CAP * raw) / (KITCHEN_GARDEN_SOFT_CAP + raw);
 }
 
 /** Share of TOTAL income the Kitchen Garden supplies. §10 item 10 asks this. */

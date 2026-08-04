@@ -106,7 +106,11 @@ export function prestige(
     elapsedSeconds: state.elapsedSeconds,
     kitchenGarden: state.kitchenGarden,
 
-    // §4 keeps "unlocked plant types" - the Insight tree IS those unlocks.
+    // §4 keeps "unlocked plant types". `owned` is wiped above, and unlock gates
+    // read owned counts, so without this high-water mark a reset would re-lock
+    // every tier the player had opened.
+    tiersUnlocked: state.tiersUnlocked,
+
     purchasedNodes: state.purchasedNodes,
     lifetimeInsight: state.lifetimeInsight,
 

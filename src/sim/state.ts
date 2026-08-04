@@ -26,6 +26,16 @@ export interface GameState {
   /** Units owned per tier, index 0 = tier 1. Reset by prestige. */
   readonly owned: readonly number[];
 
+  /**
+   * Highest generator tier ever unlocked. A HIGH-WATER MARK: never decreases,
+   * survives prestige.
+   *
+   * Tiers gate on owning ten of the previous tier, and prestige zeroes `owned` -
+   * so without this a reset would re-lock everything the player had opened.
+   * Access, once earned, is permanent; only the units are lost.
+   */
+  readonly tiersUnlocked: number;
+
   /** 1-4. Advances only on capstone clear (decision D6). */
   readonly season: number;
 
@@ -79,6 +89,7 @@ export function initialState(): GameState {
     mana: 0,
     lifetimeMana: 0,
     owned: new Array<number>(TIER_COUNT).fill(0),
+    tiersUnlocked: 0,
     season: 1,
     capstonesCleared: [],
     appliedSqp: 0,

@@ -61,13 +61,12 @@ import { initialState, ownedOf, type GameState } from './state';
  * Effect kinds this harness can price.
  *
  * Phase 3 excluded the Kitchen Garden kinds because their systems did not exist
- * and the sim could not value them. Phase 4 built those systems, so they are in
- * - and they now compete for the same Insight, which is the tightening Phase 3's
- * report predicted. Only Barn Capacity (Phase 8), Insulation (Phase 9) and
- * cosmetics remain unpriced.
+ * and the sim could not value them. Phase 4 built those systems, so they are in.
+ * Only Barn Capacity (Phase 8), Insulation (Phase 9) and cosmetics remain
+ * unpriced.
  */
 const MODELLED_EFFECTS = new Set([
-  'unlock-generator',
+  'tier-production',
   'click-bonus',
   'production-bonus',
   'frenzy-duration',
@@ -293,43 +292,20 @@ export function simulateCampaign(
     // --- Spend Insight -----------------------------------------------------
     //
     // The policy buys only nodes whose effects this simulation can actually
-    // value, and takes generator unlocks first because they gate progression
-    // outright - no sensible player leaves the next tier locked to buy a click
-    // bonus.
+    // value. Barn Capacity (Phase 8), Insulation (Phase 9) and cosmetics are
+    // skipped because their systems do not exist yet.
     //
-    // Kitchen Garden and cosmetic nodes are SKIPPED, not because they are
-    // worthless but because their systems do not exist until Phase 4 and the
-    // sim cannot price them. Spending cheapest-first instead starved the
-    // generator unlocks so badly that no archetype finished inside 60 hours.
-    //
-    // Consequence worth stating: this makes the simulated Insight economy more
-    // generous than the real one. When Phase 4 lands, ~166 Insight of Kitchen
-    // Garden nodes start competing for the same pool and the tree gets
-    // materially tighter. Re-run this then.
+    // There is no longer a save-up rule. Insight used to gate eight generator
+    // tiers, so the harness had to hoard for the next unlock or stall the
+    // campaign outright - and a real player who guessed wrong got SOFT-LOCKED,
+    // which is what a playtester hit. Tiers now gate on owned counts, so no
+    // Insight purchase can strand anyone and the sensible policy is simply to
+    // spend what is affordable.
     for (let purchases = 0; purchases < 20; purchases++) {
       const reachable = availableNodes(state).filter((node) =>
         MODELLED_EFFECTS.has(node.effect.kind)
       );
-
-      // SAVE UP for the next generator unlock rather than spending down.
-      // Unlocks gate progression outright and cost far more than a Kitchen
-      // Garden node; buying cheap nodes while one is pending starves it
-      // indefinitely. With a spend-down policy no archetype finished in 60
-      // hours once Kitchen Garden nodes became worth buying.
-      const pendingUnlock = reachable.find((node) => node.effect.kind === 'unlock-generator');
-
-      let pick;
-      if (pendingUnlock && state.insight >= pendingUnlock.cost) {
-        pick = pendingUnlock;
-      } else if (pendingUnlock) {
-        // Spend only SURPLUS while saving: buy something else if it still
-        // leaves enough for the pending unlock. Pure saving means a player
-        // never buys a Kitchen Garden node at all; pure spending starves the
-        // unlock. Real players do this - keep the goal funded, spend the rest.
-        pick = reachable.find((node) => node.cost <= state.insight - pendingUnlock.cost);
-      } else {
-        pick = reachable.find((node) => state.insight >= node.cost);
-      }
+      const pick = reachable.find((node) => state.insight >= node.cost);
 
       if (!pick) break;
       const next = purchaseNode(state, pick.id);
@@ -510,7 +486,17 @@ function tendKitchenGarden(
   // not progress - so a single plot waiting on a Cover it could not afford
   // stalled all nineteen others. A player looking at a garden works whichever
   // bed is ready.
-  carry.value += tendingRate * dt;
+  // Automation multiplies ATTENTION, not just Day Time.
+  //
+  // `kgTendingRate` models how often a player looks at the garden, and it was
+  // applied flat regardless of what the Insight tree had bought. But that is
+  // exactly what automation buys: a Level 2 step is instant and free, so a
+  // player who barely checks in still keeps plots cycling. Modelling it flat
+  // made the Kitchen Garden's value scale almost entirely with attention, which
+  // pushed the idle and active archetypes apart once the garden started paying
+  // properly (docs/09). Level 0 -> x1, Level 1 -> x3, Level 2 -> x5.
+  const automationReach = 1 + ((levels.dig + levels.plant + levels.cover) / 3) * 2;
+  carry.value += tendingRate * automationReach * dt;
   while (carry.value >= 1) {
     carry.value -= 1;
 

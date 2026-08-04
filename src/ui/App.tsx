@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { gameStore } from '@game/store';
 import { costOfNext, isTierUnlocked, totalManaPerSecond, unlockedTiers } from '@sim/economy';
-import { CLICKS_TO_FILL, isFrenzyActive } from '@sim/frenzy';
+import { CLICKS_TO_FILL, frenzyMultiplier, isFrenzyActive } from '@sim/frenzy';
 import { prestigeMultiplier } from '@sim/prestige';
 import { ownedOf, type GameState } from '@sim/state';
-import { GENERATOR_TIERS, tierAt } from '@content/generators';
+import { GENERATOR_TIERS, tierAt, type UnlockGate } from '@content/generators';
 import { formatDuration, formatNumber, formatRate, formatSeconds } from './format';
 import { SEASON_NAMES, themeVariables } from './theme';
 import { InsightPanel } from './InsightPanel';
@@ -25,9 +25,13 @@ export function App() {
   const [offlineDismissed, setOfflineDismissed] = useState(false);
 
   const theme = useMemo(() => themeVariables(state.season), [state.season]);
-  const perSecond = totalManaPerSecond(state);
   const multiplier = prestigeMultiplier(state.appliedSqp);
   const frenzyActive = isFrenzyActive(state.frenzy);
+  // The rate the player is ACTUALLY earning, Frenzy included. Reading
+  // `totalManaPerSecond` alone showed the un-frenzied rate while Mana visibly
+  // climbed at twice it, which reads as the counter being broken - and hides
+  // the whole point of the Frenzy.
+  const perSecond = totalManaPerSecond(state) * frenzyMultiplier(state.frenzy);
 
   const ring = useCallback(() => {
     gameStore.ringBell();
@@ -40,6 +44,7 @@ export function App() {
           season={state.season}
           mana={state.mana}
           perSecond={perSecond}
+          frenzyActive={frenzyActive}
           multiplier={multiplier}
           elapsedSeconds={state.elapsedSeconds}
           prestigeCount={state.prestigeCount}
@@ -97,6 +102,7 @@ interface HudProps {
   season: number;
   mana: number;
   perSecond: number;
+  frenzyActive: boolean;
   multiplier: number;
   elapsedSeconds: number;
   prestigeCount: number;
@@ -107,6 +113,7 @@ function Hud({
   season,
   mana,
   perSecond,
+  frenzyActive,
   multiplier,
   elapsedSeconds,
   prestigeCount,
@@ -120,8 +127,11 @@ function Hud({
       <div className="hud__mana" data-testid="mana">
         {formatNumber(mana)}
       </div>
-      <div className="hud__rate" data-testid="rate">
-        {formatRate(perSecond)} Mana
+      <div
+        className={frenzyActive ? 'hud__rate hud__rate--frenzy' : 'hud__rate'}
+        data-testid="rate"
+      >
+        {formatRate(perSecond)} Mana{frenzyActive ? ' · Frenzy ×2' : ''}
       </div>
 
       <div className="hud__stats">
@@ -187,6 +197,30 @@ function GeneratorList({ state }: { state: GameState }) {
   );
 }
 
+/**
+ * What a locked tier is waiting for, in words.
+ *
+ * Worth stating now that gates are legible things a player can act on. They used
+ * to be Insight nodes, where "Locked" was about all that could honestly be said;
+ * "Own 10 Sprout Beds" is a goal.
+ */
+function describeGate(gate: UnlockGate): string {
+  switch (gate.kind) {
+    case 'own-count':
+      return `Own ${gate.count} ${tierAt(gate.tier).name}s`;
+    case 'lifetime-mana':
+      return `Earn ${formatNumber(gate.amount)} Mana in total`;
+    case 'any':
+      return gate.gates.map(describeGate).join(' or ');
+    case 'capstone-clear':
+      return `Clear the Season ${gate.season} capstone`;
+    case 'season-start':
+      return `Reach Season ${gate.season}`;
+    case 'start':
+      return 'Available';
+  }
+}
+
 function GeneratorRow({
   tier,
   state,
@@ -213,7 +247,9 @@ function GeneratorRow({
       <span>
         <span className="generator__name">{locked ? '???' : definition.name}</span>
         <span className="generator__detail">
-          {locked ? 'Locked' : `${formatRate(definition.baseYield)} each · owned ${owned}`}
+          {locked
+            ? describeGate(definition.unlock)
+            : `${formatRate(definition.baseYield)} each · owned ${owned}`}
         </span>
       </span>
       <span

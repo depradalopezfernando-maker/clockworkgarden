@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { softCap } from '@sim/kitchenGarden';
 import * as B from '@content/balance';
 
 /**
@@ -33,32 +34,45 @@ describe('D3 — prestige constants stay coherent', () => {
 describe('D2 — Kitchen Garden yield is bounded and lands on its income target', () => {
   // Full Season 4 build-out: 20 slots x 5 plants (Clockwork Trellis) x 1.2 yield.
   const MAX_PLANT_UNITS = B.KG_MAX_SLOTS * 5 * 1.2;
+  const added = (units: number) => softCap(units * B.KITCHEN_GARDEN_BASE_FRACTION);
 
   it('never claims 100% or more of Garden Plot income', () => {
-    const added = MAX_PLANT_UNITS * B.KITCHEN_GARDEN_BASE_FRACTION;
-    expect(added).toBeLessThan(1.0);
+    expect(added(MAX_PLANT_UNITS)).toBeLessThan(1.0);
   });
 
   it('lands inside the target income share at full build-out', () => {
-    const added = MAX_PLANT_UNITS * B.KITCHEN_GARDEN_BASE_FRACTION;
-    const share = added / (1 + added);
+    const share = added(MAX_PLANT_UNITS) / (1 + added(MAX_PLANT_UNITS));
     expect(share).toBeGreaterThanOrEqual(B.KITCHEN_GARDEN_TARGET_INCOME_SHARE.min);
     expect(share).toBeLessThanOrEqual(B.KITCHEN_GARDEN_TARGET_INCOME_SHARE.max);
   });
 
-  it('stays finite for every configuration up to the slot cap', () => {
-    for (let slots = 0; slots <= B.KG_MAX_SLOTS; slots++) {
-      for (const capacity of [1, 3, 5]) {
+  it('pays a SMALL garden properly — the playtest complaint', () => {
+    // Four Bare Soil plots is what a Season 1 player has. Under the old linear
+    // rate that was worth 1.6% of income, which read as decoration.
+    const fourPlots = added(4) / (1 + added(4));
+    expect(fourPlots).toBeGreaterThan(0.05);
+  });
+
+  it('is strictly increasing — every extra plant is worth something', () => {
+    let previous = 0;
+    for (let units = 1; units <= 400; units++) {
+      const value = added(units);
+      expect(value, `units ${units}`).toBeGreaterThan(previous);
+      previous = value;
+    }
+  });
+
+  it('stays finite and under the cap for every configuration, however absurd', () => {
+    // The invariant (docs/03 §8): total Mana/sec finite for EVERY Kitchen Garden
+    // configuration. It used to hold because the formula was linear and the slot
+    // count capped; it now holds because the curve saturates, which is stronger -
+    // it survives a future surface with capacity 50.
+    for (const slots of [0, 1, 20, 200, 20_000]) {
+      for (const capacity of [1, 3, 5, 50]) {
         for (const surfaceMult of [0.85, 1.0, 1.1, 1.2, 1.5]) {
-          const added =
-            slots *
-            capacity *
-            surfaceMult *
-            B.KITCHEN_GARDEN_BASE_FRACTION *
-            B.PERFECT_PLANTING_MULTIPLIER;
-          expect(Number.isFinite(added)).toBe(true);
-          // Even with every plot simultaneously Perfect-Planted, bounded.
-          expect(added).toBeLessThan(2.0);
+          const value = added(slots * capacity * surfaceMult * B.PERFECT_PLANTING_MULTIPLIER);
+          expect(Number.isFinite(value)).toBe(true);
+          expect(value).toBeLessThan(B.KITCHEN_GARDEN_SOFT_CAP);
         }
       }
     }

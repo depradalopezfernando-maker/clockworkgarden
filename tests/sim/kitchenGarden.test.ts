@@ -10,6 +10,7 @@ import {
   fullBuildOut,
   initialKitchenGarden,
   kitchenGardenMultiplier,
+  totalPlantUnits,
   PENDING_STEP,
   performStep,
   plotUnits,
@@ -402,9 +403,17 @@ describe('§2a — Season transitions', () => {
 
 describe('D2 — yield stays bounded and non-recursive', () => {
   it('full Season 4 build-out matches the intended plant-unit count', () => {
-    // 20 slots x capacity 5 x yield 1.2 = 120 units.
+    // 20 slots x capacity 5 x yield 1.2 = 120 units. Asserted on the RAW unit
+    // count, not on the multiplier: yield is soft-capped now, so dividing the
+    // multiplier by the base fraction no longer recovers the units.
     const kg = fullBuildOut(4, 0);
-    expect(kitchenGardenMultiplier(kg, ctx(1e9, MANUAL, 4)) / 0.004).toBeCloseTo(120, 4);
+    expect(totalPlantUnits(kg, ctx(1e9, MANUAL, 4))).toBeCloseTo(120, 6);
+  });
+
+  it('and turns that into the multiplier D2 targets', () => {
+    const kg = fullBuildOut(4, 0);
+    const multiplier = kitchenGardenMultiplier(kg, ctx(1e9, MANUAL, 4));
+    expect(multiplier / (1 + multiplier)).toBeCloseTo(0.324, 2);
   });
 
   it('a growing plot contributes nothing until it is grown', () => {
