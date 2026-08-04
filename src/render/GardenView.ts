@@ -1,0 +1,48 @@
+/**
+ * GardenView.ts — the interface the game talks to, and the null implementation.
+ *
+ * The roadmap requires the 2D build stay runnable as a fallback and a test
+ * target, so nothing outside `src/render/` may import three.js. The UI holds a
+ * `GardenView`; whether that is WebGL or nothing at all is decided in one place
+ * (`index.ts`) and changes no caller.
+ *
+ * This also keeps the smoke suite honest: `NullGardenView` is a real
+ * implementation, so a headless or WebGL-less environment exercises the same
+ * code path rather than a special case.
+ */
+
+/**
+ * Everything the diorama needs, and nothing else.
+ *
+ * Deliberately NOT `GameState`: the renderer should not be able to reach into
+ * the economy, and a narrow snapshot means a change to the scene cannot
+ * accidentally depend on something the sim was not going to keep offering.
+ */
+export interface GardenSnapshot {
+  readonly season: number;
+  /** Units owned per tier, index 0 = tier 1. Drives how many props stand. */
+  readonly owned: readonly number[];
+  /** Kitchen Garden plot stages, in slot order. */
+  readonly plotStages: readonly string[];
+  /** True while a Growth Frenzy is running — the scene brightens. */
+  readonly frenzied: boolean;
+}
+
+export interface GardenView {
+  /** Attach to a container. Safe to call once. */
+  mount(container: HTMLElement): Promise<void>;
+  /** Reconcile the scene with new state. Called on every publish, so cheap. */
+  update(snapshot: GardenSnapshot): void;
+  /** Release GPU resources. The renderer leaks without it. */
+  dispose(): void;
+  /** False when nothing is actually being drawn, so the UI can say so. */
+  readonly active: boolean;
+}
+
+/** Does nothing, successfully. The 2D build and any WebGL-less browser use it. */
+export class NullGardenView implements GardenView {
+  readonly active = false;
+  async mount(): Promise<void> {}
+  update(): void {}
+  dispose(): void {}
+}

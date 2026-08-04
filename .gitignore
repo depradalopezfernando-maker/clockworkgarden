@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.local
+.DS_Store
+.vite/
+
+# smoke/screenshot output
+smoke.png
+out.png
+*.screenshot.png
+
+# CC0 art packs, fetched by 'npm run assets:fetch' and pinned by checksum.
+# Not committed: 13MB of binary that never diffs usefully.
+assets/vendor/
+public/models/

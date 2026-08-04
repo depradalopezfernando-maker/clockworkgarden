@@ -1,0 +1,603 @@
+/* Phase 2 UI — deliberately plain 2D. The isometric 3D layer is Phase 6.
+   Every colour comes from CSS variables set by theme.ts, which reads the locked
+   palette in src/content/palette.ts. Never hard-code a colour here. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  /* Rapid Bell tapping otherwise selects the label text or fires zoom on iOS. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1.1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 68rem;
+  margin: 0 auto;
+}
+
+@media (max-width: 1000px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .app {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}
+
+.panel {
+  background: var(--ui-surface-raised);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+/* --- HUD ----------------------------------------------------------------- */
+
+.hud__season {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--season-accent);
+  margin: 0 0 0.25rem;
+}
+
+.hud__mana {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--ui-mana);
+  line-height: 1.1;
+  /* Tabular figures stop the number jittering as digits change ten times a
+     second, which is otherwise the most noticeable flaw in an idle-game HUD. */
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__rate {
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.15rem;
+}
+
+.hud__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--ui-text-muted);
+}
+
+.hud__stats b {
+  color: var(--ui-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Bell ---------------------------------------------------------------- */
+
+.bell {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1.5rem 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ui-text);
+  background: var(--season-primary);
+  border: 2px solid var(--season-shadow);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    filter 0.12s ease;
+}
+
+.bell:hover {
+  filter: brightness(1.08);
+}
+
+.bell:active {
+  transform: scale(0.97);
+}
+
+.bell--frenzy {
+  background: var(--season-accent);
+  border-color: var(--season-accent);
+  animation: frenzy-pulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes frenzy-pulse {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bell,
+  .bell--frenzy {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* --- Frenzy meter -------------------------------------------------------- */
+
+.meter {
+  margin-top: 0.9rem;
+}
+
+.meter__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--ui-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.meter__track {
+  height: 10px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  background: var(--season-secondary);
+  transition: width 0.1s linear;
+}
+
+.meter__fill--active {
+  background: var(--season-accent);
+}
+
+/* --- Generators ---------------------------------------------------------- */
+
+.generators {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.generator {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.generator:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.generator:not(:disabled):hover {
+  border-color: var(--season-primary);
+}
+
+/* Both must be block: side by side they render as "Watering Can0.1/s each",
+   which reads as a rendering fault rather than two fields. */
+.generator__name {
+  display: block;
+  font-weight: 600;
+}
+
+.generator__detail {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.generator__cost {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.generator__cost b {
+  display: block;
+  color: var(--ui-mana);
+}
+
+.generator__cost--affordable b {
+  color: var(--ui-positive);
+}
+
+.generator__owned {
+  font-size: 0.78rem;
+  color: var(--ui-text-muted);
+}
+
+/* --- Dialog -------------------------------------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 65%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 10;
+}
+
+.dialog {
+  background: var(--ui-surface-raised);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 26rem;
+  width: 100%;
+}
+
+.dialog h2 {
+  margin: 0 0 0.5rem;
+  color: var(--season-accent);
+}
+
+.dialog p {
+  color: var(--ui-text-muted);
+  line-height: 1.5;
+}
+
+.dialog b {
+  color: var(--ui-mana);
+  font-variant-numeric: tabular-nums;
+}
+
+.button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ui-text);
+  background: var(--season-primary);
+  border: 1px solid var(--season-shadow);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.footnote {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+}
+
+/* --- Insight tree -------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.tabs__spacer {
+  flex: 1;
+}
+
+.tab {
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--ui-text-muted);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tab--active {
+  color: var(--ui-text);
+  border-color: var(--ui-insight);
+}
+
+.insight-balance {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ui-insight);
+  font-variant-numeric: tabular-nums;
+}
+
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.node,
+.milestone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.4rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.node {
+  cursor: pointer;
+  width: 100%;
+}
+
+.node:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.node:not(:disabled):hover {
+  border-color: var(--ui-insight);
+}
+
+.node--owned {
+  opacity: 1;
+  border-color: var(--ui-positive);
+}
+
+.node--owned:disabled {
+  opacity: 0.8;
+}
+
+.node__cost {
+  font-weight: 700;
+  color: var(--ui-insight);
+  font-variant-numeric: tabular-nums;
+}
+
+.node--owned .node__cost {
+  color: var(--ui-positive);
+}
+
+.milestone__progress {
+  font-size: 0.85rem;
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Kitchen Garden (§2a) ------------------------------------------------ */
+
+.panel--wide {
+  grid-column: 1 / -1;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.meter__fill--night {
+  background: var(--season-shadow);
+}
+
+.plots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.plot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.8rem;
+  min-height: 4.2rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.plot:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.plot:not(:disabled):hover {
+  border-color: var(--season-primary);
+}
+
+.plot--growing {
+  cursor: default;
+  border-style: dashed;
+  border-color: var(--season-secondary);
+}
+
+.plot--grown {
+  border-color: var(--ui-positive);
+}
+
+.plot--add {
+  border-style: dashed;
+  justify-content: center;
+}
+
+/* --- Season capstone, prestige, onboarding ------------------------------- */
+
+.tutorial {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ui-text);
+  background: color-mix(in srgb, var(--season-accent) 14%, transparent);
+  border-left: 3px solid var(--season-accent);
+  border-radius: 0 6px 6px 0;
+}
+
+.capstone,
+.prestige {
+  padding: 0.85rem;
+  margin-bottom: 0.75rem;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+
+.prestige {
+  margin-bottom: 0;
+}
+
+.capstone {
+  border-color: var(--season-accent);
+}
+
+.capstone__title {
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+  color: var(--season-accent);
+}
+
+.capstone__flavour {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ui-text-muted);
+}
+
+.capstone__failed {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ui-negative);
+}
+
+.prestige__confirm {
+  margin-top: 0.5rem;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* The rate readout during a Growth Frenzy. It doubles, and it should look like
+   it doubled - the number moving with no explanation reads as a glitch. */
+.hud__rate--frenzy {
+  color: var(--season-accent);
+  font-weight: 700;
+}
+
+/* A plot and the surface upgrade offered beneath it. */
+.plot-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.plot-upgrade {
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  padding: 0.3rem 0.4rem;
+  border: 1px dashed var(--ui-border);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  /* Two lines rather than one truncated one: the COST is the half a player is
+     deciding on, and it was the half being cut off. */
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: center;
+  min-width: 0;
+}
+
+.plot-upgrade__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plot-upgrade__cost {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.plot-upgrade:hover:not(:disabled) {
+  border-style: solid;
+  color: var(--ui-text);
+}
+
+.plot-upgrade:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The 3D diorama. A fixed height so the isometric framing is stable, and it
+   never grows tall enough to push the panels below the fold. */
+.panel--diorama {
+  padding: 0;
+  overflow: hidden;
+}
+
+.garden-canvas {
+  display: block;
+  width: 100%;
+  height: 340px;
+}
+
+.garden-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 640px) {
+  .garden-canvas {
+    height: 240px;
+  }
+}

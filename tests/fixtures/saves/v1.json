@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "savedAt": 1770000000000,
+  "state": {
+    "mana": 1500,
+    "lifetimeMana": 42000,
+    "owned": [12, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "season": 1,
+    "capstonesCleared": [],
+    "appliedSqp": 0,
+    "prestigeCount": 0,
+    "elapsedSeconds": 930,
+    "kitchenGarden": {
+      "slots": 4,
+      "capacityPerSlot": 1,
+      "surfaceYieldMult": 1,
+      "activeFraction": 1
+    },
+    "frenzy": { "meter": 0.35, "remainingSeconds": 0 }
+  }
+}

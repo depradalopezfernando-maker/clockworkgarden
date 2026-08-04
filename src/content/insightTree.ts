@@ -1,0 +1,648 @@
+/**
+ * insightTree.ts — the Insight skill tree (§3).
+ *
+ * DATA ONLY. Purchase logic and effect aggregation live in `src/sim/insight.ts`.
+ *
+ * §3 asks for ~45-55 nodes across: generator strength, click power, offline
+ * efficiency, Kitchen Garden progression, and purely cosmetic decorations.
+ *
+ * NOTHING IN THIS TREE GATES PROGRESSION. §2 put eight tiers behind "Insight
+ * skill unlock" and Phase 3 built nodes for them; a playtester then found the
+ * obvious failure: spend Insight on click power and the Kitchen Garden, and the
+ * next tier is unreachable, with no way to earn the Insight back. Tiers now gate
+ * on owning ten of the previous tier (`GENERATOR_UNLOCK_OWNED`), which Mana
+ * alone always opens, and those eight nodes became per-tier PRODUCTION ladders.
+ * The tree buys strength; it never buys access. See docs/09.
+ */
+
+/** What buying a node does. */
+export type NodeEffect =
+  /**
+   * Additive production bonus for ONE Garden Plot tier: 0.25 means that tier
+   * produces +25%.
+   *
+   * Replaces `unlock-generator`. Tiers no longer gate on Insight at all — that
+   * could soft-lock a player who spent it elsewhere — so the tree buys strength
+   * instead of access, and per tier rather than only globally. A player leaning
+   * on Butterfly Swarms can pay to make Butterfly Swarms better, which is a
+   * decision; "+8% to everything" is not.
+   */
+  | { readonly kind: 'tier-production'; readonly tier: number; readonly amount: number }
+  /** Additive to the click bonus: 1.0 means +100%. */
+  | { readonly kind: 'click-bonus'; readonly amount: number }
+  /** Additive to a global production multiplier: 0.1 means +10%. */
+  | { readonly kind: 'production-bonus'; readonly amount: number }
+  /** Raises §7's offline floor, e.g. 0.05 lifts 50% to 55%. */
+  | { readonly kind: 'offline-floor'; readonly amount: number }
+  /** Extends §5's Frenzy window, in seconds. */
+  | { readonly kind: 'frenzy-duration'; readonly seconds: number }
+  /** Extra Kitchen Garden plot slots (§2a). */
+  | { readonly kind: 'kg-slots'; readonly amount: number }
+  /** Unlocks a Kitchen Garden surface (§2a's table). */
+  | { readonly kind: 'kg-surface'; readonly surface: string }
+  /** One automation level for one step (§2a). */
+  | {
+      readonly kind: 'kg-automation';
+      readonly step: 'dig' | 'plant' | 'cover';
+      readonly level: 1 | 2;
+    }
+  /** Advances Day Length along §2a's 30/45/60/90/120s ladder. */
+  | { readonly kind: 'kg-day-length'; readonly step: number }
+  /** Seed Satchel capacity (§2a). */
+  | { readonly kind: 'satchel-capacity'; readonly amount: number }
+  /** Multiplies §6.2's Barn Capacity. */
+  | { readonly kind: 'barn-capacity'; readonly multiplier: number }
+  /** One of §6.3's three Insulation steps. */
+  | { readonly kind: 'insulation' }
+  /** No mechanical effect. §3 asks for these explicitly — pure expression. */
+  | { readonly kind: 'cosmetic' };
+
+export interface InsightNode {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  /** Season the node belongs to. Nodes are hidden until that Season is reached. */
+  readonly season: 1 | 2 | 3 | 4;
+  readonly cost: number;
+  /** Node ids that must be purchased first. Empty means a branch root. */
+  readonly requires: readonly string[];
+  readonly effect: NodeEffect;
+}
+
+export const INSIGHT_TREE: readonly InsightNode[] = [
+  // ===========================================================================
+  // Season 1 — Spring
+  // ===========================================================================
+  {
+    id: 's1-click-1',
+    name: 'Steady Hands',
+    description: 'Ringing the Bell yields twice as much Mana.',
+    season: 1,
+    cost: 1,
+    requires: [],
+    effect: { kind: 'click-bonus', amount: 1 },
+  },
+  {
+    id: 's1-compost',
+    name: 'Rich Compost',
+    description: 'All Garden Plots produce 6% more.',
+    season: 1,
+    cost: 2,
+    requires: ['s1-click-1'],
+    effect: { kind: 'production-bonus', amount: 0.06 },
+  },
+  {
+    id: 's1-yield-3',
+    name: 'Butterfly Husbandry',
+    description: 'Butterfly Swarms produce 25% more.',
+    season: 1,
+    cost: 2,
+    requires: ['s1-click-1'],
+    effect: { kind: 'tier-production', tier: 3, amount: 0.25 },
+  },
+  {
+    id: 's1-yield-4',
+    name: 'Gnome Diplomacy',
+    description: 'Garden Gnome Crews produce 25% more.',
+    season: 1,
+    cost: 4,
+    requires: ['s1-yield-3'],
+    effect: { kind: 'tier-production', tier: 4, amount: 0.25 },
+  },
+  {
+    id: 's1-deeper-beds',
+    name: 'Deeper Beds',
+    description: 'All Garden Plots produce a further 8% more.',
+    season: 1,
+    cost: 4,
+    requires: ['s1-compost'],
+    effect: { kind: 'production-bonus', amount: 0.08 },
+  },
+  {
+    id: 's1-click-2',
+    name: 'Practised Swing',
+    description: 'Ringing the Bell yields more again.',
+    season: 1,
+    cost: 5,
+    requires: ['s1-click-1'],
+    effect: { kind: 'click-bonus', amount: 1.5 },
+  },
+  {
+    id: 's1-frenzy-1',
+    name: 'Lingering Bloom',
+    description: 'Growth Frenzy lasts 5 seconds longer.',
+    season: 1,
+    cost: 3,
+    requires: ['s1-click-1'],
+    effect: { kind: 'frenzy-duration', seconds: 5 },
+  },
+  {
+    id: 's1-offline-1',
+    name: 'Night Watch',
+    description: 'The garden keeps a little more of its pace while you are away.',
+    season: 1,
+    cost: 3,
+    requires: [],
+    effect: { kind: 'offline-floor', amount: 0.05 },
+  },
+  {
+    id: 's1-kg-slots-1',
+    name: 'Broken Ground',
+    description: 'Two more Kitchen Garden plot slots.',
+    season: 1,
+    cost: 2,
+    requires: [],
+    effect: { kind: 'kg-slots', amount: 2 },
+  },
+  {
+    id: 's1-kg-terracotta',
+    name: 'Terracotta Pots',
+    description: 'A faster-cycling surface that yields a little less.',
+    season: 1,
+    cost: 3,
+    requires: ['s1-kg-slots-1'],
+    effect: { kind: 'kg-surface', surface: 'terracotta-pot' },
+  },
+  {
+    id: 's1-kg-day-1',
+    name: 'Longer Mornings',
+    description: 'Day Length rises to 45 seconds.',
+    season: 1,
+    cost: 3,
+    requires: ['s1-kg-slots-1'],
+    effect: { kind: 'kg-day-length', step: 1 },
+  },
+  {
+    id: 's1-satchel-1',
+    name: 'Wider Satchel',
+    description: 'Carry ten more Seeds.',
+    season: 1,
+    cost: 2,
+    requires: ['s1-kg-slots-1'],
+    effect: { kind: 'satchel-capacity', amount: 10 },
+  },
+  {
+    // MOVED from Season 2 by option (c) in docs/07 §2. Capacity is the only
+    // Kitchen Garden lever that scales with the hours a player is actually
+    // there, and behind a Season 2 gate it arrived too late to be one.
+    id: 's1-kg-raised',
+    name: 'Raised Garden Box',
+    description: 'Three plants per slot, planted in one dig-and-cover cycle.',
+    season: 1,
+    cost: 4,
+    requires: ['s1-kg-terracotta'],
+    effect: { kind: 'kg-surface', surface: 'raised-garden-box' },
+  },
+
+  {
+    // Ladders for the tiers a Season 1 player actually owns. Cheap and
+    // immediately felt: the complaint these answer is that early Insight
+    // bought nothing you could see happen.
+    id: 's1-yield-1',
+    name: 'Steady Drip',
+    description: 'Watering Cans produce 50% more.',
+    season: 1,
+    cost: 2,
+    requires: ['s1-click-1'],
+    effect: { kind: 'tier-production', tier: 1, amount: 0.5 },
+  },
+  {
+    id: 's1-yield-2',
+    name: 'Deep Roots',
+    description: 'Sprout Beds produce 40% more.',
+    season: 1,
+    cost: 3,
+    requires: ['s1-yield-1'],
+    effect: { kind: 'tier-production', tier: 2, amount: 0.4 },
+  },
+  {
+    id: 's1-yield-3b',
+    name: 'Nectar Trails',
+    description: 'Butterfly Swarms produce a further 30% more.',
+    season: 1,
+    cost: 5,
+    requires: ['s1-yield-3'],
+    effect: { kind: 'tier-production', tier: 3, amount: 0.3 },
+  },
+
+  // ===========================================================================
+  // Season 2 — Summer
+  // ===========================================================================
+  {
+    id: 's2-yield-8',
+    name: 'Drone Choreography',
+    description: 'Pollinator Drone Swarms produce 30% more.',
+    season: 2,
+    cost: 6,
+    requires: ['s1-yield-4'],
+    effect: { kind: 'tier-production', tier: 8, amount: 0.3 },
+  },
+  {
+    id: 's2-yield-9',
+    name: 'Nectar Chemistry',
+    description: 'Nectar Refineries produce 30% more.',
+    season: 2,
+    cost: 9,
+    requires: ['s2-yield-8'],
+    effect: { kind: 'tier-production', tier: 9, amount: 0.3 },
+  },
+  {
+    id: 's2-sunlight',
+    name: 'Sunlight Discipline',
+    description: 'All Garden Plots produce 10% more.',
+    season: 2,
+    cost: 6,
+    requires: ['s1-deeper-beds'],
+    effect: { kind: 'production-bonus', amount: 0.1 },
+  },
+  {
+    id: 's2-click-3',
+    name: 'Bell Resonance',
+    description: 'Ringing the Bell yields substantially more.',
+    season: 2,
+    cost: 7,
+    requires: ['s1-click-2'],
+    effect: { kind: 'click-bonus', amount: 3 },
+  },
+  {
+    id: 's2-frenzy-2',
+    name: 'Second Wind',
+    description: 'Growth Frenzy lasts 5 seconds longer again.',
+    season: 2,
+    cost: 6,
+    requires: ['s1-frenzy-1'],
+    effect: { kind: 'frenzy-duration', seconds: 5 },
+  },
+  {
+    id: 's2-offline-2',
+    name: 'Moonlit Rows',
+    description: 'The garden holds its pace better still while you are away.',
+    season: 2,
+    cost: 6,
+    requires: ['s1-offline-1'],
+    effect: { kind: 'offline-floor', amount: 0.05 },
+  },
+  {
+    id: 's2-kg-slots-2',
+    name: 'Turned Earth',
+    description: 'Four more Kitchen Garden plot slots.',
+    season: 2,
+    cost: 4,
+    requires: ['s1-kg-slots-1'],
+    effect: { kind: 'kg-slots', amount: 4 },
+  },
+  {
+    id: 's2-kg-stone',
+    name: 'Stone Parterre',
+    description: 'A slower surface that rewards patience with a higher yield.',
+    season: 2,
+    cost: 4,
+    requires: ['s1-kg-terracotta'],
+    effect: { kind: 'kg-surface', surface: 'stone-parterre' },
+  },
+  {
+    id: 's2-auto-dig-1',
+    name: 'Assisted Digging',
+    description: 'Digging takes half as long, at a small cost to yield.',
+    season: 2,
+    cost: 3,
+    requires: ['s2-kg-slots-2'],
+    effect: { kind: 'kg-automation', step: 'dig', level: 1 },
+  },
+  {
+    id: 's2-auto-plant-1',
+    name: 'Assisted Planting',
+    description: 'Planting takes half as long, at a small cost to yield.',
+    season: 2,
+    cost: 3,
+    requires: ['s2-auto-dig-1'],
+    effect: { kind: 'kg-automation', step: 'plant', level: 1 },
+  },
+
+  {
+    id: 's2-yield-8b',
+    name: 'Swarm Logistics',
+    description: 'Pollinator Drone Swarms produce a further 35% more.',
+    season: 2,
+    cost: 9,
+    requires: ['s2-yield-8'],
+    effect: { kind: 'tier-production', tier: 8, amount: 0.35 },
+  },
+  {
+    id: 's2-yield-9b',
+    name: 'Refined Nectar',
+    description: 'Nectar Refineries produce a further 35% more.',
+    season: 2,
+    cost: 12,
+    requires: ['s2-yield-9'],
+    effect: { kind: 'tier-production', tier: 9, amount: 0.35 },
+  },
+
+  // ===========================================================================
+  // Season 3 — Autumn
+  // ===========================================================================
+  {
+    id: 's3-yield-13',
+    name: 'Cider Chemistry',
+    description: 'Cider Press Guilds produce 35% more.',
+    season: 3,
+    cost: 12,
+    requires: ['s2-yield-9'],
+    effect: { kind: 'tier-production', tier: 13, amount: 0.35 },
+  },
+  {
+    id: 's3-yield-14',
+    name: 'Sentinel Drill',
+    description: 'Scarecrow Sentinel Networks produce 35% more.',
+    season: 3,
+    cost: 16,
+    requires: ['s3-yield-13'],
+    effect: { kind: 'tier-production', tier: 14, amount: 0.35 },
+  },
+  {
+    id: 's3-barn-1',
+    name: 'Raised Rafters',
+    description: 'The Barn holds half again as much Mana.',
+    season: 3,
+    cost: 8,
+    requires: [],
+    effect: { kind: 'barn-capacity', multiplier: 1.5 },
+  },
+  {
+    id: 's3-barn-2',
+    name: 'Second Granary',
+    description: 'The Barn holds twice as much again.',
+    season: 3,
+    cost: 14,
+    requires: ['s3-barn-1'],
+    effect: { kind: 'barn-capacity', multiplier: 2 },
+  },
+  {
+    id: 's3-harvest-lore',
+    name: 'Harvest Lore',
+    description: 'All Garden Plots produce 12% more.',
+    season: 3,
+    cost: 12,
+    requires: ['s2-sunlight'],
+    effect: { kind: 'production-bonus', amount: 0.12 },
+  },
+  {
+    id: 's3-click-4',
+    name: 'Harvest Peal',
+    description: 'Ringing the Bell yields far more.',
+    season: 3,
+    cost: 12,
+    requires: ['s2-click-3'],
+    effect: { kind: 'click-bonus', amount: 6 },
+  },
+  {
+    id: 's3-offline-3',
+    name: 'Frost-Proof Cloches',
+    description: 'The garden barely slows while you are away.',
+    season: 3,
+    cost: 12,
+    requires: ['s2-offline-2'],
+    effect: { kind: 'offline-floor', amount: 0.05 },
+  },
+  {
+    id: 's3-kg-slots-3',
+    name: 'Widened Beds',
+    description: 'Five more Kitchen Garden plot slots.',
+    season: 3,
+    cost: 6,
+    requires: ['s2-kg-slots-2'],
+    effect: { kind: 'kg-slots', amount: 5 },
+  },
+  {
+    id: 's3-auto-cover-1',
+    name: 'Assisted Covering',
+    description: 'Covering takes half as long, at a small cost to yield.',
+    season: 3,
+    cost: 5,
+    requires: ['s2-auto-plant-1'],
+    effect: { kind: 'kg-automation', step: 'cover', level: 1 },
+  },
+  {
+    id: 's3-auto-dig-2',
+    name: 'Automatic Digging',
+    description: 'Digging is instant and free of Day Time, at full yield.',
+    season: 3,
+    cost: 8,
+    requires: ['s3-auto-cover-1'],
+    effect: { kind: 'kg-automation', step: 'dig', level: 2 },
+  },
+  {
+    // MOVED from Season 4 by option (c). At Season 4 the highest-capacity
+    // surface existed for minutes, not hours - the campaign ends shortly after
+    // Season 4 begins. Its prerequisite was the Greenhouse Bed, which is a
+    // Frost-immunity node and has nothing to do with capacity; it now hangs off
+    // automation, which is what the surface's built-in Level 2 actually extends.
+    id: 's3-kg-trellis',
+    name: 'Clockwork Trellis',
+    description: 'Five plants per slot, with automation pre-installed.',
+    season: 3,
+    cost: 12,
+    requires: ['s3-auto-dig-2', 's1-kg-raised'],
+    effect: { kind: 'kg-surface', surface: 'clockwork-trellis' },
+  },
+  {
+    id: 's3-kg-day-2',
+    name: 'Long Afternoons',
+    description: 'Day Length rises to 60 seconds.',
+    season: 3,
+    cost: 6,
+    requires: ['s1-kg-day-1'],
+    effect: { kind: 'kg-day-length', step: 2 },
+  },
+
+  {
+    id: 's3-yield-13b',
+    name: 'Slow Pressing',
+    description: 'Cider Press Guilds produce a further 40% more.',
+    season: 3,
+    cost: 15,
+    requires: ['s3-yield-13'],
+    effect: { kind: 'tier-production', tier: 13, amount: 0.4 },
+  },
+  {
+    id: 's3-yield-14b',
+    name: 'Standing Watch',
+    description: 'Scarecrow Sentinel Networks produce a further 40% more.',
+    season: 3,
+    cost: 18,
+    requires: ['s3-yield-14'],
+    effect: { kind: 'tier-production', tier: 14, amount: 0.4 },
+  },
+
+  // ===========================================================================
+  // Season 4 — Winter
+  // ===========================================================================
+  {
+    id: 's4-yield-18',
+    name: 'Ember Metallurgy',
+    description: 'Ember Furnace Cores produce 40% more.',
+    season: 4,
+    cost: 20,
+    requires: ['s3-yield-14'],
+    effect: { kind: 'tier-production', tier: 18, amount: 0.4 },
+  },
+  {
+    id: 's4-yield-19',
+    name: 'Aurora Theory',
+    description: 'Aurora Conduits produce 40% more.',
+    season: 4,
+    cost: 26,
+    requires: ['s4-yield-18'],
+    effect: { kind: 'tier-production', tier: 19, amount: 0.4 },
+  },
+  {
+    id: 's4-insulation-1',
+    name: 'Insulation',
+    description: 'Frost Cycles bite less deeply.',
+    season: 4,
+    cost: 10,
+    requires: [],
+    effect: { kind: 'insulation' },
+  },
+  {
+    id: 's4-insulation-2',
+    name: 'Double Glazing',
+    description: 'Frost Cycles bite less deeply again.',
+    season: 4,
+    cost: 16,
+    requires: ['s4-insulation-1'],
+    effect: { kind: 'insulation' },
+  },
+  {
+    id: 's4-insulation-3',
+    name: 'Banked Hearths',
+    description: 'Frost Cycles bite as little as they ever will.',
+    season: 4,
+    cost: 24,
+    requires: ['s4-insulation-2'],
+    effect: { kind: 'insulation' },
+  },
+  {
+    id: 's4-kg-greenhouse',
+    name: 'Greenhouse Bed',
+    description: 'A surface immune to Frost Dormancy.',
+    season: 4,
+    cost: 10,
+    requires: ['s1-kg-raised'],
+    effect: { kind: 'kg-surface', surface: 'greenhouse-bed' },
+  },
+  {
+    id: 's4-kg-slots-4',
+    name: 'The Whole Plot',
+    description: 'The last Kitchen Garden slots.',
+    season: 4,
+    cost: 10,
+    requires: ['s3-kg-slots-3'],
+    effect: { kind: 'kg-slots', amount: 5 },
+  },
+  {
+    id: 's4-kg-day-3',
+    name: 'Endless Dusk',
+    description: 'Day Length rises to 90 seconds.',
+    season: 4,
+    cost: 10,
+    requires: ['s3-kg-day-2'],
+    effect: { kind: 'kg-day-length', step: 3 },
+  },
+  {
+    id: 's4-clockwork-heart',
+    name: 'Clockwork Sympathy',
+    description: 'All Garden Plots produce 20% more.',
+    season: 4,
+    cost: 24,
+    requires: ['s3-harvest-lore'],
+    effect: { kind: 'production-bonus', amount: 0.2 },
+  },
+  {
+    id: 's4-frenzy-3',
+    name: 'Winter Bloom',
+    description: 'Growth Frenzy lasts 10 seconds longer.',
+    season: 4,
+    cost: 20,
+    requires: ['s2-frenzy-2'],
+    effect: { kind: 'frenzy-duration', seconds: 10 },
+  },
+
+  // ===========================================================================
+  // Cosmetic — no mechanical effect. §3 asks for these by name.
+  // ===========================================================================
+  {
+    id: 'cos-lanterns',
+    name: 'Paper Lanterns',
+    description: 'Hang lanterns along the rows. Purely for the look of it.',
+    season: 1,
+    cost: 2,
+    requires: [],
+    effect: { kind: 'cosmetic' },
+  },
+  {
+    id: 'cos-sundial',
+    name: 'Brass Sundial',
+    description: 'A sundial for the centre of the garden.',
+    season: 2,
+    cost: 4,
+    requires: ['cos-lanterns'],
+    effect: { kind: 'cosmetic' },
+  },
+  {
+    id: 'cos-topiary',
+    name: 'Topiary Menagerie',
+    description: 'Clip the hedges into improbable animals.',
+    season: 2,
+    cost: 6,
+    requires: ['cos-lanterns'],
+    effect: { kind: 'cosmetic' },
+  },
+  {
+    id: 'cos-weathervane',
+    name: 'Copper Weathervane',
+    description: 'It turns with the Season.',
+    season: 3,
+    cost: 8,
+    requires: ['cos-sundial'],
+    effect: { kind: 'cosmetic' },
+  },
+  {
+    id: 'cos-frost-lights',
+    name: 'Winter Lights',
+    description: 'Strings of light for the long nights.',
+    season: 4,
+    cost: 10,
+    requires: ['cos-weathervane'],
+    effect: { kind: 'cosmetic' },
+  },
+  {
+    id: 's4-yield-18b',
+    name: 'Banked Embers',
+    description: 'Ember Furnace Cores produce a further 45% more.',
+    season: 4,
+    cost: 30,
+    requires: ['s4-yield-18'],
+    effect: { kind: 'tier-production', tier: 18, amount: 0.45 },
+  },
+  {
+    id: 's4-yield-19b',
+    name: 'Aurora Resonance',
+    description: 'Aurora Conduits produce a further 45% more.',
+    season: 4,
+    cost: 34,
+    requires: ['s4-yield-19'],
+    effect: { kind: 'tier-production', tier: 19, amount: 0.45 },
+  },
+] as const;
+
+export const NODE_COUNT = INSIGHT_TREE.length;
+
+const BY_ID = new Map(INSIGHT_TREE.map((node) => [node.id, node]));
+
+export function nodeById(id: string): InsightNode | undefined {
+  return BY_ID.get(id);
+}
+
+/** Total Insight to buy every node. Compared against milestone supply in tests. */
+export const TOTAL_TREE_COST = INSIGHT_TREE.reduce((sum, node) => sum + node.cost, 0);

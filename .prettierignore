@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+package-lock.json
+assets/vendor
+
+# Source of truth, authored by the designer. Never reformat.
+clockwork-garden-design-spec.md

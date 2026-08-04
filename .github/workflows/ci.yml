@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+
+      # The spec audit is a guard, not a formality: it re-derives the economy's
+      # properties from the tier table and fails loudly if a tuning change breaks
+      # one. See docs/04-spec-open-questions.md.
+      - name: Spec audit
+        run: npm run audit:spec
+
+      # The balance harness is a gate, not a report. If a content change pushes
+      # the campaign outside 6-10 hours for any archetype, CI says so.
+      - name: Balance simulation
+        run: npm run simulate
+
+      # The runner has no browser. PLAYWRIGHT_BROWSERS_PATH used to be pinned to
+      # /opt/pw-browsers on the smoke step below, which is where the DEVELOPMENT
+      # sandbox keeps its pre-installed Chromium - it does not exist here, so the
+      # smoke step had been failing since Phase 2 with "browser not installed".
+      # Installing on the runner is the right move; the sandbox still uses its
+      # own copy and must never run this.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Phase 2's exit criterion, executed in real Chromium: play, reload, come
+      # back to correct offline progress. Unit tests cannot prove this - the
+      # store, save layer, React subscription and localStorage all have to work
+      # together in a browser.
+      - name: Smoke test (browser)
+        run: |
+          npx vite preview --port 4173 &
+          npx wait-on http://localhost:4173/ --timeout 60000
+          npm run smoke
