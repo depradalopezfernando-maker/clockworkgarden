@@ -162,6 +162,13 @@ number.
 **What would reopen this:** the spread rising above ×1.67, at which point idle
 and casual can no longer both fit either. That is the assertion to watch.
 
+**REOPENED 2026-08-04 by Phase 7.** The spread is now ×2.45. §6.1's Blooms are
+an active-play multiplier by construction — idle earns the drone's ×1.08, an
+engaged player up to ×2.00 — so the mechanic that §9 asks for is the thing that
+breaks §8's ratio. §6.2 and §6.3 will each do it again. Three options, measured,
+in `docs/11` §3; a human has to pick one. Until then `npm run simulate` reports
+the spread as `[KNOWN]` and pins it at ×2.6 so a regression still fails.
+
 ---
 
 ## 1. BLOCKER — Barn Capacity deadlocks Season 3 and 4 progression
@@ -507,25 +514,27 @@ normally. The capstone is a ceremony marking the Season's end, not a wall.
 - Re-run `npm run simulate` afterwards: changing what clears Season 1 moves every
   downstream Season boundary.
 
-**Still open:** the Season 2 and Season 3 capstones. Proposals in item 4 below
-("The Great Pollination" and "The Grand Harvest") remain unreviewed, and Season 2
-blocks Phase 7 rather than Phase 5.
+**Still open:** the Season 3 capstone. Season 2's was decided as D4b and built in
+Phase 7; the item 4 proposal "The Grand Harvest" remains unreviewed and blocks
+Phase 8.
 
 ---
 
 ## Decision status
 
-| #   | Decision                                           | Blocks  | Status                     |
-| --- | -------------------------------------------------- | ------- | -------------------------- |
-| 1   | Barn Capacity = total output + safety floor        | Phase 1 | **decided 2026-08-02**     |
-| 2   | Non-recursive KG yield; `BaseFraction` 0.4%        | Phase 1 | **decided 2026-08-02**     |
-| 3   | Log-shaped prestige on non-resetting lifetime Mana | Phase 1 | **decided 2026-08-02**     |
-| 6   | Capstone-gated Seasons; prestige renamed           | Phase 1 | **decided 2026-08-02**     |
-| 4   | Approve/replace the three proposed capstones       | Phase 5 | open                       |
-| 5   | Map "Insight skill unlock" gates to real nodes     | Phase 3 | open (authored in Phase 3) |
-| 7   | Offline crop growth tapered or full-rate           | Phase 4 | open                       |
-| 8   | Should slot cost be a real decision                | Phase 4 | open                       |
-| 9   | Confirm no anti-tamper requirement                 | Phase 2 | open                       |
+| #   | Decision                                            | Blocks  | Status                                                 |
+| --- | --------------------------------------------------- | ------- | ------------------------------------------------------ |
+| 1   | Barn Capacity = total output + safety floor         | Phase 1 | **decided 2026-08-02**                                 |
+| 2   | Non-recursive KG yield; `BaseFraction` 0.4%         | Phase 1 | **decided 2026-08-02**                                 |
+| 3   | Log-shaped prestige on non-resetting lifetime Mana  | Phase 1 | **decided 2026-08-02**                                 |
+| 6   | Capstone-gated Seasons; prestige renamed            | Phase 1 | **decided 2026-08-02**                                 |
+| 4   | Approve/replace the three proposed capstones        | Phase 5 | S1 + S2 decided (D4a/D4b); **S3 open, blocks Phase 8** |
+| 7b  | D7 reopened by §6.1 — §8's spread vs §9's guardrail | Phase 8 | **open, see docs/11 §3**                               |
+| 5   | Map "Insight skill unlock" gates to real nodes      | Phase 3 | open (authored in Phase 3)                             |
+| 7   | Offline crop growth tapered or full-rate            | Phase 4 | open                                                   |
+| 8   | Should slot cost be a real decision                 | Phase 4 | open                                                   |
+| 9   | Confirm no anti-tamper requirement                  | Phase 2 | open                                                   |
 
-**Phase 1 is unblocked.** The next decision that gates real work is item 4 — the
-Season 1 and 2 capstones — which blocks Phase 5, the vertical-slice go/no-go.
+**Phase 1 is unblocked.** Item 4's Season 1 and 2 capstones are decided (D4a,
+D4b) and Season 4's is specified by §6.3. The next decisions that gate real work
+are the **Season 3 capstone** and the **reopened D7**, both of which block Phase 8.

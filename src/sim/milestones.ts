@@ -23,6 +23,8 @@ export function isConditionMet(state: GameState, condition: MilestoneCondition):
       return state.prestigeCount >= condition.count;
     case 'played-seconds':
       return state.elapsedSeconds >= condition.seconds;
+    case 'best-chain':
+      return state.pollination.bestChain >= condition.length;
   }
 }
 
@@ -82,5 +84,7 @@ export function milestoneProgress(state: GameState, milestone: Milestone): numbe
       return ratio(state.prestigeCount, c.count);
     case 'played-seconds':
       return ratio(state.elapsedSeconds, c.seconds);
+    case 'best-chain':
+      return ratio(state.pollination.bestChain, c.length);
   }
 }

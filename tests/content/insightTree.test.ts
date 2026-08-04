@@ -245,6 +245,10 @@ describe('no node silently does nothing', () => {
       'kg-automation',
       'kg-day-length',
       'satchel-capacity',
+      // Wired in Phase 7 (§6.1).
+      'pollination-window',
+      'pollination-bloom',
+      'pollination-drone',
     ];
     const accounted = new Set<string>([...applied, ...PENDING_EFFECT_KINDS]);
 

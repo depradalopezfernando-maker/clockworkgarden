@@ -9,6 +9,7 @@ import { TIER_COUNT } from '@content/generators';
 import { initialFrenzy, type FrenzyState } from './frenzy';
 import { initialKitchenGarden, type KitchenGardenState } from './kitchenGarden';
 import { initialCapstone, type CapstoneState } from './capstone';
+import { initialPollination, type PollinationState } from './pollination';
 
 export type { KitchenGardenState };
 export { initialKitchenGarden };
@@ -61,6 +62,9 @@ export interface GameState {
   /** §5 Growth Frenzy meter and active window. */
   readonly frenzy: FrenzyState;
 
+  /** §6.1 Pollination Combo. Inert until Season 2. */
+  readonly pollination: PollinationState;
+
   /** Unspent Insight (§3). */
   readonly insight: number;
 
@@ -97,6 +101,7 @@ export function initialState(): GameState {
     elapsedSeconds: 0,
     kitchenGarden: initialKitchenGarden(),
     frenzy: initialFrenzy(),
+    pollination: initialPollination(),
     insight: 0,
     lifetimeInsight: 0,
     purchasedNodes: [],

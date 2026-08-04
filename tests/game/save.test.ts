@@ -2,12 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { CURRENT_SAVE_VERSION, decodeSave, deserialize, encodeSave, serialize } from '@game/save';
 import { initialState } from '@sim/state';
 import { initialCapstone } from '@sim/capstone';
+import { initialPollination } from '@sim/pollination';
 import { canPrestige } from '@sim/prestige';
 import { TIER_COUNT } from '@content/generators';
 import v1Fixture from '../fixtures/saves/v1.json';
 import v2Fixture from '../fixtures/saves/v2.json';
 import v3Fixture from '../fixtures/saves/v3.json';
 import v4Fixture from '../fixtures/saves/v4.json';
+import v5Fixture from '../fixtures/saves/v5.json';
+import v6Fixture from '../fixtures/saves/v6.json';
 
 /**
  * ADR-0004. Every version ships with a FROZEN fixture of that format and a test
@@ -46,6 +49,56 @@ describe('round-tripping the current version', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.save.state.lifetimeMana / 1.234e28).toBeCloseTo(1, 12);
+  });
+});
+
+describe('the frozen v6 fixture round-trips at the current version', () => {
+  it('loads without migrating', () => {
+    const result = deserialize(JSON.stringify(v6Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.migratedFrom).toBeNull();
+    expect(result.save.state.pollination.bestChain).toBe(6);
+  });
+
+  it('drops the in-flight chain and Bloom, and keeps the record', () => {
+    // Reloading into a live Bloom would hand back a multiplier the player did
+    // not earn on this session - the one thing in this state worth cheating for.
+    const result = deserialize(JSON.stringify(v6Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const p = result.save.state.pollination;
+    expect(v6Fixture.state.pollination.chain).toBeGreaterThan(0);
+    expect(v6Fixture.state.pollination.bloomRemaining).toBeGreaterThan(0);
+    expect(p.chain).toBe(0);
+    expect(p.bloomRemaining).toBe(0);
+    expect(p.bloomTier).toBe(-1);
+    expect(p.bestChain).toBe(6);
+  });
+
+  it('keeps the drone seed, so a reload cannot reroll its luck', () => {
+    const result = deserialize(JSON.stringify(v6Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.state.pollination.droneSeed).toBe(v6Fixture.state.pollination.droneSeed);
+  });
+});
+
+describe('the frozen v5 fixture still loads after the v6 migration', () => {
+  it('gains a fresh Pollination state and loses nothing else', () => {
+    const result = deserialize(JSON.stringify(v5Fixture));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.migratedFrom).toBe(5);
+    expect(result.save.state.pollination).toEqual(initialPollination());
+    expect(result.save.state.mana).toBe(41200);
+    expect(result.save.state.tiersUnlocked).toBe(6);
+    expect(result.save.state.purchasedNodes).toEqual([
+      's1-click-1',
+      's1-yield-3',
+      's1-yield-4',
+      's2-yield-8',
+    ]);
   });
 });
 

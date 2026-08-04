@@ -1,21 +1,26 @@
 /**
- * capstone.ts — Season capstones (§2, §8), starting with Season 1's.
+ * capstone.ts — Season capstones (§2, §8).
  *
  * Pure (ADR-0002).
  *
  * Decision D6: Seasons advance on capstone-clear ONLY, never on elapsed time.
  * Decision D4a: Season 1's capstone is "First Bloom" — reach a target Mana/sec
  * during a single Growth Frenzy.
+ * Decision D4b: Season 2's is "Both Blooms" — land a Golden Bloom (§6.1's chain
+ * of nine) DURING a Growth Frenzy. §6.1 already names that combination the
+ * Season's peak moment, so the capstone asks for the moment the Season was
+ * designed around rather than inventing a second one.
  *
- * Seasons 2, 3 and 4 are still undesigned (`docs/04` item 4). They keep the
- * Phase 1 placeholder: readiness alone clears them. `hasDesignedChallenge`
- * marks which is which so a later phase cannot mistake a placeholder for a
- * finished capstone.
+ * Seasons 3 and 4 are still undesigned (`docs/04` item 4). They keep the Phase 1
+ * placeholder: readiness alone clears them. `hasDesignedChallenge` marks which
+ * is which so a later phase cannot mistake a placeholder for a finished
+ * capstone.
  */
 
 import { S1_CAPSTONE_TARGET_RATE } from '@content/balance';
 import { CAPSTONE_GATE_COUNT, CAPSTONE_GATE_TIER } from '@content/generators';
 import { isFrenzyActive } from './frenzy';
+import { isGoldenBloomActive } from './pollination';
 import { ownedOf, type GameState } from './state';
 
 export interface CapstoneState {
@@ -37,11 +42,30 @@ export function initialCapstone(): CapstoneState {
 
 /** Seasons whose capstone has a real designed challenge rather than a stand-in. */
 export function hasDesignedChallenge(season: number): boolean {
-  return season === 1;
+  return season === 1 || season === 2;
 }
 
+/**
+ * The Mana/sec an attempt must reach, or 0 where the challenge is not about rate.
+ *
+ * Season 2 (D4b) asks for a Golden Bloom, not a number. It deliberately carries
+ * NO rate floor on top: the readiness gate already requires ten Nectar
+ * Refineries, and stacking a second requirement would turn "land the Season's
+ * peak moment" into "land the Season's peak moment while also having overbuilt",
+ * which is a different and much less legible ask.
+ *
+ * Undesigned Seasons return Infinity so nothing can accidentally clear them by
+ * rate; `clearPlaceholderCapstone` advances those instead.
+ */
 export function capstoneTargetRate(season: number): number {
-  return season === 1 ? S1_CAPSTONE_TARGET_RATE : Number.POSITIVE_INFINITY;
+  if (season === 1) return S1_CAPSTONE_TARGET_RATE;
+  if (season === 2) return 0;
+  return Number.POSITIVE_INFINITY;
+}
+
+/** D4b: Season 2 clears only on a Golden Bloom landed inside a Frenzy. */
+export function requiresGoldenBloom(season: number): boolean {
+  return season === 2;
 }
 
 /**
@@ -91,7 +115,8 @@ export interface CapstoneProgress {
 export function progressCapstone(
   state: GameState,
   currentRate: number,
-  frenziedDuringStep?: boolean
+  frenziedDuringStep?: boolean,
+  goldenBloomDuringStep?: boolean
 ): CapstoneProgress {
   const capstone = state.capstone;
   if (!capstone.armed) return { state, justCleared: false, justFailed: false };
@@ -101,11 +126,14 @@ export function progressCapstone(
   // that closes mid-step is otherwise invisible and the attempt hangs armed
   // forever. Rare at 10 Hz; routine on the catch-up path, which uses far larger
   // steps. Callers pass whether a Frenzy was live at any point in the step.
+  // A Golden Bloom can flicker the same way, and for the same reason.
   const frenzied = frenziedDuringStep ?? isFrenzyActive(state.frenzy);
+  const golden = goldenBloomDuringStep ?? isGoldenBloomActive(state.pollination);
   const target = capstoneTargetRate(state.season);
   const peak = Math.max(capstone.attemptPeakRate, frenzied ? currentRate : 0);
+  const bloomed = !requiresGoldenBloom(state.season) || golden;
 
-  if (frenzied && peak >= target) {
+  if (frenzied && bloomed && peak >= target) {
     return {
       state: {
         ...state,

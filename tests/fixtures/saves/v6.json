@@ -1,0 +1,102 @@
+{
+  "version": 6,
+  "savedAt": 1775000000000,
+  "state": {
+    "mana": 490897386.0754169,
+    "lifetimeMana": 2324170.3499999824,
+    "owned": [12, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "tiersUnlocked": 7,
+    "season": 2,
+    "capstonesCleared": [1],
+    "appliedSqp": 0,
+    "prestigeCount": 0,
+    "elapsedSeconds": 63.00000000000058,
+    "kitchenGarden": {
+      "plots": [
+        {
+          "surface": "bare-soil",
+          "stage": "bare",
+          "digAt": -1,
+          "plantAt": -1,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 0
+        },
+        {
+          "surface": "bare-soil",
+          "stage": "bare",
+          "digAt": -1,
+          "plantAt": -1,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 0
+        },
+        {
+          "surface": "bare-soil",
+          "stage": "bare",
+          "digAt": -1,
+          "plantAt": -1,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 0
+        },
+        {
+          "surface": "bare-soil",
+          "stage": "bare",
+          "digAt": -1,
+          "plantAt": -1,
+          "coverAt": -1,
+          "grownAt": -1,
+          "perfectUntil": -1,
+          "plantedSeason": 0
+        }
+      ],
+      "seeds": 20,
+      "dayTimeRemaining": 30,
+      "nightRemaining": 0,
+      "seedProgress": 0
+    },
+    "frenzy": {
+      "meter": 0,
+      "remainingSeconds": 0
+    },
+    "pollination": {
+      "chain": 6,
+      "lastFlower": "poppy",
+      "windowRemaining": 2.5,
+      "driver": "player",
+      "bloomTier": 1,
+      "bloomRemaining": 14.5,
+      "bestChain": 6,
+      "droneCooldown": 0,
+      "droneSeed": 1592598101
+    },
+    "insight": 73,
+    "lifetimeInsight": 73,
+    "purchasedNodes": [],
+    "claimedMilestones": [
+      "m-water-10",
+      "m-mana-1k",
+      "m-sprout-10",
+      "m-butterfly-10",
+      "m-gnome-10",
+      "m-capstone-1",
+      "m-beehive-10",
+      "m-mana-10k",
+      "m-mana-100k",
+      "m-mana-1m",
+      "m-chain-3",
+      "m-chain-6"
+    ],
+    "capstone": {
+      "armed": false,
+      "attemptPeakRate": 0,
+      "attempts": 0,
+      "lastFailed": false,
+      "sawFrenzy": false
+    }
+  }
+}

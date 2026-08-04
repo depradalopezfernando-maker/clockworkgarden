@@ -8,7 +8,8 @@ import {
   isCapstoneReady,
   progressCapstone,
 } from '@sim/capstone';
-import { advance, clickBell } from '@sim/tick';
+import { advance, clickBell, pollinateFlower } from '@sim/tick';
+import { FLOWERS, GOLDEN_CHAIN, isGoldenBloomActive, type FlowerType } from '@sim/pollination';
 import { totalManaPerSecond } from '@sim/economy';
 import { CLICKS_TO_FILL, initialFrenzy } from '@sim/frenzy';
 import { canPrestige } from '@sim/prestige';
@@ -52,9 +53,10 @@ describe('D4a — readiness is separate from clearing', () => {
     expect(state.capstonesCleared).toEqual([]);
   });
 
-  it('only Season 1 has a designed challenge so far', () => {
+  it('Seasons 1 and 2 have designed challenges; 3 and 4 do not yet', () => {
     expect(hasDesignedChallenge(1)).toBe(true);
-    for (const season of [2, 3, 4]) {
+    expect(hasDesignedChallenge(2)).toBe(true);
+    for (const season of [3, 4]) {
       expect(hasDesignedChallenge(season), `season ${season}`).toBe(false);
     }
   });
@@ -195,21 +197,36 @@ describe('D4a — the target is calibrated, not arbitrary', () => {
     expect(S1_CAPSTONE_TARGET_RATE).toBeGreaterThan(MEASURED_RATE_AT_READINESS * 1.2);
   });
 
-  it('later Seasons have no target yet, and are marked as such', () => {
-    expect(capstoneTargetRate(2)).toBe(Number.POSITIVE_INFINITY);
+  it('Season 2 carries no rate floor — D4b is a skill test, not a build test', () => {
+    expect(capstoneTargetRate(2)).toBe(0);
+  });
+
+  it('undesigned Seasons have no reachable target, and are marked as such', () => {
+    expect(capstoneTargetRate(3)).toBe(Number.POSITIVE_INFINITY);
+    expect(capstoneTargetRate(4)).toBe(Number.POSITIVE_INFINITY);
   });
 });
 
-describe('Seasons 2-4 keep the placeholder until designed', () => {
+describe('Seasons 3-4 keep the placeholder until designed', () => {
   it('readiness alone advances them', () => {
+    const base = initialState();
+    const owned = new Array<number>(TIER_COUNT).fill(0);
+    owned[(CAPSTONE_GATE_TIER[3] ?? 14) - 1] = CAPSTONE_GATE_COUNT;
+    const state: GameState = { ...base, owned, season: 3, capstonesCleared: [1, 2] };
+
+    expect(isCapstoneReady(state)).toBe(true);
+    const cleared = clearPlaceholderCapstone(state);
+    expect(cleared.season).toBe(4);
+  });
+
+  it('does NOT clear Season 2 — D4b must be played', () => {
     const base = initialState();
     const owned = new Array<number>(TIER_COUNT).fill(0);
     owned[(CAPSTONE_GATE_TIER[2] ?? 9) - 1] = CAPSTONE_GATE_COUNT;
     const state: GameState = { ...base, owned, season: 2, capstonesCleared: [1] };
 
     expect(isCapstoneReady(state)).toBe(true);
-    const cleared = clearPlaceholderCapstone(state);
-    expect(cleared.season).toBe(3);
+    expect(clearPlaceholderCapstone(state)).toBe(state);
   });
 
   it('never advances past Season 4', () => {
@@ -249,5 +266,95 @@ describe('initial state', () => {
       lastFailed: false,
       sawFrenzy: false,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DECISION D4b — Season 2's capstone, "Both Blooms"
+// ---------------------------------------------------------------------------
+//
+// §6.1 already names its own peak moment: a Golden Bloom landed during a Growth
+// Frenzy. D4b makes that moment the capstone rather than inventing a second one,
+// so the Season is finished by doing the thing the Season taught.
+
+describe('D4b — Both Blooms', () => {
+  /** A Season 2 state that has met the readiness gate (10x Tier 9). */
+  function readyForSeason2(extra: Partial<GameState> = {}): GameState {
+    const base = initialState();
+    const owned = new Array<number>(TIER_COUNT).fill(0);
+    owned[(CAPSTONE_GATE_TIER[2] ?? 9) - 1] = CAPSTONE_GATE_COUNT;
+    return { ...base, owned, season: 2, capstonesCleared: [1], ...extra };
+  }
+
+  function goldenChain(state: GameState): GameState {
+    let s = state;
+    for (let i = 0; i < GOLDEN_CHAIN; i++) {
+      s = pollinateFlower(s, FLOWERS[i % FLOWERS.length] as FlowerType).state;
+    }
+    return s;
+  }
+
+  it('needs BOTH: a Frenzy alone does not clear it', () => {
+    let state = armCapstone(readyForSeason2());
+    expect(state.capstone.armed).toBe(true);
+    state = withFrenzy(state);
+    // Rate is astronomically above zero, and Season 2 has no rate floor - so if
+    // the Golden Bloom were not required this would clear on the next tick.
+    state = advance(state, 0.1);
+    expect(state.capstonesCleared).toEqual([1]);
+    expect(state.season).toBe(2);
+  });
+
+  it('needs BOTH: a Golden Bloom outside a Frenzy does not clear it', () => {
+    let state = armCapstone(readyForSeason2());
+    state = goldenChain(state);
+    expect(isGoldenBloomActive(state.pollination)).toBe(true);
+    state = advance(state, 0.1);
+    expect(state.capstonesCleared).toEqual([1]);
+  });
+
+  it('clears on a Golden Bloom landed during a Frenzy, and advances the Season', () => {
+    let state = armCapstone(readyForSeason2());
+    state = withFrenzy(state);
+    state = goldenChain(state);
+    state = advance(state, 0.1);
+    expect(state.capstonesCleared).toEqual([1, 2]);
+    expect(state.season).toBe(3);
+  });
+
+  it('fails without penalty when the Frenzy runs out, and re-arms instantly', () => {
+    // D4a's anti-frustration rule, inherited: no cooldown, no cost, try again.
+    let state = armCapstone(readyForSeason2());
+    state = withFrenzy(state);
+    state = advance(state, FRENZY_DURATION_SECONDS + 1);
+    // The step the Frenzy expires in still counts as frenzied; the attempt ends
+    // on the first step that is not.
+    state = advance(state, 0.1);
+    expect(state.capstone.armed).toBe(false);
+    expect(state.capstone.lastFailed).toBe(true);
+    expect(state.capstonesCleared).toEqual([1]);
+
+    const again = armCapstone(state);
+    expect(again.capstone.armed).toBe(true);
+    expect(again.capstone.attempts).toBe(2);
+  });
+
+  it('cannot be cleared by the drone alone — it is a test of the PLAYER', () => {
+    // Nine straight successes at 40% is 0.026%. Ten simulated minutes of a
+    // fully-automated Season 2, armed and frenzied, must not clear it.
+    const owned = new Array<number>(TIER_COUNT).fill(0);
+    owned[(CAPSTONE_GATE_TIER[2] ?? 9) - 1] = CAPSTONE_GATE_COUNT;
+    owned[7] = 50; // fifty Pollinator Drone Swarms
+    let state = armCapstone({
+      ...initialState(),
+      owned,
+      season: 2,
+      capstonesCleared: [1],
+    });
+    for (let i = 0; i < 6000; i++) {
+      state = { ...state, frenzy: { meter: 0, remainingSeconds: 30 } };
+      state = advance(state, 0.1);
+    }
+    expect(state.capstonesCleared).toEqual([1]);
   });
 });

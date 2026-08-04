@@ -17,9 +17,12 @@
 import {
   FRENZY_MULTIPLIER,
   KITCHEN_GARDEN_BASE_FRACTION,
+  POLLINATION_DRONE_SUCCESS_RATE,
+  POLLINATION_TIERS,
   PRESTIGE_SQP_COEFFICIENT,
   PRESTIGE_SQP_REFERENCE,
 } from '@content/balance';
+import { expectedDroneMultiplier, isPollinationUnlocked } from './pollination';
 import { CAPSTONE_DURATION_SECONDS, TIER_COUNT, seasonTierOneCost } from '@content/generators';
 import {
   bestPurchase,
@@ -76,6 +79,13 @@ const MODELLED_EFFECTS = new Set([
   'kg-automation',
   'kg-day-length',
   'satchel-capacity',
+  'pollination-bloom',
+  'pollination-drone',
+  // 'pollination-window' is absent ON PURPOSE. It buys forgiveness — a wider
+  // margin for a MISSED click — and this harness has no model of missing, so it
+  // would price the node at zero and skip it either way. Listing it would only
+  // pretend otherwise. Nothing on the tree requires it, so leaving it out
+  // strands nothing.
 ]);
 
 export interface PlayerArchetype {
@@ -96,6 +106,16 @@ export interface PlayerArchetype {
    * least this factor. Lower = prestiges more eagerly.
    */
   readonly prestigeThreshold: number;
+  /**
+   * 0-1: fraction of Season 2+ play spent working §6.1's Pollination Combo.
+   *
+   * BEHAVIOURAL, like `frenzyUptime` — how much of the mechanic this player
+   * chooses to engage with, not how good the mechanic is. An engaged player
+   * holds a Golden Bloom continuously: it runs twenty seconds and rebuilding the
+   * chain that earns it costs nine clicks, so roughly 27 clicks a minute keeps
+   * it up. A disengaged one gets whatever the drone manages alone.
+   */
+  readonly pollinationEngagement: number;
 }
 
 /**
@@ -109,6 +129,7 @@ export const ARCHETYPES: readonly PlayerArchetype[] = [
     frenzyUptime: 0.05,
     prestigeThreshold: 2.0,
     kgTendingRate: 0.02,
+    pollinationEngagement: 0.02,
   },
   {
     name: 'casual',
@@ -116,6 +137,7 @@ export const ARCHETYPES: readonly PlayerArchetype[] = [
     frenzyUptime: 0.25,
     prestigeThreshold: 1.6,
     kgTendingRate: 0.15,
+    pollinationEngagement: 0.12,
   },
   {
     name: 'active',
@@ -123,6 +145,7 @@ export const ARCHETYPES: readonly PlayerArchetype[] = [
     frenzyUptime: 0.6,
     prestigeThreshold: 1.4,
     kgTendingRate: 0.5,
+    pollinationEngagement: 0.4,
   },
 ] as const;
 
@@ -192,6 +215,13 @@ export interface CampaignResult {
   /** Share averaged over Seasons 1-2 alone — the half of the run most players see. */
   readonly kitchenGardenShareEarly: number;
   readonly finalManaPerSecond: number;
+  /**
+   * §6.1's average Mana multiplier at the end of the run, for this archetype.
+   * The Phase 7 exit criterion is read off this against `droneOnlyMultiplier`.
+   */
+  readonly pollinationMultiplierAtEnd: number;
+  /** What the same build would be worth on drones alone — the §6.1 guardrail. */
+  readonly droneOnlyMultiplier: number;
   readonly lifetimeMana: number;
   /** Phase 3: how much of the Insight tree a playthrough actually affords. */
   readonly lifetimeInsight: number;
@@ -250,8 +280,10 @@ export function simulateCampaign(
     tendCarry.value = state.kitchenGarden.plots.length > 0 ? tendCarry.value : 0;
 
     // --- Income ------------------------------------------------------------
-    const clicks = clicksPerSecond * clickYield(state, 0, frenzy);
-    const income = totalManaPerSecond(state, kitchenGardenBaseFraction) * frenzy + clicks;
+    // §6.1's Blooms multiply on top of the Frenzy, exactly as `advance` does.
+    const bloom = pollinationMultiplier(state, archetype);
+    const clicks = clicksPerSecond * clickYield(state, 0, frenzy * bloom);
+    const income = totalManaPerSecond(state, kitchenGardenBaseFraction) * frenzy * bloom + clicks;
 
     const earned = income * stepSeconds;
     state = {
@@ -315,12 +347,22 @@ export function simulateCampaign(
 
     // --- Capstone, and therefore Season advancement (D6) --------------------
     //
-    // Season 1 now has a real challenge (D4a): reach a target rate during a
+    // Season 1 has a real challenge (D4a): reach a target rate during a
     // Frenzy. The harness models Frenzy as an average uptime rather than a
     // meter, so it cannot "play" First Bloom - instead it clears once the
     // player's rate WITH a full Frenzy would beat the target, which is the same
-    // condition a real attempt tests. Seasons 2-4 keep the readiness-only
-    // placeholder until they are designed.
+    // condition a real attempt tests.
+    //
+    // Season 2 (D4b) asks for a Golden Bloom during a Frenzy, which is a SKILL
+    // test rather than a build test, and `capstoneTargetRate` returns 0 for it
+    // accordingly. Modelling it as "clears once ready" is not the harness
+    // shrugging: retries are instant and unlimited (D4a's rule, which D4b
+    // inherits), so a chain of nine is a thing every archetype lands eventually,
+    // and how many attempts it takes changes the campaign by seconds. What the
+    // capstone really gates on - owning ten Nectar Refineries - is modelled
+    // exactly, by `isCapstoneAvailable`.
+    //
+    // Seasons 3-4 keep the readiness-only placeholder until they are designed.
     if (capstoneTimer > 0) {
       capstoneTimer -= stepSeconds;
       if (capstoneTimer <= 0) {
@@ -382,6 +424,8 @@ export function simulateCampaign(
     kitchenGardenShareTimeAverage: shareSeconds > 0 ? shareWeighted / shareSeconds : 0,
     kitchenGardenShareEarly: shareSecondsEarly > 0 ? shareWeightedEarly / shareSecondsEarly : 0,
     finalManaPerSecond: gardenPlotManaPerSecond(state),
+    pollinationMultiplierAtEnd: pollinationMultiplier(state, archetype),
+    droneOnlyMultiplier: pollinationMultiplier(state, { ...archetype, pollinationEngagement: 0 }),
     lifetimeMana: state.lifetimeMana,
     lifetimeInsight: state.lifetimeInsight,
     nodesPurchased: state.purchasedNodes.length,
@@ -401,6 +445,47 @@ export function highestOwnedTier(state: GameState): number {
   }
   return 0;
 }
+
+// ---------------------------------------------------------------------------
+// Pollination Combo play (§6.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * The average Mana multiplier §6.1 is worth to one archetype right now.
+ *
+ * Two regimes, blended by the archetype's engagement:
+ *
+ *   ENGAGED. A player working the combo holds the Golden Bloom continuously —
+ *   twenty seconds of it costs nine clicks to rebuild. The engaged multiplier
+ *   is therefore the Golden Bloom's, not an average over chain lengths: the
+ *   Bronze and Silver tiers are milestones passed on the way up, not places
+ *   anyone stops.
+ *
+ *   UNATTENDED. Whatever the Tier 8 drone manages, in closed form. Worth ~1.08
+ *   at the stock 40%, which is the "real, if lesser, role" §6.1 asks for.
+ *
+ * Modelled rather than played for the same reason Frenzy is: the harness has no
+ * clicks, and a campaign whose length depended on six hours of an LCG's luck
+ * would not be a thing anyone could tune against.
+ */
+function pollinationMultiplier(state: GameState, archetype: PlayerArchetype): number {
+  if (!isPollinationUnlocked(state.season)) return 1;
+
+  const effects = effectsOf(state);
+  const golden = POLLINATION_TIERS[POLLINATION_TIERS.length - 1];
+  const engaged = 1 + (golden?.bonus ?? 1) + effects.pollinationBloomBonus;
+
+  const drone =
+    ownedOf(state, POLLINATION_DRONE_TIER) >= 1
+      ? expectedDroneMultiplier(POLLINATION_DRONE_SUCCESS_RATE + effects.pollinationDroneBonus)
+      : 1;
+
+  const engagement = Math.min(1, Math.max(0, archetype.pollinationEngagement));
+  return engaged * engagement + drone * (1 - engagement);
+}
+
+/** §6.1: the Pollinator Drone Swarm. Kept next to the model that reads it. */
+const POLLINATION_DRONE_TIER = 8;
 
 // ---------------------------------------------------------------------------
 // Kitchen Garden play (§2a)

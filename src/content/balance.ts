@@ -78,19 +78,26 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * Re-fitted 26 -> 24 when the Kitchen Garden started paying what it was designed
  * to pay (docs/07 §2), then 24 -> 10 after the playtest changes in docs/09.
  *
- * K and REFERENCE were fitted TOGETHER this time, because they pull against
- * each other: lowering K to lengthen the campaign also shrinks the first
- * prestige, which is the one D3 exists to make felt. A 2D sweep of both
- * (docs/09 §6) found no point that satisfies all of §8's 6-10 hours, §4's felt
- * first prestige, and every archetype at once - the archetype spread is now
- * x1.65 against a band whose ratio is x1.67. This pair is the best available:
- * idle 8.46h, casual 6.28h, active 5.13h, first prestige x1.78.
+ * K and REFERENCE are fitted TOGETHER, because they pull against each other:
+ * lowering K to lengthen the campaign also shrinks the first prestige, which is
+ * the one thing D3 exists to make felt. A 2D sweep of both (docs/09 §6) found no
+ * point that satisfies §8's 6-10 hours, §4's felt first prestige and every
+ * archetype at once.
+ *
+ * RE-FITTED in Phase 7 (10 -> 7.5, REF 1e2 -> 2e1). §6.1's Blooms are income the
+ * pacing model never had - even the Tier 8 drone alone, with no player input at
+ * all, is worth ~x1.08 from Season 2 on - and every archetype finished roughly a
+ * quarter faster. This pair is the best available:
+ * idle 8.46h, casual 6.17h, active 3.45h, first prestige x1.74.
  *
  * The active archetype finishing under six hours is accepted: D7 scopes §8's
- * band to the idle and casual archetypes. Reopen if the spread exceeds x1.67,
- * which `npm run simulate` checks every run. See docs/09 §6.
+ * band to the idle and casual archetypes. The archetype SPREAD is now x2.45,
+ * past the band's own x1.67, which reopens D7 - see docs/11 §3. That is not a
+ * fitting problem: §6.1 is by construction an active-play multiplier, so §9's
+ * "active play out-earns automation" and §8's spread pull in opposite
+ * directions and a human has to choose. `npm run simulate` reports it every run.
  */
-export const PRESTIGE_SQP_COEFFICIENT = 10;
+export const PRESTIGE_SQP_COEFFICIENT = 8;
 /**
  * SIM. The lifetime Mana at which SQP starts accruing.
  *
@@ -110,9 +117,9 @@ export const PRESTIGE_SQP_COEFFICIENT = 10;
  * point where SQP starts accruing, so it controls what fraction of the total
  * multiplier the FIRST prestige is worth. Lowering it is what let K come down
  * far enough to keep the campaign long without making the first reset feel like
- * nothing. First prestige is x1.78.
+ * nothing. Re-fitted 1e2 -> 2e1 in Phase 7 alongside K. First prestige is x1.74.
  */
-export const PRESTIGE_SQP_REFERENCE = 1e2;
+export const PRESTIGE_SQP_REFERENCE = 2e1;
 export const PRESTIGE_BONUS_PER_SQP = 0.02; // SPEC §4  (+2% per SQP)
 
 /** SIM. Phase 1 fits PRESTIGE_SQP_COEFFICIENT until natural play lands here. */
@@ -187,6 +194,20 @@ export const POLLINATION_TIERS = [
  * INVARIANT: active play must reliably out-earn this. Guarded by test.
  */
 export const POLLINATION_DRONE_SUCCESS_RATE = 0.4;
+
+/** SPEC §6.1: "unlocked at the start of Season 2". */
+export const POLLINATION_SEASON = 2;
+
+/**
+ * HUMAN. Seconds between unattended drone attempts.
+ *
+ * Must sit INSIDE `POLLINATION_CHAIN_WINDOW_SECONDS` or the drone's own chain
+ * lapses between its attempts and it can never reach a bloom at all. It is also
+ * the whole lever on how much the drone is worth: at 40% success the expected
+ * multiplier is ~1.08, against the ~2.0 an engaged player holds. §6.1 wants
+ * exactly that gap — "a real, if lesser, role".
+ */
+export const POLLINATION_DRONE_ATTEMPT_SECONDS = 2;
 
 // ---------------------------------------------------------------------------
 // §6.2 — Season 3: Harvest Festival & the Barn  ·  DECISION D1

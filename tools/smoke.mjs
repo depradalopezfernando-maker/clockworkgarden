@@ -270,6 +270,57 @@ check(
   'clearing the capstone unlocks Turning the Soil'
 );
 
+// --- 4e. Pollination Combo (§6.1, Phase 7) ------------------------------------
+//
+// Season 2 has just started, so the flowers should have appeared. Everything
+// here is driven through the real buttons: the chain, the Bloom it earns, and
+// the fact that repeating a flower breaks it.
+check(
+  await page.locator('[data-testid="pollination"]').isVisible(),
+  'the flowers appear at the start of Season 2'
+);
+
+const chainNow = async () =>
+  Number((await page.locator('[data-testid="pollination-chain"]').textContent()) ?? '0');
+
+// Dispatched from inside the page for the same reason `ringBell` is: the chain
+// window is three seconds and Playwright's per-click latency would be testing
+// the harness rather than §6.1.
+const pollinate = (flowers) =>
+  page.evaluate((names) => {
+    for (const name of names) {
+      document.querySelector(`[data-testid="flower-${name}"]`)?.click();
+    }
+  }, flowers);
+
+await pollinate(['sunflower', 'lavender', 'poppy']);
+check((await chainNow()) === 3, 'three different flowers build a chain of three');
+check(
+  ((await page.locator('[data-testid="rate"]').textContent()) ?? '').includes('Bronze Bloom'),
+  'a chain of three lands the Bronze Bloom, and the HUD says so'
+);
+
+await pollinate(['sunflower', 'sunflower']);
+check((await chainNow()) === 1, 'the same flower twice breaks the chain');
+
+// A chain of nine scatters into the Golden Bloom - §6.1's peak, and D4b's
+// capstone condition.
+await pollinate([
+  'lavender',
+  'poppy',
+  'sunflower',
+  'lavender',
+  'poppy',
+  'sunflower',
+  'lavender',
+  'poppy',
+]);
+check(
+  ((await page.locator('[data-testid="rate"]').textContent()) ?? '').includes('Golden Bloom'),
+  'a chain of nine lands the Golden Bloom'
+);
+check((await chainNow()) === 0, 'the Golden Bloom scatters the chain that earned it');
+
 // Prestige asks before it wipes anything.
 await page.locator('[data-testid="prestige-open"]').click();
 check(

@@ -9,7 +9,8 @@
  */
 
 import { MAX_CATCHUP_SECONDS, OFFLINE_MIN_EFFICIENCY, SIM_TICK_SECONDS } from '@content/balance';
-import { advance, clickBell, type ClickResult } from '@sim/tick';
+import { advance, clickBell, pollinateFlower, type ClickResult } from '@sim/tick';
+import type { FlowerType, PollinationTier } from '@sim/pollination';
 import { buy as buyGenerator } from '@sim/economy';
 import { purchaseNode as purchaseInsightNode } from '@sim/insight';
 import { armCapstone } from '@sim/capstone';
@@ -260,6 +261,15 @@ export class GameStore {
     this.state = result.state;
     this.publish();
     return result;
+  }
+
+  /** §6.1: click one of the three flowers. Returns the Bloom it landed, if any. */
+  pollinate(flower: FlowerType): PollinationTier | null {
+    const outcome = pollinateFlower(this.state, flower);
+    if (outcome.state === this.state) return null;
+    this.state = outcome.state;
+    this.publish();
+    return outcome.landed;
   }
 
   buy(tier: number): boolean {
