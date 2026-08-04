@@ -44,6 +44,15 @@ jobs:
       - name: Balance simulation
         run: npm run simulate
 
+      # The runner has no browser. PLAYWRIGHT_BROWSERS_PATH used to be pinned to
+      # /opt/pw-browsers on the smoke step below, which is where the DEVELOPMENT
+      # sandbox keeps its pre-installed Chromium - it does not exist here, so the
+      # smoke step had been failing since Phase 2 with "browser not installed".
+      # Installing on the runner is the right move; the sandbox still uses its
+      # own copy and must never run this.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
       # Phase 2's exit criterion, executed in real Chromium: play, reload, come
       # back to correct offline progress. Unit tests cannot prove this - the
       # store, save layer, React subscription and localStorage all have to work
@@ -53,5 +62,3 @@ jobs:
           npx vite preview --port 4173 &
           npx wait-on http://localhost:4173/ --timeout 60000
           npm run smoke
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: /opt/pw-browsers
