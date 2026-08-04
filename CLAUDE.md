@@ -92,6 +92,10 @@ D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
 D4a Season 1 capstone = "First Bloom": reach 1600 Mana/sec DURING a Growth
     Frenzy. Retry instantly on failure, no penalty. Calibrated so a normally
     built player clears it first try but cannot clear it by idling.
+D4b Season 2 capstone = "Both Blooms": land a Golden Bloom (Pollination chain
+    of 9) DURING a Growth Frenzy — §6.1's own "peak moment". Same retry and
+    difficulty rules as D4a. BUILD IT LAST in Phase 7: it cannot be calibrated
+    before Pollination exists in the harness.
 D7  §8's 6-10h band applies to the idle and casual archetypes. `active` may
     finish faster; the spread (x1.65) no longer fits the band (x1.67).
 ```
@@ -105,8 +109,10 @@ exactly nothing. See `docs/06` §2 and `docs/09` §6.
 Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
-**Still open, and they gate later phases — ask, do not guess:** the Season 2 and
-3 capstones (block Phases 7 and 8; Season 1's is decided — D4a); whether prestige
+**Still open, and they gate later phases — ask, do not guess:** the Season 3
+capstone (blocks Phase 8; it should test the Harvest Festival, and the Barn's
+shape may move once it is real). Season 1 and 2 are decided (D4a, D4b) and
+Season 4's is specified by §6.3 — The Long Night. Also open: whether prestige
 wipes banked Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen
 Garden behaviour (`docs/04` item 7 — crops currently grow on engaged-play time
 only). How to make the Kitchen Garden matter is **settled** — option (c),

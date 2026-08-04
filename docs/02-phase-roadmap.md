@@ -229,6 +229,11 @@ place to find out the design does not work, if it does not.
 
 ## Phase 7 — Season 2: Pollination Combo (§6.1)
 
+> **Capstone decided (D4b): "Both Blooms"** — land a Golden Bloom during a Growth
+> Frenzy. Build it LAST in this phase: it cannot be calibrated before Pollination
+> exists in the balance harness, and D4a's target drifting out from under a later
+> change is the failure to avoid repeating. See `docs/04`.
+
 **Sessions: 2–3** · Entry: Phase 5
 
 Three flower types, 3s chain window, Bronze/Silver/Golden Bloom tiers, Tier 8

@@ -7,10 +7,16 @@
  * Decision D4a: Season 1's capstone is "First Bloom" — reach a target Mana/sec
  * during a single Growth Frenzy.
  *
- * Seasons 2, 3 and 4 are still undesigned (`docs/04` item 4). They keep the
- * Phase 1 placeholder: readiness alone clears them. `hasDesignedChallenge`
- * marks which is which so a later phase cannot mistake a placeholder for a
- * finished capstone.
+ * Season 2's challenge is DECIDED but not BUILT (D4b, "Both Blooms": land a
+ * Golden Bloom during a Growth Frenzy). It cannot be implemented here until
+ * Pollination Combo exists in Phase 7 — and it must be the LAST thing that phase
+ * builds, because the target has to be calibrated against a harness that models
+ * the mechanic. Season 3's is still open; Season 4's is specified by §6.3 as The
+ * Long Night.
+ *
+ * Until then all three keep the Phase 1 placeholder: readiness alone clears
+ * them. `hasDesignedChallenge` marks which is which so a later phase cannot
+ * mistake a placeholder for a finished capstone.
  */
 
 import { S1_CAPSTONE_TARGET_RATE } from '@content/balance';
