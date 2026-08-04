@@ -528,3 +528,51 @@ body {
   color: var(--frenzy, #ffd479);
   font-weight: 700;
 }
+
+/* A plot and the surface upgrade offered beneath it. */
+.plot-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.plot-upgrade {
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  padding: 0.3rem 0.4rem;
+  border: 1px dashed var(--border, #4a4a4a);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--muted, #a0a0a0);
+  cursor: pointer;
+  /* Two lines rather than one truncated one: the COST is the half a player is
+     deciding on, and it was the half being cut off. */
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: center;
+  min-width: 0;
+}
+
+.plot-upgrade__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plot-upgrade__cost {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.plot-upgrade:hover:not(:disabled) {
+  border-style: solid;
+  color: var(--text, #e8e8e8);
+}
+
+.plot-upgrade:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

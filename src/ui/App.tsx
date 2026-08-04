@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import { gameStore } from '@game/store';
-import { costOfNext, isTierUnlocked, totalManaPerSecond, unlockedTiers } from '@sim/economy';
+import {
+  costOfNext,
+  isTierUnlocked,
+  perUnitManaPerSecond,
+  totalManaPerSecond,
+  unlockedTiers,
+} from '@sim/economy';
 import { CLICKS_TO_FILL, frenzyMultiplier, isFrenzyActive } from '@sim/frenzy';
 import { prestigeMultiplier } from '@sim/prestige';
 import { ownedOf, type GameState } from '@sim/state';
@@ -249,7 +255,7 @@ function GeneratorRow({
         <span className="generator__detail">
           {locked
             ? describeGate(definition.unlock)
-            : `${formatRate(definition.baseYield)} each · owned ${owned}`}
+            : `${formatRate(perUnitManaPerSecond(state, tier))} each · owned ${owned}`}
         </span>
       </span>
       <span

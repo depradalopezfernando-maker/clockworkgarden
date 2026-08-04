@@ -193,3 +193,104 @@ and prints the spread against the band.
 node ids (`s1-gen-3` → `s1-yield-3`, and so on). Without it `reviveState` would
 drop them as unknown and silently confiscate the Insight a player had spent.
 `tests/fixtures/saves/v4.json` is frozen alongside the others.
+
+---
+
+## 7. Second play session (2026-08-04, later)
+
+Five more fixes. One was a genuine regression the first batch introduced.
+
+### 7.1 First Bloom could be cleared without a Frenzy — D4a broken
+
+> "the target rate was achieved without the need of frenzy"
+
+A regression caused by §§1–3. The capstone target was calibrated at 1200 Mana/sec
+against a **measured** passive rate of ~890 at readiness. Making the economy more
+generous raised that passive rate to **~1205** — straight past the target. The
+Frenzy became a formality, and First Bloom became the production threshold in a
+costume that D4a exists to prevent.
+
+Re-calibrated **1200 → 1600**: 33% above the passive rate, comfortably under the
+~2410 a Frenzy delivers. A test now asserts `target > passive × 1.2` against the
+measured figure, so the next change that moves the readiness rate fails in CI
+rather than in a play session.
+
+This is the second time a measured constant has drifted out from under a balance
+change. The lesson is in the test, not the number.
+
+### 7.2 Garden Plot rates ignored Insight
+
+> "the rate of mana is not updated after you get insights updates, should not
+> update with the frenzy mode"
+
+Each row showed `baseYield` — the raw table value, before any bonus. Buying
+"Steady Drip" (+50% on Watering Cans) changed nothing on screen. New
+`perUnitManaPerSecond` includes the tier's own ladder, the global production
+bonus and the prestige multiplier, and **excludes Growth Frenzy**, exactly as
+asked: a per-tier figure is a property of the plot, and one that silently doubles
+for twenty seconds cannot be compared against its neighbour.
+
+Watering Cans now read `0.15/s each` with Steady Drip bought, against `0.1/s`
+without.
+
+### 7.3 Kitchen Garden plots could not be re-surfaced
+
+> "there is no way to upgrade the plots one bought"
+
+`kitchenGardenApplySurface` existed in the store with **nothing in the UI calling
+it**. The Insight tree sold you a Raised Garden Box and the only way to see one
+was to break new ground.
+
+Each plot now offers its best affordable upgrade beneath it — name and cost on
+separate lines, because the cost was the half being truncated. Only strictly
+better surfaces are offered, and only one at a time: six surfaces × twenty plots
+would be 120 buttons, which is the busywork §2a's twenty-plot cap exists to
+prevent.
+
+### 7.4 Two nodes named plots that do not exist
+
+> "I can not see anything about canapy"
+
+Correct — there is no Canopy Loom, and no Loam Reactor either. Both names came
+from Phase 3 and survived into the production ladders:
+
+| node               | said            | actually boosts            |
+| ------------------ | --------------- | -------------------------- |
+| Loam Engineering   | "Loam Reactors" | Cider Press Guild          |
+| Canopy Mathematics | "Canopy Looms"  | Scarecrow Sentinel Network |
+
+Renamed to Cider Chemistry / Slow Pressing and Sentinel Drill / Standing Watch.
+A test now checks every per-tier node's copy against the name of the tier it
+boosts, comparing stems so "Nectar Refineries" still matches "Nectar Refinery".
+
+### 7.5 The Barn nodes took Insight and did nothing
+
+> "on the silo upgrade it mentions it holds double when should be produce double"
+
+The wording is right — Barn Capacity is storage, so "holds" is correct. The real
+problem is that **Barn Capacity is Phase 8 and does not exist**. Five nodes
+(2 Barn, 3 Insulation, 72 Insight between them) were purchasable and changed no
+number in the game.
+
+`PENDING_EFFECT_KINDS` already recorded them, and a test already asserted no
+effect kind goes unnoticed — but that protected the codebase, not the player.
+Nodes whose systems do not exist are now **hidden** rather than sold. Hiding
+rather than greying out: a disabled row invites the player to work out how to
+enable it, and there is nothing they can do. They return when their phase lands,
+with no save migration — visibility is derived, not stored.
+
+Cosmetic nodes stay: having no mechanical effect is their entire point, and their
+copy says so.
+
+### 7.6 On "a bit too fast"
+
+Season 1 runs 28–62 minutes across the archetypes in simulation, against §8's own
+prediction of **0:15–1:30**, so it is inside the design's window — at the fast
+end. Its length is set by the readiness gate (own ten Tier-4 plots), not by the
+rate target, which is why 7.1 did not change the timings.
+
+Nothing was changed for pacing beyond the capstone, deliberately: total campaign
+length is 8.46h / 6.28h / 5.13h and moving it means moving K, which pulls against
+the first prestige (§6). If Season 1 still feels rushed after 7.1 makes the
+Frenzy mandatory, the cheap lever is the readiness gate — ten Tier-4 plots to
+twelve or fifteen — and that is a feel judgement, not a simulated one.

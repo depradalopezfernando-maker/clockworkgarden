@@ -8,7 +8,7 @@ import {
 } from '@content/insightTree';
 import { MILESTONES, TOTAL_INSIGHT_AVAILABLE } from '@content/milestones';
 import { PENDING_EFFECT_KINDS } from '@sim/insight';
-import { GENERATOR_TIERS, GENERATOR_UNLOCK_OWNED, TIER_COUNT } from '@content/generators';
+import { GENERATOR_TIERS, GENERATOR_UNLOCK_OWNED, TIER_COUNT, tierAt } from '@content/generators';
 import { INSIGHT_TREE_NODE_TARGET } from '@content/balance';
 
 describe('no Insight node gates progression — the soft-lock fix', () => {
@@ -37,6 +37,22 @@ describe('no Insight node gates progression — the soft-lock fix', () => {
         tier: tier - 1,
         count: GENERATOR_UNLOCK_OWNED,
       });
+    }
+  });
+
+  it('per-tier nodes NAME the tier they boost — the playtest caught two that did not', () => {
+    // Two nodes were named after generators that do not exist ("Loam Reactors",
+    // "Canopy Looms") while boosting Cider Press Guilds and Scarecrow Sentinel
+    // Networks. A description that names the wrong plot is worse than a vague
+    // one: the player buys it expecting something else.
+    for (const node of INSIGHT_TREE) {
+      if (node.effect.kind !== 'tier-production') continue;
+      const real = tierAt(node.effect.tier).name.toLowerCase();
+      const said = node.description.toLowerCase();
+      // Compare STEMS, so "Nectar Refineries" still matches "Nectar Refinery".
+      const stem = (word: string) => word.replace(/(ies|ys|s|y)$/, '');
+      const keyword = stem(real.split(' ').sort((a, b) => b.length - a.length)[0]!);
+      expect(said, `${node.id} says "${node.description}" but boosts ${real}`).toContain(keyword);
     }
   });
 

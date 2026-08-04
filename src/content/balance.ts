@@ -125,20 +125,27 @@ export const TARGET_PRESTIGE_RESETS = { min: 4, max: 5 } as const;
 /**
  * HUMAN. Mana/sec that must be reached DURING a Growth Frenzy to clear Season 1.
  *
- * Calibrated against the simulation, not picked: at the moment the capstone
- * becomes available every archetype sits at ~890 Mana/sec (the readiness gate is
- * own-count based, so they all arrive in the same build state and only the clock
- * differs). A Frenzy doubles that to ~1780.
+ * Calibrated against the simulation, not picked. At the moment the capstone
+ * becomes available every archetype sits at the same rate - the readiness gate
+ * is own-count based, so they all arrive in the same build state and only the
+ * clock differs.
  *
- * 1200 therefore sits ABOVE what idling delivers and BELOW what one Frenzy
- * delivers, which is the whole point: the capstone genuinely tests §5 rather
- * than being a production threshold in a costume, and a normally-built player
- * clears it first try with ~45% headroom.
+ * RE-CALIBRATED 1200 -> 1600 after the docs/09 playtest. Those changes raised
+ * the rate at readiness from ~890 to ~1205, which put it ABOVE the old 1200
+ * target: a playtester cleared First Bloom without needing a Frenzy at all,
+ * which is precisely the failure D4a exists to prevent. The capstone had become
+ * a production threshold wearing a costume.
  *
- * Tagged HUMAN because it is a feel number. The Phase 5 playtest is the only
- * place it can honestly be judged. See docs/04 D4a.
+ *   at readiness   passive ~1205/s   frenzied ~2410/s
+ *   target 1600    33% above passive, 50% of headroom below frenzied
+ *
+ * A test asserts both bounds against the measured figures, so the next balance
+ * change that moves the readiness rate fails here rather than in someone's
+ * play session.
+ *
+ * Tagged HUMAN because it is a feel number. See docs/04 D4a and docs/09 §7.
  */
-export const S1_CAPSTONE_TARGET_RATE = 1200;
+export const S1_CAPSTONE_TARGET_RATE = 1600;
 
 /** SPEC §4. Prestige unlocks after the Season 1 capstone; never required. */
 export const PRESTIGE_UNLOCK_SEASON = 1;

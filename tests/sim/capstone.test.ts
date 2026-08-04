@@ -162,7 +162,11 @@ describe('D4a — the target is calibrated, not arbitrary', () => {
   // player arriving at the readiness gate owns Tiers 1-4 and several Insight
   // nodes, not ten Tier-4 generators alone. All three archetypes land on the
   // same figure because the gate is own-count based. See docs/04 D4a.
-  const MEASURED_RATE_AT_READINESS = 890;
+  //
+  // RE-MEASURED after the docs/09 playtest changes: 890 -> 1205. The old target
+  // of 1200 had fallen BELOW the passive rate, so a playtester cleared First
+  // Bloom without ever needing a Frenzy. These bounds are what catch that.
+  const MEASURED_RATE_AT_READINESS = 1205;
   const MEASURED_FRENZIED = MEASURED_RATE_AT_READINESS * 2;
 
   it('sits above what a ready player produces passively', () => {
@@ -179,9 +183,16 @@ describe('D4a — the target is calibrated, not arbitrary', () => {
   });
 
   it('a bare readiness state alone does NOT clear it', () => {
-    // Ten Tier-4 generators and nothing else is ~550/s, ~1100 frenzied - below
-    // target. Reaching it requires the whole Season 1 build, which is the point.
+    // Ten Tier-4 generators and nothing else is far below target even frenzied.
+    // Reaching it requires the whole Season 1 build, which is the point.
     expect(totalManaPerSecond(ready()) * 2).toBeLessThan(S1_CAPSTONE_TARGET_RATE);
+  });
+
+  it('CANNOT be cleared by idling — the failure the playtest found', () => {
+    // The capstone must test §5, not production. If the target ever drops below
+    // what a ready player makes passively, the Frenzy becomes a formality and
+    // D4a is dead: "a production threshold wearing a costume".
+    expect(S1_CAPSTONE_TARGET_RATE).toBeGreaterThan(MEASURED_RATE_AT_READINESS * 1.2);
   });
 
   it('later Seasons have no target yet, and are marked as such', () => {

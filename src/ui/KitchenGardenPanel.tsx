@@ -13,7 +13,7 @@ import {
 import { gardenPlotManaPerSecond, kitchenGardenShare } from '@sim/economy';
 import { KITCHEN_GARDEN_BASE_FRACTION } from '@content/balance';
 import { seasonTierOneCost } from '@content/generators';
-import { surfaceById } from '@content/surfaces';
+import { DEFAULT_SURFACE, SURFACES, surfaceById, type SurfaceId } from '@content/surfaces';
 import type { GameState } from '@sim/state';
 import { formatNumber, formatRate, formatSeconds } from './format';
 
@@ -51,6 +51,15 @@ export function KitchenGardenPanel({ state }: { state: GameState }) {
   const dayLength = dayLengthSeconds(effects.kgDayLengthStep);
   const dayFraction = Math.max(0, Math.min(1, kg.dayTimeRemaining / dayLength));
   const night = kg.nightRemaining > 0;
+
+  // Surfaces the Insight tree has opened, best first. Bare Soil is always
+  // available and always free, so it is the fallback rather than a choice.
+  const unlockedSurfaces = (Object.keys(SURFACES) as SurfaceId[])
+    .filter((id) => id !== DEFAULT_SURFACE && effects.kgSurfaces.has(id))
+    .sort(
+      (a, b) =>
+        SURFACES[b].capacity * SURFACES[b].yieldMult - SURFACES[a].capacity * SURFACES[a].yieldMult
+    );
 
   // What the garden is actually worth right now. Without this the subsystem is
   // invisible: each Bare Soil plot adds 0.4% of Garden Plot income, so a player
@@ -122,6 +131,7 @@ export function KitchenGardenPanel({ state }: { state: GameState }) {
             state={state}
             context={context}
             canAct={!night}
+            unlockedSurfaces={unlockedSurfaces}
           />
         ))}
 
@@ -168,22 +178,43 @@ function PlotCard({
   state,
   context,
   canAct,
+  unlockedSurfaces,
 }: {
   index: number;
   plot: Plot;
   state: GameState;
   context: { levels: ReturnType<typeof levelsOf>; season: number; nowSeconds: number };
   canAct: boolean;
+  unlockedSurfaces: readonly SurfaceId[];
 }) {
   const surface = surfaceById(plot.surface);
   const step = NEXT_STEP[plot.stage] ?? null;
 
+  // Re-surfacing a plot you already own was unreachable: the Insight tree sold
+  // you a Raised Garden Box and nothing in the UI applied it, so it could only
+  // ever land on newly broken ground. `applySurface` resets the plot (§2a counts
+  // a surface change as one of the three things that force a replant), which is
+  // why the offer sits under the plot rather than replacing its action.
+  const upgrades = unlockedSurfaces
+    .filter((id) => id !== plot.surface)
+    .map((id) => ({
+      id,
+      surface: SURFACES[id],
+      cost: SURFACES[id].applyCostMultiplier * seasonTierOneCost(state.season),
+    }))
+    .filter((u) => u.surface.capacity * u.surface.yieldMult > surface.capacity * surface.yieldMult);
+
+  const surfaceOffer = <SurfaceOffer index={index} state={state} upgrades={upgrades} />;
+
   if (plot.stage === 'growing') {
     const remaining = Math.max(0, plot.grownAt - state.elapsedSeconds);
     return (
-      <div className="plot plot--growing" data-testid={`kg-plot-${index}`} data-stage="growing">
-        <span className="generator__name">{surface.name}</span>
-        <span className="generator__detail">Growing · {formatSeconds(remaining)}</span>
+      <div className="plot-cell">
+        <div className="plot plot--growing" data-testid={`kg-plot-${index}`} data-stage="growing">
+          <span className="generator__name">{surface.name}</span>
+          <span className="generator__detail">Growing · {formatSeconds(remaining)}</span>
+        </div>
+        {surfaceOffer}
       </div>
     );
   }
@@ -195,38 +226,81 @@ function PlotCard({
     // rather than inferring it from a HUD rate that barely moves.
     const own = plotUnits(plot, context) * KITCHEN_GARDEN_BASE_FRACTION;
     return (
-      <button
-        type="button"
-        className="plot plot--grown"
-        onClick={() => gameStore.kitchenGardenClear(index)}
-        data-testid={`kg-plot-${index}`}
-        data-stage="grown"
-        data-contribution={own.toFixed(4)}
-      >
-        <span className="generator__name">{surface.name}</span>
-        <span className="generator__detail">
-          {stale ? 'Last Season — replant' : `${formatContribution(own)}${perfect ? ' · ×2' : ''}`}
-        </span>
-      </button>
+      <div className="plot-cell">
+        <button
+          type="button"
+          className="plot plot--grown"
+          onClick={() => gameStore.kitchenGardenClear(index)}
+          data-testid={`kg-plot-${index}`}
+          data-stage="grown"
+          data-contribution={own.toFixed(4)}
+        >
+          <span className="generator__name">{surface.name}</span>
+          <span className="generator__detail">
+            {stale
+              ? 'Last Season — replant'
+              : `${formatContribution(own)}${perfect ? ' · ×2' : ''}`}
+          </span>
+        </button>
+        {surfaceOffer}
+      </div>
     );
   }
 
   const allowed = step !== null && canAct && canPerform(state.kitchenGarden, index, step, context);
 
   return (
+    <div className="plot-cell">
+      <button
+        type="button"
+        className="plot"
+        disabled={!allowed}
+        onClick={() => step && gameStore.kitchenGardenStep(index, step)}
+        data-testid={`kg-plot-${index}`}
+        data-stage={plot.stage}
+      >
+        <span className="generator__name">{step ? STEP_LABEL[step] : surface.name}</span>
+        <span className="generator__detail">
+          {surface.name}
+          {surface.capacity > 1 && ` · ×${surface.capacity}`}
+        </span>
+      </button>
+      {surfaceOffer}
+    </div>
+  );
+}
+
+/**
+ * The "upgrade this plot's surface" offer.
+ *
+ * Only strictly better surfaces are listed, and only the cheapest one at a time:
+ * six surfaces x twenty plots would be a hundred and twenty buttons, which is
+ * the busywork §2a's twenty-plot cap exists to prevent.
+ */
+function SurfaceOffer({
+  index,
+  state,
+  upgrades,
+}: {
+  index: number;
+  state: GameState;
+  upgrades: readonly { id: SurfaceId; surface: (typeof SURFACES)[SurfaceId]; cost: number }[];
+}) {
+  const best = upgrades[0];
+  if (!best) return null;
+  const affordable = state.mana >= best.cost;
+
+  return (
     <button
       type="button"
-      className="plot"
-      disabled={!allowed}
-      onClick={() => step && gameStore.kitchenGardenStep(index, step)}
-      data-testid={`kg-plot-${index}`}
-      data-stage={plot.stage}
+      className="plot-upgrade"
+      disabled={!affordable}
+      onClick={() => gameStore.kitchenGardenApplySurface(index, best.id)}
+      data-testid={`kg-surface-${index}`}
+      title={`${best.surface.name} — ${best.surface.description} Replants this plot.`}
     >
-      <span className="generator__name">{step ? STEP_LABEL[step] : surface.name}</span>
-      <span className="generator__detail">
-        {surface.name}
-        {surface.capacity > 1 && ` · ×${surface.capacity}`}
-      </span>
+      <span className="plot-upgrade__name">↑ {best.surface.name}</span>
+      <span className="plot-upgrade__cost">{formatNumber(best.cost)} Mana</span>
     </button>
   );
 }

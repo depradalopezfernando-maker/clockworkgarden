@@ -140,6 +140,25 @@ export function gardenPlotManaPerSecond(state: GameState): number {
 }
 
 /**
+ * Mana/sec ONE unit of a tier produces, as the player experiences it.
+ *
+ * Includes the tier's own Insight ladder, the global production bonus and the
+ * prestige multiplier - everything that makes a Watering Can better than it was
+ * yesterday. Deliberately EXCLUDES Growth Frenzy: the per-tier figure is a
+ * property of the plot, and a number that silently doubles for twenty seconds
+ * makes it impossible to compare two tiers at a glance.
+ */
+export function perUnitManaPerSecond(state: GameState, tier: number): number {
+  const insight = effectsOf(state);
+  return (
+    tierAt(tier).baseYield *
+    (1 + (insight.tierProduction.get(tier) ?? 0)) *
+    prestigeMultiplier(state.appliedSqp) *
+    (1 + insight.productionBonus)
+  );
+}
+
+/**
  * Total production, Garden Plots plus the Kitchen Garden's bounded share.
  *
  * `kitchenGardenBaseFraction` is overridable so the balance harness can sweep

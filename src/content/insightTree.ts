@@ -343,8 +343,8 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
   // ===========================================================================
   {
     id: 's3-yield-13',
-    name: 'Loam Engineering',
-    description: 'Loam Reactors produce 35% more.',
+    name: 'Cider Chemistry',
+    description: 'Cider Press Guilds produce 35% more.',
     season: 3,
     cost: 12,
     requires: ['s2-yield-9'],
@@ -352,8 +352,8 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
   },
   {
     id: 's3-yield-14',
-    name: 'Canopy Mathematics',
-    description: 'Canopy Looms produce 35% more.',
+    name: 'Sentinel Drill',
+    description: 'Scarecrow Sentinel Networks produce 35% more.',
     season: 3,
     cost: 16,
     requires: ['s3-yield-13'],
@@ -457,8 +457,8 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
 
   {
     id: 's3-yield-13b',
-    name: 'Deep Loam',
-    description: 'Loam Reactors produce a further 40% more.',
+    name: 'Slow Pressing',
+    description: 'Cider Press Guilds produce a further 40% more.',
     season: 3,
     cost: 15,
     requires: ['s3-yield-13'],
@@ -466,8 +466,8 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
   },
   {
     id: 's3-yield-14b',
-    name: 'Woven Canopy',
-    description: 'Canopy Looms produce a further 40% more.',
+    name: 'Standing Watch',
+    description: 'Scarecrow Sentinel Networks produce a further 40% more.',
     season: 3,
     cost: 18,
     requires: ['s3-yield-14'],

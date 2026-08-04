@@ -190,9 +190,32 @@ export function automationLevels(purchasedNodeIds: readonly string[]): Automatio
 // Availability and purchasing
 // ---------------------------------------------------------------------------
 
-/** A node is visible once its Season is reached. Prerequisites are separate. */
+/**
+ * Whether a node's effect actually does anything in this build.
+ *
+ * `PENDING_EFFECT_KINDS` nodes are authored ahead of their systems - Barn
+ * Capacity is Phase 8, Insulation is Phase 9. Offering them for sale meanwhile
+ * takes a player's Insight and gives nothing back, which a playtester ran into:
+ * "Second Granary — the Barn holds twice as much again" is purchasable, costs
+ * 12 Insight, and changes no number in the game.
+ *
+ * Cosmetics are exempt: having no mechanical effect is the entire point of them
+ * (§3 asks for them by name), and their copy says so.
+ */
+export function isNodeImplemented(node: InsightNode): boolean {
+  if (node.effect.kind === 'cosmetic') return true;
+  return !PENDING_EFFECT_KINDS.includes(node.effect.kind);
+}
+
+/**
+ * A node is visible once its Season is reached AND its system exists.
+ *
+ * Hiding rather than disabling: a greyed-out row invites the player to work out
+ * how to enable it, and there is nothing they can do. These come back the moment
+ * their phase lands, with no save migration - visibility is derived, not stored.
+ */
 export function isNodeVisible(state: GameState, node: InsightNode): boolean {
-  return state.season >= node.season;
+  return state.season >= node.season && isNodeImplemented(node);
 }
 
 export function arePrerequisitesMet(state: GameState, node: InsightNode): boolean {
