@@ -29,6 +29,20 @@ them was meant to buy; the repository stays small.
 > future tool hits the same wall, `/root/.ccr/README.md` lists the per-tool fix —
 > and never work around it by disabling TLS verification.
 
+## The palette is locked (2026-08-04)
+
+**Enamel** for the four Seasons, **Slate** for the UI chrome — chosen by a human
+from four worked-through candidates, each previewed on a mock diorama rather
+than as swatches. Recorded in `src/content/palette.ts`; §11's review is done.
+
+Enamel is a painted-tin-toy reading: higher chroma than the original draft, clean
+edges, holds up at phone size. Slate is a cool, neutral chrome that leaves the
+Seasons room to be the colour on screen — which matters most in Winter, where the
+warm ember accent has to be the only warmth in the frame.
+
+Every sourced model is recoloured to the nearest entry at import time, so this is
+now expensive to revisit. Reopen deliberately.
+
 ## What we have
 
 | Pack                      |   Size | Contents          | Status       |

@@ -525,7 +525,7 @@ body {
 /* The rate readout during a Growth Frenzy. It doubles, and it should look like
    it doubled - the number moving with no explanation reads as a glitch. */
 .hud__rate--frenzy {
-  color: var(--frenzy, #ffd479);
+  color: var(--season-accent);
   font-weight: 700;
 }
 
@@ -542,10 +542,10 @@ body {
   font-size: 0.7rem;
   line-height: 1.25;
   padding: 0.3rem 0.4rem;
-  border: 1px dashed var(--border, #4a4a4a);
+  border: 1px dashed var(--ui-border);
   border-radius: 0.35rem;
   background: transparent;
-  color: var(--muted, #a0a0a0);
+  color: var(--ui-text-muted);
   cursor: pointer;
   /* Two lines rather than one truncated one: the COST is the half a player is
      deciding on, and it was the half being cut off. */
@@ -569,7 +569,7 @@ body {
 
 .plot-upgrade:hover:not(:disabled) {
   border-style: solid;
-  color: var(--text, #e8e8e8);
+  color: var(--ui-text);
 }
 
 .plot-upgrade:disabled {

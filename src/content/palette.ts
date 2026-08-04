@@ -13,11 +13,13 @@
  * mechanical transform rather than an aesthetic judgement.
  *
  * ---------------------------------------------------------------------------
- * HUMAN REVIEW REQUIRED. These ramps are a defensible starting point, not an
- * art-directed choice. Claude cannot judge whether they look good - only that
- * they are structurally valid and sufficiently distinct per Season. Treat this
- * as a first draft to be replaced by a human eye in an hour of work, before any
- * asset enters the repo. See CLAUDE.md, "What Claude cannot judge here".
+ * HUMAN REVIEW DONE — 2026-08-04. Direction chosen: "Enamel" for the Seasons,
+ * "Slate" for the UI chrome, picked from four worked-through candidates.
+ *
+ * Enamel is a painted-tin-toy reading: higher chroma than the original draft,
+ * clean edges, holds up at phone size. The palette is now LOCKED per §11 - every
+ * sourced model is recoloured to the nearest entry here at import time, so a
+ * change after assets land is not cheap. Reopen deliberately, not casually.
  * ---------------------------------------------------------------------------
  */
 
@@ -39,44 +41,44 @@ export interface SeasonPalette {
 export type SeasonKey = 'spring' | 'summer' | 'autumn' | 'winter';
 
 export const SEASON_PALETTES: Readonly<Record<SeasonKey, SeasonPalette>> = {
-  // Season 1 — Spring. Fresh, high-value, low-saturation ground.
+  // Season 1 — Spring. Fresh and bright; hot pink accent against warm clay ground.
   spring: {
-    primary: '#7cb342',
-    secondary: '#aed581',
-    accent: '#f48fb1',
-    shadow: '#33691e',
-    ground: '#8d6e63',
-    sky: '#c5e1e8',
+    primary: '#5fbb46',
+    secondary: '#b6e05a',
+    accent: '#ff4d87',
+    shadow: '#2b6626',
+    ground: '#a9703f',
+    sky: '#a8dfe8',
   },
-  // Season 2 — Summer. Warmer and more saturated; gold replaces pink as accent.
+  // Season 2 — Summer. Deeper leaf, gold secondary; the sky carries the heat.
   summer: {
-    primary: '#43a047',
-    secondary: '#fdd835',
-    accent: '#fb8c00',
-    shadow: '#1b5e20',
-    ground: '#a1887f',
-    sky: '#81d4fa',
+    primary: '#2f9e44',
+    secondary: '#ffd43b',
+    accent: '#ff922b',
+    shadow: '#175230',
+    ground: '#c08552',
+    sky: '#4dabf7',
   },
-  // Season 3 — Autumn. Hue rotates warm; the ground reads drier and more ochre
-  // than Spring's damp earth, so the two Seasons never share terrain colour.
+  // Season 3 — Autumn. Hue rotates warm. Ground reads drier and more ochre than
+  // Spring's damp clay, so the two Seasons never share terrain colour.
   autumn: {
-    primary: '#ef6c00',
-    secondary: '#c62828',
-    accent: '#ffd54f',
-    shadow: '#4e342e',
-    ground: '#7d5a3c',
-    sky: '#ffcc80',
+    primary: '#f76707',
+    secondary: '#c92a2a',
+    accent: '#ffd43b',
+    shadow: '#4d2f1c',
+    ground: '#8f5f3a',
+    sky: '#ffc078',
   },
-  // Season 4 — Winter. Desaturated and cool, so Frost reads instantly; the
-  // accent stays warm on purpose - it is the Ember Furnace and the Clockwork
-  // Heart, the only warmth left in the scene.
+  // Season 4 — Winter. Desaturated and cool so Frost reads instantly; the accent
+  // stays warm on purpose - the Ember Furnace and the Clockwork Heart are the only
+  // warmth left in the scene.
   winter: {
-    primary: '#90a4ae',
-    secondary: '#eceff1',
-    accent: '#ff7043',
-    shadow: '#37474f',
-    ground: '#b0bec5',
-    sky: '#cfd8dc',
+    primary: '#74a3b8',
+    secondary: '#f1f3f5',
+    accent: '#ff6b35',
+    shadow: '#26383f',
+    ground: '#c5ced4',
+    sky: '#dbe4e9',
   },
 } as const;
 
@@ -94,17 +96,17 @@ export const EDGE_TREATMENT = {
 
 /** UI chrome, shared across all Seasons so the HUD stays stable as they change. */
 export const UI_PALETTE = {
-  surface: '#1f1b16',
-  surfaceRaised: '#2b2620',
-  text: '#f5efe6',
-  textMuted: '#a89f92',
-  border: '#3d362d',
-  positive: '#7cb342',
-  negative: '#e53935',
+  surface: '#161a1d',
+  surfaceRaised: '#212729',
+  text: '#eef2f4',
+  textMuted: '#95a2a8',
+  border: '#2f383c',
+  positive: '#66bb6a',
+  negative: '#ef5350',
   /** Mana. Deliberately distinct from every Season primary. */
-  mana: '#9575cd',
+  mana: '#7e8cff',
   /** Insight. */
-  insight: '#4fc3f7',
+  insight: '#29b6f6',
 } as const;
 
 export const SEASON_KEYS: readonly SeasonKey[] = ['spring', 'summer', 'autumn', 'winter'];

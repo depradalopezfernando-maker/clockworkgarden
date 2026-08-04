@@ -31,7 +31,7 @@ docs/adr/                         load-bearing technical decisions
 tools/spec-audit.mjs              numerical audit of the spec's own formulas
 tools/screenshot.mjs              drive the app, capture it, report layout problems
 src/content/balance.ts            EVERY tunable constant, with provenance tags
-src/content/palette.ts            locked palette (§11) — HUMAN REVIEW PENDING
+src/content/palette.ts            LOCKED palette (§11): Enamel + Slate, human-picked
 src/content/generators.ts         the 20-tier table (§2), transcribed
 src/content/insightTree.ts        59 nodes (§3). None of them gate progression
 src/content/milestones.ts         43 milestones — the ONLY source of Insight
@@ -189,7 +189,9 @@ Say so plainly rather than guessing:
 - **Game feel.** Frenzy's 20s window, Perfect Planting's 2s tolerance, the 3s
   Pollination window. Implement them as constants in `content/balance.ts` and
   report consequences; a human decides the values.
-- **Art direction.** Screenshots verify correctness, not taste.
+- **Art direction.** Screenshots verify correctness, not taste. The palette was
+  picked by a human on 2026-08-04 (Enamel seasons, Slate chrome) and is now
+  LOCKED — assets get recoloured to it at import, so reopening is not cheap.
 - **Audio.** Cannot be evaluated at all. Human-owned workstream.
 
 Phases 5, 6, 11, and 12 have human gates for exactly these reasons.
