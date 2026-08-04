@@ -9,3 +9,7 @@ coverage/
 smoke.png
 out.png
 *.screenshot.png
+
+# CC0 art packs, fetched by 'npm run assets:fetch' and pinned by checksum.
+# Not committed: 13MB of binary that never diffs usefully.
+assets/vendor/

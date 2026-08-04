@@ -1,60 +1,77 @@
-# Asset Pipeline — CC0 Sourcing Plan
+# 05 — Asset Pipeline
 
-Implements §11 of the design spec, with the decision to **source CC0 packs early**.
-
-**Read §1 first: the recommended 3D sources are currently unreachable from this
-environment.** That is a live constraint with three fixes, not a reason to change
-the art direction.
+**Updated 2026-08-04:** the network constraint is GONE. `kenney.nl` and
+`game-icons.net` were 403'd at the gateway; the environment's network policy was
+widened and both now resolve. Nothing about assets is blocked.
 
 ---
 
-## 1. Network reality check (verified 2026-08-02)
-
-Tested live from this environment, not assumed:
-
-| Source               | What it provides                                  | Status                                            |
-| -------------------- | ------------------------------------------------- | ------------------------------------------------- |
-| `registry.npmjs.org` | npm packages                                      | **200 — reachable** (allowlisted, bypasses proxy) |
-| `kenney.nl`          | §11 Style A: Isometric Miniature Farm, Nature Kit | **403 at gateway — BLOCKED**                      |
-| `game-icons.net`     | §11 UI iconography                                | **403 at gateway — BLOCKED**                      |
-| `itch.io`            | §11 Style B: KayKit Forest Nature Pack            | untested, assume blocked                          |
-
-The environment's network policy allowlists package registries (npm, PyPI,
-crates.io, Go proxy) and denies general web hosts. Confirmed via
-`curl -sS "$HTTPS_PROXY/__agentproxy/status"`, which logs the gateway's 403 CONNECT
-rejections for both hosts by name.
-
-### 1.1 UI icons — already solved
-
-game-icons.net's set is published to npm and needs no policy change:
+## How to get them
 
 ```bash
-npm install @iconify-json/game-icons
+npm run assets:fetch          # Nature Kit only — the one Phase 6 needs
+npm run assets:fetch -- --all # plus the two optional 2D packs
 ```
 
-Same CC BY 3.0 corpus (4,000+ icons) as the website, as JSON, tree-shakeable.
-Attribution requirement is unchanged — a credits-screen mention, added in Phase 10.
+`tools/fetch-assets.mjs` pins every pack by **URL and SHA-256**, extracts to
+`assets/vendor/`, and is idempotent — a pack already present with a matching
+checksum is skipped. A mismatch fails loudly and extracts nothing.
 
-### 1.2 3D packs — three routes
+**The packs are not committed.** 13MB of binary would sit in git history forever
+and never diff usefully. The checksum buys the reproducibility that committing
+them was meant to buy; the repository stays small.
 
-**Route 1 — Widen the network policy (recommended).** Allow `kenney.nl` and
-`itch.io` in the environment settings. One-time change; makes asset work fully
-self-service and reproducible for every future session. See
-https://code.claude.com/docs/en/claude-code-on-the-web for environment
-configuration.
+`assets/vendor/` is gitignored. After a fresh clone, run the fetch.
 
-**Route 2 — Commit the packs yourself.** Download locally, place under
-`assets/vendor/<pack-name>/`, commit with the licence file. Kenney's packs are
-**CC0**, so redistribution inside the repo is unrestricted. Fully self-contained
-and version-pinned; costs repo weight (the two recommended packs are tens of MB).
-This is the pragmatic choice if changing the policy is awkward.
+> **Gotcha, already handled:** Node's built-in `fetch` does not read
+> `HTTPS_PROXY`, so every request 403s at the gateway while `curl` to the same
+> URL succeeds. The npm script sets `NODE_USE_ENV_PROXY=1` (Node ≥ 22.21). If a
+> future tool hits the same wall, `/root/.ccr/README.md` lists the per-tool fix —
+> and never work around it by disabling TLS verification.
 
-**Route 3 — Procedural placeholders.** Generate low-poly geometry in code. Needs
-no external assets at all and keeps Phases 1–5 unblocked regardless of which route
-you pick. **The roadmap assumes this as the default through Phase 5**, so nothing
-before Phase 6 is on the critical path for this decision.
+## What we have
 
-**Action:** pick Route 1 or 2 before Phase 6 begins. Nothing earlier is blocked.
+| Pack                      |   Size | Contents          | Status       |
+| ------------------------- | -----: | ----------------- | ------------ |
+| **Kenney Nature Kit 2.1** | 10.5MB | 329 `.glb` models | **required** |
+| Kenney Foliage Pack 1.0   |  2.2MB | 113 2D sprites    | optional     |
+| Kenney Tiny Farm 1.0      |  0.2MB | 136 2D tiles      | optional     |
+
+All three are **CC0** — free for commercial use, credit appreciated but not
+required. Verified by reading each pack's `License.txt`, not by trusting the
+store page.
+
+UI icons come from npm instead: `@iconify-json/game-icons`. No download, no
+licence question, and it tree-shakes.
+
+### Nature Kit, by family
+
+61 trees · 56 cliffs · 30 stones · 30 rocks · 29 grounds · **17 crops** ·
+16 bridges · **12 fences** · **9 flowers** · **8 plants** · 7 stumps · 7 paths ·
+6 statues · 6 mushrooms · **4 grasses**
+
+GLTF-binary (`.glb`) is exactly what three.js's `GLTFLoader` wants — no
+conversion step.
+
+### The crops have growth stages
+
+Worth knowing before Phase 6 designs anything:
+
+```
+crops_wheatStageA   crops_wheatStageB
+crops_cornStageA    crops_cornStageB   crops_cornStageC   crops_cornStageD
+crops_leafsStageA   crops_leafsStageB
+crops_bambooStageA  crops_bambooStageB
+crops_dirtRow  crops_dirtSingle  crops_dirtDoubleRow  (+ corner/end pieces)
+```
+
+That maps **directly** onto §2a's plot state machine — `dirt` for dug, `StageA`
+for planted, later stages for growing, the final stage for grown. The Kitchen
+Garden's five stages already have art without anyone drawing anything, and the
+`dirtRow`/`Corner`/`End` pieces tile a 20-slot grid.
+
+Flowers come in three colours × three shapes, which is enough to distinguish the
+six surfaces (§2a) by sight.
 
 ---
 

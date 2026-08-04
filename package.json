@@ -21,7 +21,8 @@
     "screenshot": "node tools/screenshot.mjs",
     "simulate": "vite-node tools/simulate.ts",
     "fit": "vite-node tools/fit.ts",
-    "smoke": "node tools/smoke.mjs"
+    "smoke": "node tools/smoke.mjs",
+    "assets:fetch": "NODE_USE_ENV_PROXY=1 node tools/fetch-assets.mjs"
   },
   "repository": {
     "type": "git",

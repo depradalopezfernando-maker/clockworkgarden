@@ -43,6 +43,7 @@ src/ui/                           React shell, HUD, formatting
 tools/simulate.ts                 the balance report. Run it after any content change
 tools/fit.ts                      sweeps constants against the pacing targets
 tools/smoke.mjs                   drives the built app in Chromium end to end
+tools/fetch-assets.mjs            CC0 art packs, pinned by URL + SHA-256
 tests/fixtures/saves/             FROZEN old save formats. Never edit these
 ```
 
@@ -81,7 +82,7 @@ D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 10, REF = 1
     LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
 D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
     simulation validates, not a trigger. Prestige is renamed ("Turn the Soil").
-D4a Season 1 capstone = "First Bloom": reach 1200 Mana/sec DURING a Growth
+D4a Season 1 capstone = "First Bloom": reach 1600 Mana/sec DURING a Growth
     Frenzy. Retry instantly on failure, no penalty. Calibrated so a normally
     built player clears it first try but cannot clear it by idling.
 D7  §8's 6-10h band applies to the idle and casual archetypes. `active` may
@@ -169,10 +170,13 @@ rationale in `docs/03-technical-architecture.md` §8:
 - **Chromium + Playwright are pre-installed** (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`).
   Never run `playwright install`. Drive the game, screenshot it, and read the image
   — this catches layout, overflow, contrast, and empty-panel bugs without a human.
-- **npm is reachable. Most of the web is not.** `kenney.nl` and `game-icons.net`
-  are blocked by the environment's network policy (403 at the gateway). UI icons
-  are available via npm as `@iconify-json/game-icons`; the 3D packs need either a
-  policy change or committing to `assets/vendor/`. See `docs/05-asset-pipeline.md`.
+- **Assets are UNBLOCKED (2026-08-04).** The network policy was widened;
+  `kenney.nl` and `game-icons.net` both resolve. `npm run assets:fetch` pulls
+  Kenney's Nature Kit (329 CC0 `.glb` models, crops with growth stages) into
+  the gitignored `assets/vendor/`, pinned by URL and SHA-256. UI icons come from
+  npm as `@iconify-json/game-icons`. See `docs/05-asset-pipeline.md`.
+- **Node's built-in `fetch` ignores `HTTPS_PROXY`** and 403s at the gateway while
+  `curl` to the same URL works. Run it with `NODE_USE_ENV_PROXY=1` (Node >= 22.21).
 - **Never disable TLS verification or unset `HTTPS_PROXY`.** If a tool fails TLS
   or gets a 403/405/407, see `/root/.ccr/README.md`.
 
