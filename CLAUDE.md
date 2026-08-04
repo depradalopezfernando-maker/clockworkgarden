@@ -49,10 +49,11 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 Start here: `docs/README.md`. Verify with `npm run ci`.
 Latest balance numbers: `docs/09-playtest-revisions.md`.
 
-**One design decision is open and blocks nothing but wants an answer:** the
-archetype spread (x1.65) has grown into §8's 6-10h band (ratio x1.67), so the
-`active` archetype finishes at 5.13h. Four options in `docs/09` §6; my read is
-accept it. `npm run simulate` reports it as `[KNOWN]` rather than failing.
+**D7 (2026-08-04): §8's 6-10h target applies to the idle and casual archetypes
+only.** The spread (x1.65) has grown into the band (ratio x1.67), so `active`
+finishes at 5.13h and that is accepted — it is a deliberately extreme model, and
+§9 requires active play to out-earn automation. `npm run simulate` reports it as
+`[KNOWN]`. **Reopen if the spread exceeds x1.67**, checked every run.
 
 **The gate:** play it for ninety minutes and answer four questions —
 is the core loop satisfying? Does Frenzy feel worth chasing? Does the Kitchen
@@ -83,6 +84,8 @@ D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
 D4a Season 1 capstone = "First Bloom": reach 1200 Mana/sec DURING a Growth
     Frenzy. Retry instantly on failure, no penalty. Calibrated so a normally
     built player clears it first try but cannot clear it by idling.
+D7  §8's 6-10h band applies to the idle and casual archetypes. `active` may
+    finish faster; the spread (x1.65) no longer fits the band (x1.67).
 ```
 
 K and REF are **fitted together** (`npm run fit`, and the 2D sweep in `docs/09`

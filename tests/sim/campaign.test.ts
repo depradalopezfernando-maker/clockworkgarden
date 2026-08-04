@@ -31,7 +31,8 @@ describe('PHASE 1 EXIT — the campaign lands on §8 for every archetype', () =>
     }
   );
 
-  // KNOWN DEVIATION, awaiting a design decision (docs/09 §6).
+  // DECISION D7 (docs/04, rationale in docs/09 §6): §8's 6-10 hour target
+  // applies to the idle and casual archetypes. `active` may finish faster.
   //
   // §8's 6-10 hour band has a ratio of 1.67. The archetype spread is now x1.65
   // and rises above 1.67 at some settings, so no single pair of pacing constants
@@ -41,8 +42,10 @@ describe('PHASE 1 EXIT — the campaign lands on §8 for every archetype', () =>
   // design working as intended: active play is supposed to pay.
   //
   // The `active` archetype is a deliberately extreme model - 240 clicks/minute,
-  // 60% Frenzy uptime, constant Kitchen Garden work - and it finishes fast.
-  // Asserted below at its measured value so a regression still fails loudly.
+  // 60% Frenzy uptime, constant Kitchen Garden work - and a player sustaining
+  // that finishing in ~5 hours is §9's "active play out-earns automation"
+  // working rather than failing. Asserted below at its measured value anyway, so
+  // a regression still fails loudly.
   it.each(results.filter((r) => r.archetype !== 'active').map((r) => [r.archetype, r] as const))(
     '%s finishes inside the 6-10 hour target',
     (_name, r) => {
@@ -51,7 +54,7 @@ describe('PHASE 1 EXIT — the campaign lands on §8 for every archetype', () =>
     }
   );
 
-  it('the active archetype finishes fast, below §8 — the deviation, pinned', () => {
+  it('the active archetype finishes fast, below §8 — D7, pinned', () => {
     const active = results.find((r) => r.archetype === 'active');
     expect(active).toBeDefined();
     // Under the floor, and not by an unbounded amount. Widening either bound

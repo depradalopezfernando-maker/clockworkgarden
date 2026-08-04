@@ -86,8 +86,9 @@ export const PAYBACK_SECONDS_BAND = { min: 140, max: 190 } as const;
  * x1.65 against a band whose ratio is x1.67. This pair is the best available:
  * idle 8.46h, casual 6.28h, active 5.13h, first prestige x1.78.
  *
- * The active archetype finishing under six hours is a KNOWN, DELIBERATE
- * deviation awaiting a design decision. See docs/09 §6.
+ * The active archetype finishing under six hours is accepted: D7 scopes §8's
+ * band to the idle and casual archetypes. Reopen if the spread exceeds x1.67,
+ * which `npm run simulate` checks every run. See docs/09 §6.
  */
 export const PRESTIGE_SQP_COEFFICIENT = 10;
 /**

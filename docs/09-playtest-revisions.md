@@ -112,7 +112,7 @@ numbers behind it are ten times larger, so it is legible now as well as present.
 
 ---
 
-## 6. What this cost, and the decision it needs
+## 6. What this cost, and the decision taken (D7)
 
 > "the progress also feels really slow and unrewarding"
 
@@ -151,7 +151,7 @@ consumed the rest.
 Neither the test suite nor `npm run simulate` hides this. The campaign-length
 assertion covers idle and casual, and pins `active` between 4.5h and the 6h floor
 so a regression still fails loudly. `npm run simulate` reports it as `[KNOWN]`
-with a pointer here, and prints the spread against the band every run.
+with a pointer to D7, and prints the spread against the band every run.
 
 ### Also worth knowing: prestige cadence fell
 
@@ -174,8 +174,16 @@ lifetime Mana** across the campaign, and a shorter campaign spans less.
   ~150–180s payback property, which is the tier table's best feature. Not
   recommended.
 
-**My read: (c), then (a) if the playtest disagrees.** Nothing here is broken —
-the design is simply more generous than it was, which is what was asked for.
+**Decided 2026-08-04: (c), accept it.** Recorded as **D7** in
+[`04-spec-open-questions.md`](04-spec-open-questions.md). §8's 6–10 hour target
+applies to the idle and casual archetypes; the `active` archetype is allowed to
+finish faster, because a player sustaining 240 clicks a minute at 60% Frenzy
+uptime finishing in ~5 hours is §9's "active play out-earns automation"
+requirement working, not failing.
+
+**What would reopen it:** the spread rising above ×1.67, at which point idle and
+casual can no longer both fit either. `npm run simulate` checks that every run
+and prints the spread against the band.
 
 ---
 

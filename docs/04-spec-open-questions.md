@@ -23,7 +23,7 @@ unblocked. The rest remain open but block only later phases.
 
 ---
 
-## Decisions taken — 2026-08-02
+## Decisions taken — 2026-08-02 (D1–D6), 2026-08-04 (D7)
 
 These are authoritative. They override the spec text where they conflict, and
 Phase 1 implements them. Constants marked _sim-fitted_ are starting values for the
@@ -133,6 +133,34 @@ advancement — "Season Change" currently means two different things, one of whi
 wipes your generators, at the exact moment the player is deciding whether to do
 it. Working name: **"Turn the Soil"** (final name is the designer's call; it is a
 string, changeable at any time).
+
+### D7 — the archetype spread against §8's band (2026-08-04)
+
+**§8's 6–10 hour target applies to the idle and casual archetypes. The `active`
+archetype is allowed to finish faster.**
+
+§8's band has a ratio of 1.67 (10 ÷ 6). After the playtest revisions in
+`docs/09` the simulated archetype spread is ×1.65, driven mostly by Growth
+Frenzy uptime — ×1.05 for the idle archetype against ×1.60 for the active one.
+A 2× Frenzy at 5–60% uptime consumes almost the entire band on its own, so no
+pair of pacing constants puts all three archetypes inside it while keeping §4's
+first prestige felt. A 2D sweep of K and REFERENCE confirmed there is no such
+point (`docs/09` §6).
+
+The `active` archetype is a deliberately extreme stress model — 240 clicks a
+minute, 60% Frenzy uptime, constant Kitchen Garden work. A player sustaining
+that finishing in ~5 hours is the design working, not failing: §9 requires that
+active play out-earn automation, and this is what that requirement costs at the
+top of the range.
+
+**Consequences.** `npm run simulate` reports `active` as `[KNOWN]` rather than
+`[FAIL]` and prints the spread against the band every run. The campaign-length
+test asserts the band for idle and casual, and pins `active` between 4.5 hours
+and the 6-hour floor so a regression still fails loudly. Neither hides the
+number.
+
+**What would reopen this:** the spread rising above ×1.67, at which point idle
+and casual can no longer both fit either. That is the assertion to watch.
 
 ---
 

@@ -83,11 +83,12 @@ const results = simulateAllArchetypes();
     const ok =
       r.totalHours >= TARGET_CAMPAIGN_HOURS.min && r.totalHours <= TARGET_CAMPAIGN_HOURS.max;
     const label = `${r.archetype}: campaign is ${h(r.totalHours)} (target 6-10h)`;
-    // The active archetype is a known, documented deviation: §8's band has a
-    // ratio of 1.67 and the archetype spread is now 1.65, so no pacing constant
-    // fits all three at once while keeping the first prestige felt.
+    // D7: §8's band applies to the idle and casual archetypes. `active` is a
+    // deliberately extreme stress model and is allowed to finish faster - the
+    // band's ratio is 1.67 and the archetype spread is 1.65, so no pacing
+    // constant fits all three while keeping the first prestige felt.
     if (!ok && r.archetype === 'active') {
-      known(label, 'archetype spread x1.65 vs a x1.67 band — decision pending, docs/09 §6');
+      known(label, 'accepted deviation — D7 (docs/04), rationale in docs/09 §6');
       continue;
     }
     check(ok, label);
@@ -99,7 +100,9 @@ const results = simulateAllArchetypes();
   console.log('');
   console.log(`  archetype spread:  x${spread.toFixed(2)}`);
   console.log(`  the band allows:   x${band.toFixed(2)}`);
-  check(spread <= band, 'the spread still fits inside the band at all');
+  // The condition that would REOPEN D7: above the band's own ratio, idle and
+  // casual can no longer both fit either, and the pacing needs rethinking.
+  check(spread <= band, 'the spread still fits inside the band at all (D7 holds)');
 }
 
 // ---------------------------------------------------------------------------

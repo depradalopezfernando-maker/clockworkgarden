@@ -22,7 +22,7 @@ and game feel need human gates.
 | [06 — Phase 1 Balance Report](06-phase-1-balance-report.md) | Simulated campaign length, the fitted constants, and what the sim does not prove                         |
 | [07 — Phase 4 Report](07-phase-4-kitchen-garden-report.md)  | The Kitchen Garden as built, why it contributed far less than intended, and the fix (§5)                 |
 | [08 — The Vertical Slice](08-vertical-slice.md)             | **How to play it and what to look for.** The human gate                                                  |
-| [09 — Playtest Revisions](09-playtest-revisions.md)         | **What the first real play session changed**, and the one pacing decision it needs                       |
+| [09 — Playtest Revisions](09-playtest-revisions.md)         | **What the first real play session changed** — the soft-lock fix, and decision D7                        |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
 
