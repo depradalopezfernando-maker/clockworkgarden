@@ -35,7 +35,7 @@ import {
 import { EDGE_TREATMENT, SEASON_PALETTES } from '@content/palette';
 import { seasonKeyFor } from '@ui/theme';
 import { materialPalette } from './materialPalette';
-import { footprintScale, loadTemplate, type RolePalette } from './models';
+import { footprintScale, loadTemplate, missingModels, type RolePalette } from './models';
 import { describeTemplate, PropPool, type Placement } from './instancing';
 import type { GardenSnapshot, GardenStats, GardenView } from './GardenView';
 
@@ -162,6 +162,10 @@ export class ThreeGardenView implements GardenView {
     };
   }
 
+  missingModels(): readonly string[] {
+    return missingModels();
+  }
+
   // -------------------------------------------------------------------------
 
   private resize(): void {
@@ -210,7 +214,8 @@ export class ThreeGardenView implements GardenView {
     } catch {
       // A missing model must never take the game down. The staging script and a
       // test both guard against this; the catch is for a dev build run without
-      // staging.
+      // staging. `loadTemplate` records the name so the UI can say so — swallowing
+      // this silently is what produced an empty blue panel with a clean console.
       return null;
     }
   }

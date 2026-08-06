@@ -6,6 +6,19 @@ Standing brief for any session working in this repository. Read this first.
 
 ## Current state
 
+**Phase 7 DONE — Season 2 has its mechanic.** The Pollination Combo (§6.1)
+plays: three flowers under the Bell, a 3s chain window, Bronze/Silver/Golden
+Blooms that MULTIPLY with a Frenzy, the Tier 8 drone auto-attempting at 40%, and
+the "Both Blooms" capstone (D4b). The exit criterion is met with a 1.7x margin.
+Report: `docs/11-phase-7-pollination.md`.
+
+**One decision came out of Phase 7 and should be taken before Phase 8: D7 is
+REOPENED.** The archetype spread is x2.45 against §8's band ratio of x1.67, and
+it is structural rather than a mis-fit — §6.1 is an active-play multiplier, so
+§9's "active play out-earns automation" and §8's band now pull against each
+other. §6.2 and §6.3 will each widen it again. Three measured options in
+`docs/11` §3; a human picks. `npm run simulate` reports and pins it meanwhile.
+
 **Phase 6 IN PROGRESS — the 3D garden renders.** Session 1 of 4-6 built the
 pipeline end to end: three.js behind a `GardenView` interface, a fixed isometric
 camera, glTF import with palette recolour and outlines, and a live diorama that
@@ -14,9 +27,10 @@ not: `docs/10-phase-6-presentation.md`.
 
 Phases 0-5 are complete and the vertical slice plays.
 
-Everything through Season 1 works end to end: Bell, generators, Growth Frenzy,
-the Insight tree, milestones, the full Kitchen Garden (§2a), the First Bloom
-capstone, the prestige loop, onboarding, versioned saves, offline progress.
+Everything through Season 2 works end to end: Bell, generators, Growth Frenzy,
+Pollination, the Insight tree, milestones, the full Kitchen Garden (§2a), the
+First Bloom and Both Blooms capstones, the prestige loop, onboarding, versioned
+saves, offline progress.
 
 **The first play session happened (2026-08-04) and changed six things — see
 `docs/09-playtest-revisions.md`.** The most serious: Insight gated eight
@@ -38,10 +52,11 @@ tools/screenshot.mjs              drive the app, capture it, report layout probl
 src/content/balance.ts            EVERY tunable constant, with provenance tags
 src/content/palette.ts            LOCKED palette (§11): Enamel + Slate, human-picked
 src/content/generators.ts         the 20-tier table (§2), transcribed
-src/content/insightTree.ts        59 nodes (§3). None of them gate progression
-src/content/milestones.ts         43 milestones — the ONLY source of Insight
+src/content/insightTree.ts        64 nodes (§3). None of them gate progression
+src/content/milestones.ts         46 milestones — the ONLY source of Insight
 src/content/surfaces.ts           the six Kitchen Garden surfaces (§2a)
-src/sim/capstone.ts               First Bloom (D4a); S2-S4 are placeholders
+src/sim/pollination.ts            §6.1 chain, Blooms, and the deterministic drone
+src/sim/capstone.ts               First Bloom (D4a) + Both Blooms (D4b); S3-S4 are placeholders
 src/sim/                          pure economy: costs, prestige, offline, frenzy, tick
 src/game/                         runtime: store + loop + versioned saves
 src/ui/                           React shell, HUD, formatting
@@ -56,21 +71,25 @@ tests/fixtures/saves/             FROZEN old save formats. Never edit these
 ```
 
 Start here: `docs/README.md`. Verify with `npm run ci`.
-Latest balance numbers: `docs/09-playtest-revisions.md`.
+Latest balance numbers: `docs/11-phase-7-pollination.md`.
 
-**D7 (2026-08-04): §8's 6-10h target applies to the idle and casual archetypes
-only.** The spread (x1.65) has grown into the band (ratio x1.67), so `active`
-finishes at 5.13h and that is accepted — it is a deliberately extreme model, and
-§9 requires active play to out-earn automation. `npm run simulate` reports it as
-`[KNOWN]`. **Reopen if the spread exceeds x1.67**, checked every run.
+**D7 (2026-08-04, REOPENED same day by Phase 7): §8's 6-10h target applies to the
+idle and casual archetypes only.** `active` finishes at 3.45h and that is
+accepted — it is a deliberately extreme model, and §9 requires active play to
+out-earn automation. The SPREAD is now x2.45 against the band's x1.67, past the
+condition that was written down as reopening D7, and no pacing constant fixes it
+because §6.1 pays attention by design. `npm run simulate` prints it as `[KNOWN]`
+and pins it at x2.6 so a regression still fails. **Decide before Phase 8:
+`docs/11` §3.**
 
 **The gate:** play it for ninety minutes and answer four questions —
 is the core loop satisfying? Does Frenzy feel worth chasing? Does the Kitchen
 Garden read as meaningful or as busywork (§10 item 10)? Does the first prestige
 feel like a reward? See `docs/08-vertical-slice.md`.
 
-**Phase 6 was cleared to start on 2026-08-04.** Phase 7 (Seasons 2-4) is still
-gated on the same verdict.
+**Phase 6 was cleared to start on 2026-08-04, and Phase 7 shipped the same day.**
+Phase 8 (Season 3, the Harvest Festival) is gated on two answers: the Season 3
+capstone, and the reopened D7.
 
 ---
 
@@ -84,7 +103,7 @@ Full rationale in `docs/04-spec-open-questions.md`
 D1  BarnCapacity = max(500 × TotalManaPerSec, 2.5 × CostOfNextUnpurchasedTier)
 D2  PlotContribution = softCap(BaseFraction × mods × GardenPlotManaPerSec)
     BaseFraction = 0.0314, soft cap 0.55   // docs/09 §3; ~1/3 at full build-out
-D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 10, REF = 1e2
+D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 8, REF = 2e1
     PrestigeMultiplier = 1 + 0.02 × TotalSQP
     LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
 D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
@@ -94,10 +113,11 @@ D4a Season 1 capstone = "First Bloom": reach 1600 Mana/sec DURING a Growth
     built player clears it first try but cannot clear it by idling.
 D4b Season 2 capstone = "Both Blooms": land a Golden Bloom (Pollination chain
     of 9) DURING a Growth Frenzy — §6.1's own "peak moment". Same retry and
-    difficulty rules as D4a. BUILD IT LAST in Phase 7: it cannot be calibrated
-    before Pollination exists in the harness.
+    difficulty rules as D4a. BUILT in Phase 7. It carries NO rate floor: the
+    readiness gate (10x Tier 9) is the build test, the chain is the skill test.
 D7  §8's 6-10h band applies to the idle and casual archetypes. `active` may
-    finish faster; the spread (x1.65) no longer fits the band (x1.67).
+    finish faster. REOPENED by Phase 7: the spread is x2.45, past the band's
+    x1.67, and no pacing constant fixes it. Decide from `docs/11` §3.
 ```
 
 K and REF are **fitted together** (`npm run fit`, and the 2D sweep in `docs/09`
@@ -110,9 +130,10 @@ Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
 **Still open, and they gate later phases — ask, do not guess:** the Season 3
-capstone (blocks Phase 8; it should test the Harvest Festival, and the Barn's
-shape may move once it is real). Season 1 and 2 are decided (D4a, D4b) and
-Season 4's is specified by §6.3 — The Long Night. Also open: whether prestige
+capstone and the **reopened D7** (both block Phase 8; the capstone should test
+the Harvest Festival, and the Barn's shape may move once it is real). Season 1
+and 2 are decided (D4a, D4b) and Season 4's is specified by §6.3 — The Long
+Night. Also open: whether prestige
 wipes banked Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen
 Garden behaviour (`docs/04` item 7 — crops currently grow on engaged-play time
 only). How to make the Kitchen Garden matter is **settled** — option (c),
@@ -163,6 +184,15 @@ three.js is dynamically imported, so a player without WebGL never downloads
 by URL and SHA-256) and stages ONLY the models the registry references into the
 gitignored `public/models/` - 37 files, 0.42MB, out of 329 and 10.5MB.
 
+**A FRESH CLONE THEREFORE RENDERS AN EMPTY GARDEN until `npm run assets` runs.**
+That is expected; what was not is that it used to happen in silence, because
+`ThreeGardenView` catches every load failure so one missing prop cannot take the
+game down. A playtester got a blank blue panel and a clean console. The panel now
+carries a notice naming the command, `loadTemplate` records every failure in
+`missingModels()`, and one console error explains it. Record the failure on the
+PROMISE, not in three's `onError` callback - the loader goes through `fetch` and
+a URL it cannot even parse rejects without the callback ever running.
+
 **6. Protect the invariants.** These encode the design's promises. Full list and
 rationale in `docs/03-technical-architecture.md` §8:
 
@@ -183,6 +213,11 @@ rationale in `docs/03-technical-architecture.md` §8:
   in `PENDING_EFFECT_KINDS`
 - Night pauses ONLY new Kitchen Garden actions — never the Bell, Garden Plots,
   Frenzy, Pollination or the Festival (§2a's narrow blast radius)
+- the §6.1 drone works an IDLE chain only. It must never be able to break a
+  chain the player is driving — automation that can sabotage active play inverts
+  §6.1's own guardrail
+- active play out-earns the drone. Measured, not assumed: `expectedDroneMultiplier`
+  against a held Golden Bloom, asserted in `tests/sim/pollination.test.ts`
 - Day Time is spend-only and never ticks down on a timer (§9 lists real-time
   energy gates as a known failure mode)
 

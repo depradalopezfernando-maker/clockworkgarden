@@ -26,6 +26,7 @@ import {
   PRESTIGE_UNLOCK_SEASON,
 } from '@content/balance';
 import { initialKitchenGarden, type GameState } from './state';
+import { initialPollination } from './pollination';
 import { TIER_COUNT } from '@content/generators';
 
 /**
@@ -113,6 +114,17 @@ export function prestige(
 
     purchasedNodes: state.purchasedNodes,
     lifetimeInsight: state.lifetimeInsight,
+
+    // §6.1's chain is in-progress state and goes; `bestChain` is a record and
+    // stays, for the same reason `claimedMilestones` does — the chain milestones
+    // must not become re-earnable Insight on every reset. The drone's seed
+    // carries on rather than restarting, so a player cannot reroll its luck by
+    // Turning the Soil.
+    pollination: {
+      ...initialPollination(),
+      bestChain: state.pollination.bestChain,
+      droneSeed: state.pollination.droneSeed,
+    },
 
     // MUST survive. If claimed milestones reset, every reset re-pays the same
     // Insight and the tree becomes free - precisely what §3's milestone design

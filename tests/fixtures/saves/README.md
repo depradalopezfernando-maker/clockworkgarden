@@ -15,3 +15,9 @@ file untouched.
 running v3 build — Phase 4 shipped the v3 schema without freezing a fixture, and
 the gap was found before anyone had a v3 save. Every other file here is a
 verbatim capture. From v4 on, capture at ship time.
+
+`v5.json` was reconstructed in Phase 7 by putting `v4.json` through the shipped
+4→5 migration and adding the `tiersUnlocked` field the next autosave would have
+written — Phase 6 shipped the v5 schema without freezing a fixture. It is
+byte-for-byte what a v4 player's file became on opening that build. Everything
+from v6 on is captured at ship time.

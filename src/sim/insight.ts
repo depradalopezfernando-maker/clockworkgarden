@@ -32,6 +32,12 @@ export interface InsightEffects {
   readonly offlineFloorBonus: number;
   /** Added to §5's Frenzy duration, in seconds. */
   readonly frenzyBonusSeconds: number;
+  /** Added to §6.1's 3-second chain window. */
+  readonly pollinationWindowSeconds: number;
+  /** Added to every Bloom's bonus, in multiplier points. */
+  readonly pollinationBloomBonus: number;
+  /** Added to the Tier 8 drone's success rate. */
+  readonly pollinationDroneBonus: number;
   /**
    * Per-tier additive production bonus, keyed by tier. A tier absent from the
    * map has no bonus. Read alongside `productionBonus`, which is global.
@@ -53,6 +59,9 @@ const EMPTY: InsightEffects = {
   productionBonus: 0,
   offlineFloorBonus: 0,
   frenzyBonusSeconds: 0,
+  pollinationWindowSeconds: 0,
+  pollinationBloomBonus: 0,
+  pollinationDroneBonus: 0,
   tierProduction: new Map(),
   kgSlotBonus: 0,
   kgSurfaces: new Set(),
@@ -68,6 +77,9 @@ export function aggregateEffects(purchasedNodeIds: readonly string[]): InsightEf
   let productionBonus = 0;
   let offlineFloorBonus = 0;
   let frenzyBonusSeconds = 0;
+  let pollinationWindowSeconds = 0;
+  let pollinationBloomBonus = 0;
+  let pollinationDroneBonus = 0;
   let kgSlotBonus = 0;
   let kgDayLengthStep = 0;
   let satchelBonus = 0;
@@ -96,6 +108,15 @@ export function aggregateEffects(purchasedNodeIds: readonly string[]): InsightEf
         break;
       case 'frenzy-duration':
         frenzyBonusSeconds += effect.seconds;
+        break;
+      case 'pollination-window':
+        pollinationWindowSeconds += effect.seconds;
+        break;
+      case 'pollination-bloom':
+        pollinationBloomBonus += effect.amount;
+        break;
+      case 'pollination-drone':
+        pollinationDroneBonus += effect.amount;
         break;
       case 'kg-slots':
         kgSlotBonus += effect.amount;
@@ -126,6 +147,9 @@ export function aggregateEffects(purchasedNodeIds: readonly string[]): InsightEf
     productionBonus,
     offlineFloorBonus,
     frenzyBonusSeconds,
+    pollinationWindowSeconds,
+    pollinationBloomBonus,
+    pollinationDroneBonus,
     tierProduction,
     kgSlotBonus,
     kgSurfaces,

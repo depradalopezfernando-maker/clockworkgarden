@@ -242,3 +242,31 @@ describe('offline progress on load (§7)', () => {
     expect(new GameStore(clock, storage).load().offline).toBeNull();
   });
 });
+
+describe('§6.1 Pollination through the store', () => {
+  const enterSummer = () =>
+    store.replaceState({ ...initialState(), season: 2, capstonesCleared: [1] });
+
+  it('refuses to pollinate before Season 2', () => {
+    expect(store.pollinate('sunflower')).toBeNull();
+    expect(store.getSnapshot().pollination.chain).toBe(0);
+  });
+
+  it('builds a chain and publishes each link', () => {
+    enterSummer();
+    let published = 0;
+    store.subscribe(() => published++);
+
+    store.pollinate('sunflower');
+    store.pollinate('lavender');
+    expect(store.getSnapshot().pollination.chain).toBe(2);
+    expect(published).toBe(2);
+  });
+
+  it('returns the Bloom it landed, and nothing on an ordinary link', () => {
+    enterSummer();
+    expect(store.pollinate('sunflower')).toBeNull();
+    expect(store.pollinate('lavender')).toBeNull();
+    expect(store.pollinate('poppy')?.name).toBe('Bronze Bloom');
+  });
+});

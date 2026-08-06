@@ -15,15 +15,22 @@ import {
   DAY_LENGTH_SECONDS_BY_UPGRADE,
   KG_MAX_SLOTS,
   KG_STARTING_SLOTS,
+  POLLINATION_TIERS,
   SEED_SATCHEL_BASE_CAPACITY,
 } from '@content/balance';
 import { DEFAULT_SURFACE, surfaceById } from '@content/surfaces';
 import { emptyPlot, type KitchenGardenState, type Plot } from '@sim/kitchenGarden';
 import { initialCapstone, type CapstoneState } from '@sim/capstone';
+import {
+  FLOWERS,
+  initialPollination,
+  type FlowerType,
+  type PollinationState,
+} from '@sim/pollination';
 import { nodeById } from '@content/insightTree';
 import { MILESTONES } from '@content/milestones';
 
-export const CURRENT_SAVE_VERSION = 5;
+export const CURRENT_SAVE_VERSION = 6;
 export const SAVE_KEY = 'clockwork-garden:save';
 
 export interface SaveFile {
@@ -41,7 +48,7 @@ export type LoadFailure = 'empty' | 'unparseable' | 'future-version' | 'corrupt'
 
 /**
  * Migrations, keyed by the version they upgrade FROM. Each is a pure function.
- * Loading a v1 save into a v5 build runs 1->2, 2->3, 3->4, 4->5 in order.
+ * Loading a v1 save into a v6 build runs 1->2, 2->3, ... 5->6 in order.
  *
  * Never edit a migration once it has shipped - players' saves depend on the
  * exact transformation. Add a new one instead.
@@ -144,6 +151,24 @@ const MIGRATIONS: Readonly<Record<number, (raw: unknown) => unknown>> = {
       },
     };
   },
+
+  /**
+   * v5 -> v6 (Phase 7): §6.1's Pollination Combo arrived.
+   *
+   * A returning player starts with no chain, no Bloom and a fresh drone seed.
+   * Nothing is lost — there was nothing to lose — but the migration is written
+   * out rather than left to `reviveState`'s defaults, because the record of WHEN
+   * a field appeared is the thing that makes the next schema change safe.
+   */
+  5: (raw) => {
+    const envelope = (raw ?? {}) as Record<string, unknown>;
+    const state = (envelope['state'] ?? {}) as Record<string, unknown>;
+    return {
+      ...envelope,
+      version: 6,
+      state: { ...state, pollination: initialPollination() },
+    };
+  },
 };
 
 /** Old node id -> new node id, for the v4 -> v5 rename. Never edit. */
@@ -212,6 +237,7 @@ function reviveState(raw: unknown): GameState {
       meter: Math.min(1, Math.max(0, num(frenzyRaw['meter'], 0))),
       remainingSeconds: Math.max(0, num(frenzyRaw['remainingSeconds'], 0)),
     },
+    pollination: revivePollination(r['pollination']),
     insight: Math.max(0, num(r['insight'], 0)),
     lifetimeInsight: Math.max(0, num(r['lifetimeInsight'], 0)),
     // Unknown ids are dropped rather than trusted: a save may name a node this
@@ -235,6 +261,39 @@ function reviveCapstone(raw: unknown): CapstoneState {
     sawFrenzy: false,
     attempts: Math.max(0, Math.floor(num(c['attempts'], 0))),
     lastFailed: c['lastFailed'] === true,
+  };
+}
+
+/**
+ * Rebuild §6.1's Pollination state.
+ *
+ * The chain and any active Bloom are DROPPED, exactly as a capstone attempt is:
+ * reloading into a live Golden Bloom would hand back twenty seconds of x2 that
+ * the player did not earn, and it is the one thing in this state worth cheating
+ * for. `bestChain` is a record and survives; the drone's seed survives so a
+ * reloaded save keeps replaying the same sequence rather than restarting its
+ * luck every time the tab is refreshed.
+ */
+function revivePollination(raw: unknown): PollinationState {
+  const base = initialPollination();
+  if (typeof raw !== 'object' || raw === null) return base;
+  const p = raw as Record<string, unknown>;
+  const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+
+  // A ceiling on `bestChain`, because it feeds milestones and therefore Insight.
+  // Generous enough that no honest chain reaches it, tight enough that a hand-
+  // edited save cannot claim an unbounded record. ADR-0004 rules out anti-tamper,
+  // so this is a sanity clamp, not a defence.
+  const longest = (POLLINATION_TIERS[POLLINATION_TIERS.length - 1]?.chain ?? 9) * 1000;
+  const flower = p['lastFlower'];
+
+  return {
+    ...base,
+    // Kept only so the UI can still name the flower that ended the last chain;
+    // with `chain` at 0 it has no mechanical effect.
+    lastFlower: FLOWERS.includes(flower as FlowerType) ? (flower as FlowerType) : null,
+    bestChain: Math.min(longest, Math.max(0, Math.floor(num(p['bestChain'], 0)))),
+    droneSeed: Math.floor(num(p['droneSeed'], base.droneSeed)) >>> 0,
   };
 }
 

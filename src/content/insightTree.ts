@@ -36,6 +36,19 @@ export type NodeEffect =
   | { readonly kind: 'offline-floor'; readonly amount: number }
   /** Extends §5's Frenzy window, in seconds. */
   | { readonly kind: 'frenzy-duration'; readonly seconds: number }
+  /**
+   * Extends §6.1's Pollination chain window, in seconds.
+   *
+   * This is §10 item 5 — "window forgiveness" — made a thing the player earns
+   * rather than a constant someone has to guess right for every hand. The base
+   * 3s stays a HUMAN-tagged decision; this lets a player who finds it tight buy
+   * their way out of it.
+   */
+  | { readonly kind: 'pollination-window'; readonly seconds: number }
+  /** Additive to every Bloom's bonus: 0.1 turns Bronze's +25% into +35%. */
+  | { readonly kind: 'pollination-bloom'; readonly amount: number }
+  /** Additive to the Tier 8 drone's success rate: 0.1 lifts 40% to 50%. */
+  | { readonly kind: 'pollination-drone'; readonly amount: number }
   /** Extra Kitchen Garden plot slots (§2a). */
   | { readonly kind: 'kg-slots'; readonly amount: number }
   /** Unlocks a Kitchen Garden surface (§2a's table). */
@@ -336,6 +349,67 @@ export const INSIGHT_TREE: readonly InsightNode[] = [
     cost: 12,
     requires: ['s2-yield-9'],
     effect: { kind: 'tier-production', tier: 9, amount: 0.35 },
+  },
+
+  // --- §6.1 Pollination Combo -----------------------------------------------
+  //
+  // A branch of its own, rooted at no other node: Pollination arrives with the
+  // Season and a player who wants to lean into it should not first have to buy
+  // their way through the generator ladder to reach it.
+  {
+    id: 's2-pollen-bloom-1',
+    name: 'Heavy Blossom',
+    description: 'Every Bloom is worth 15 percentage points more Mana.',
+    season: 2,
+    cost: 6,
+    requires: [],
+    effect: { kind: 'pollination-bloom', amount: 0.15 },
+  },
+  {
+    id: 's2-pollen-bloom-2',
+    name: 'Nectar Saturation',
+    description: 'Every Bloom is worth a further 25 percentage points more Mana.',
+    season: 2,
+    cost: 11,
+    requires: ['s2-pollen-bloom-1'],
+    effect: { kind: 'pollination-bloom', amount: 0.25 },
+  },
+  {
+    // Deliberately NOT the branch root, and deliberately not on the path to
+    // anything. Forgiveness is a node for the player who finds three seconds
+    // tight, and making it a prerequisite would charge every other player for a
+    // problem they do not have.
+    id: 's2-pollen-patience',
+    name: 'Patient Pollen',
+    description: 'You get an extra second to reach the next flower in a chain.',
+    season: 2,
+    cost: 4,
+    requires: ['s2-pollen-bloom-1'],
+    effect: { kind: 'pollination-window', seconds: 1 },
+  },
+  {
+    // 5 POINTS, NOT 15. A drone chain needs nine straight successes, so the
+    // success rate enters the payoff at the ninth power and a change that looks
+    // small on the tin is not: 40% -> 50% nearly doubles what the drone is
+    // worth. At +15 points a pair of these nodes made unattended play worth
+    // x1.47 against an engaged player's x2.0, which is not the "real, if lesser,
+    // role" §6.1 asks for - it is most of the mechanic, for 20 Insight.
+    id: 's2-pollen-drone-1',
+    name: 'Flight Calibration',
+    description: 'Unattended pollinations succeed 5 percentage points more often.',
+    season: 2,
+    cost: 7,
+    requires: ['s2-yield-8'],
+    effect: { kind: 'pollination-drone', amount: 0.05 },
+  },
+  {
+    id: 's2-pollen-drone-2',
+    name: 'Waggle Dance Protocol',
+    description: 'Unattended pollinations succeed a further 5 points more often.',
+    season: 2,
+    cost: 13,
+    requires: ['s2-pollen-drone-1'],
+    effect: { kind: 'pollination-drone', amount: 0.05 },
   },
 
   // ===========================================================================

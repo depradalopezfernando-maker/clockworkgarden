@@ -8,6 +8,8 @@ import {
   unlockedTiers,
 } from '@sim/economy';
 import { CLICKS_TO_FILL, frenzyMultiplier, isFrenzyActive } from '@sim/frenzy';
+import { activeBloom, bloomMultiplier } from '@sim/pollination';
+import { effectsOf } from '@sim/insight';
 import { prestigeMultiplier } from '@sim/prestige';
 import { ownedOf, type GameState } from '@sim/state';
 import { GENERATOR_TIERS, tierAt, type UnlockGate } from '@content/generators';
@@ -16,6 +18,7 @@ import { SEASON_NAMES, themeVariables } from './theme';
 import { InsightPanel } from './InsightPanel';
 import { GardenCanvas } from './GardenCanvas';
 import { KitchenGardenPanel } from './KitchenGardenPanel';
+import { PollinationPanel } from './PollinationPanel';
 import { SeasonPanel } from './SeasonPanel';
 import { Tutorial } from './Tutorial';
 import { useGameRuntime, useGameState, useGameStatus } from './useGame';
@@ -38,7 +41,12 @@ export function App() {
   // `totalManaPerSecond` alone showed the un-frenzied rate while Mana visibly
   // climbed at twice it, which reads as the counter being broken - and hides
   // the whole point of the Frenzy.
-  const perSecond = totalManaPerSecond(state) * frenzyMultiplier(state.frenzy);
+  // A Bloom multiplies on top of the Frenzy (§6.1), so it belongs here for the
+  // same reason: a rate that ignores a live ×2 is a rate the player can see is
+  // wrong.
+  const bloom = bloomMultiplier(state.pollination, effectsOf(state).pollinationBloomBonus);
+  const perSecond = totalManaPerSecond(state) * frenzyMultiplier(state.frenzy) * bloom;
+  const bloomName = activeBloom(state.pollination)?.name ?? null;
 
   const ring = useCallback(() => {
     gameStore.ringBell();
@@ -52,6 +60,7 @@ export function App() {
           mana={state.mana}
           perSecond={perSecond}
           frenzyActive={frenzyActive}
+          bloomName={bloomName}
           multiplier={multiplier}
           elapsedSeconds={state.elapsedSeconds}
           prestigeCount={state.prestigeCount}
@@ -68,6 +77,8 @@ export function App() {
         </button>
 
         <FrenzyMeter meter={state.frenzy.meter} remainingSeconds={state.frenzy.remainingSeconds} />
+
+        <PollinationPanel state={state} />
 
         <Tutorial state={state} />
 
@@ -117,6 +128,8 @@ interface HudProps {
   mana: number;
   perSecond: number;
   frenzyActive: boolean;
+  /** Name of the §6.1 Bloom currently up, or null. */
+  bloomName: string | null;
   multiplier: number;
   elapsedSeconds: number;
   prestigeCount: number;
@@ -128,6 +141,7 @@ function Hud({
   mana,
   perSecond,
   frenzyActive,
+  bloomName,
   multiplier,
   elapsedSeconds,
   prestigeCount,
@@ -146,6 +160,7 @@ function Hud({
         data-testid="rate"
       >
         {formatRate(perSecond)} Mana{frenzyActive ? ' · Frenzy ×2' : ''}
+        {bloomName ? ` · ${bloomName}` : ''}
       </div>
 
       <div className="hud__stats">

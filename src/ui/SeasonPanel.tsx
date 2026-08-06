@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { gameStore } from '@game/store';
-import { capstoneTargetRate, hasDesignedChallenge, isCapstoneReady } from '@sim/capstone';
+import {
+  capstoneTargetRate,
+  hasDesignedChallenge,
+  isCapstoneReady,
+  requiresGoldenBloom,
+} from '@sim/capstone';
+import { GOLDEN_CHAIN, isGoldenBloomActive } from '@sim/pollination';
 import { isFrenzyActive } from '@sim/frenzy';
 import { canPrestige, prestigeGainFactor, prestigeMultiplier, sqpAvailable } from '@sim/prestige';
 import { totalManaPerSecond } from '@sim/economy';
@@ -9,7 +15,8 @@ import { formatNumber, formatRate } from './format';
 import { SEASON_NAMES } from './theme';
 
 /**
- * The Season capstone ("First Bloom", D4a) and prestige ("Turn the Soil", §4).
+ * The Season capstone (D4a's "First Bloom", D4b's "Both Blooms") and prestige
+ * ("Turn the Soil", §4).
  *
  * Both are moments rather than transactions, so both get room and plain
  * language. Prestige in particular asks before it wipes anything: §4 makes it
@@ -40,48 +47,61 @@ export function SeasonPanel({ state }: { state: GameState }) {
   );
 }
 
+/**
+ * The copy for each designed capstone.
+ *
+ * A table rather than a branch inside the component: Seasons 3 and 4 are still
+ * undesigned, and when they land the only thing this file should need is two
+ * more rows. `hasDesignedChallenge` decides whether a row is reachable, so an
+ * entry here can never accidentally offer a capstone the sim will not clear.
+ */
+const CAPSTONES: Readonly<Record<number, { name: string; flavour: string }>> = {
+  1: {
+    name: 'First Bloom',
+    flavour: '“The garden has never all bloomed at once. Ring for it.”',
+  },
+  2: {
+    name: 'Both Blooms',
+    flavour: '“Summer keeps its best moment for whoever can hold two things at once.”',
+  },
+};
+
 function Capstone({ state }: { state: GameState }) {
+  const copy = CAPSTONES[state.season] ?? CAPSTONES[1]!;
+  const goldenNeeded = requiresGoldenBloom(state.season);
   const target = capstoneTargetRate(state.season);
   const frenzied = isFrenzyActive(state.frenzy);
   const rate = totalManaPerSecond(state) * (frenzied ? 2 : 1);
   const { armed, attemptPeakRate, lastFailed } = state.capstone;
-  const progress = Math.min(1, Math.max(attemptPeakRate, armed ? rate : 0) / target);
 
   return (
     <div className="capstone" data-testid="capstone">
-      <p className="capstone__title">First Bloom</p>
-      <p className="capstone__flavour">“The garden has never all bloomed at once. Ring for it.”</p>
+      <p className="capstone__title">{copy.name}</p>
+      <p className="capstone__flavour">{copy.flavour}</p>
       <p className="footnote" style={{ marginTop: 0 }}>
-        Reach <b>{formatRate(target)}</b> during a single Growth Frenzy.
+        {goldenNeeded ? (
+          <>
+            Land a <b>Golden Bloom</b> — a Pollination chain of nine — during a Growth Frenzy.
+          </>
+        ) : (
+          <>
+            Reach <b>{formatRate(target)}</b> during a single Growth Frenzy.
+          </>
+        )}
       </p>
 
-      {armed && (
-        <>
-          <div className="meter" style={{ marginTop: '0.8rem' }}>
-            <div className="meter__label">
-              <span>{frenzied ? 'Frenzy — go!' : 'Ring the Bell to start a Frenzy'}</span>
-              <span data-testid="capstone-peak">
-                {formatNumber(Math.max(attemptPeakRate, armed && frenzied ? rate : 0))}/
-                {formatNumber(target)}
-              </span>
-            </div>
-            <div
-              className="meter__track"
-              role="progressbar"
-              aria-label="First Bloom progress"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(progress * 100)}
-            >
-              <div
-                className="meter__fill meter__fill--active"
-                style={{ width: `${progress * 100}%` }}
-              />
-            </div>
-          </div>
-          <p className="footnote">The attempt ends when the Frenzy does.</p>
-        </>
-      )}
+      {armed &&
+        (goldenNeeded ? (
+          <BloomAttempt state={state} frenzied={frenzied} />
+        ) : (
+          <RateAttempt
+            target={target}
+            frenzied={frenzied}
+            rate={rate}
+            attemptPeakRate={attemptPeakRate}
+            label={copy.name}
+          />
+        ))}
 
       {!armed && (
         <>
@@ -96,11 +116,77 @@ function Capstone({ state }: { state: GameState }) {
             onClick={() => gameStore.armCapstone()}
             data-testid="capstone-arm"
           >
-            {lastFailed ? 'Try again' : 'Attempt First Bloom'}
+            {lastFailed ? 'Try again' : `Attempt ${copy.name}`}
           </button>
         </>
       )}
     </div>
+  );
+}
+
+/** D4a: a rate to reach. The meter is the rate against the target. */
+function RateAttempt({
+  target,
+  frenzied,
+  rate,
+  attemptPeakRate,
+  label,
+}: {
+  target: number;
+  frenzied: boolean;
+  rate: number;
+  attemptPeakRate: number;
+  label: string;
+}) {
+  const progress = Math.min(1, Math.max(attemptPeakRate, frenzied ? rate : 0) / target);
+  return (
+    <>
+      <div className="meter" style={{ marginTop: '0.8rem' }}>
+        <div className="meter__label">
+          <span>{frenzied ? 'Frenzy — go!' : 'Ring the Bell to start a Frenzy'}</span>
+          <span data-testid="capstone-peak">
+            {formatNumber(Math.max(attemptPeakRate, frenzied ? rate : 0))}/{formatNumber(target)}
+          </span>
+        </div>
+        <div
+          className="meter__track"
+          role="progressbar"
+          aria-label={`${label} progress`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+        >
+          <div
+            className="meter__fill meter__fill--active"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      </div>
+      <p className="footnote">The attempt ends when the Frenzy does.</p>
+    </>
+  );
+}
+
+/**
+ * D4b: two conditions at once, so the UI shows two lights rather than a meter.
+ *
+ * A progress bar would be a lie here — there is no partial credit for a chain of
+ * eight, and the player's real question is "which of the two am I missing?".
+ */
+function BloomAttempt({ state, frenzied }: { state: GameState; frenzied: boolean }) {
+  const golden = isGoldenBloomActive(state.pollination);
+  return (
+    <>
+      <ul className="capstone__conditions" data-testid="capstone-conditions">
+        <li className={frenzied ? 'met' : undefined}>
+          {frenzied ? '✓' : '·'} Growth Frenzy running
+        </li>
+        <li className={golden ? 'met' : undefined}>
+          {golden ? '✓' : '·'} Golden Bloom — chain {state.pollination.chain}/{GOLDEN_CHAIN}
+        </li>
+      </ul>
+      <p className="footnote">The attempt ends when the Frenzy does.</p>
+    </>
   );
 }
 

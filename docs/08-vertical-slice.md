@@ -89,9 +89,13 @@ Reproduce with `npm run simulate`.
 
 Three things need your decision, in order:
 
-1. **Go / no-go on Seasons 2–4.** The remaining ~20–30 sessions.
-2. **How the Kitchen Garden should matter** (`docs/07` §2, five options).
-3. **The Season 2 capstone**, which blocks Phase 7.
+1. **Go / no-go on Seasons 3–4.** The remaining ~20–30 sessions.
+2. **The reopened D7** — §8's campaign band against §9's active-play guardrail
+   (`docs/11` §3, three measured options). Blocks Phase 8.
+3. **The Season 3 capstone**, which also blocks Phase 8.
+
+Items 2 and 3 from the original list are settled: the Kitchen Garden question
+took option (c) (`docs/07` §5) and the Season 2 capstone is D4b, built in Phase 7.
 
 Two smaller ones are waiting whenever convenient: whether prestige should wipe
 banked Insight (`docs/04` item 10), and whether crops should grow while the tab

@@ -172,6 +172,61 @@ body {
   background: var(--season-accent);
 }
 
+/* --- Pollination Combo (§6.1) -------------------------------------------- */
+
+.flowers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.flower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.25rem;
+  font: inherit;
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    border-color 0.12s ease;
+}
+
+.flower:hover {
+  border-color: var(--season-primary);
+}
+
+.flower:active {
+  transform: scale(0.96);
+}
+
+/*
+ * The flower that landed the last link. Pressing it again breaks the chain, so
+ * it is dimmed rather than disabled: disabling it would deny the player the
+ * mistake, and §6.1's whole skill test is remembering not to make it.
+ */
+.flower--spent {
+  opacity: 0.45;
+  border-color: var(--season-shadow);
+}
+
+.flower__glyph {
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--season-accent);
+}
+
+.flower__name {
+  font-size: 0.72rem;
+  color: var(--ui-text-muted);
+}
+
 /* --- Generators ---------------------------------------------------------- */
 
 .generators {
@@ -586,8 +641,33 @@ body {
 
 .garden-canvas {
   display: block;
+  position: relative;
   width: 100%;
   height: 340px;
+}
+
+/*
+ * Sits OVER the canvas rather than replacing it. The renderer is running fine —
+ * it simply has nothing to draw — so tearing the canvas out would hide a working
+ * system and make the next failure harder to tell apart from this one.
+ */
+.garden-canvas__notice {
+  position: absolute;
+  inset: auto 0 0;
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ui-text);
+  background: var(--ui-surface-raised);
+  border-top: 1px solid var(--ui-border);
+}
+
+.garden-canvas__notice code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: var(--ui-surface);
+  color: var(--ui-insight);
 }
 
 .garden-canvas canvas {
@@ -600,4 +680,22 @@ body {
   .garden-canvas {
     height: 240px;
   }
+}
+
+/* --- Capstone conditions (D4b) ------------------------------------------- */
+
+.capstone__conditions {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--ui-text-muted);
+}
+
+.capstone__conditions li {
+  padding: 0.15rem 0;
+}
+
+.capstone__conditions .met {
+  color: var(--ui-positive);
 }

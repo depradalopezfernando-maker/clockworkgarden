@@ -20,6 +20,19 @@ const loader = new GLTFLoader();
 const cache = new Map<string, Promise<Group>>();
 
 /**
+ * Models that were asked for and could not be loaded.
+ *
+ * Recorded rather than only thrown, because the caller's only sane response to
+ * a missing prop is to skip it — and thirty-seven skipped props leave an empty
+ * blue box with nothing in the console to explain it. That happened: rule 8
+ * keeps `public/models/` out of git, so anyone who clones the repo and runs
+ * `npm run dev` without `npm run assets` gets a diorama that looks broken and
+ * says nothing. The set is what lets the UI tell them why.
+ */
+const missing = new Set<string>();
+let warned = false;
+
+/**
  * Load a model, once. The returned Group is a shared TEMPLATE and must never be
  * added to a scene directly — call `instantiate` for a recoloured copy.
  */
@@ -35,14 +48,43 @@ export function loadTemplate(name: string, base = ''): Promise<Group> {
       undefined,
       () => reject(new Error(`could not load model "${name}" from ${url}`))
     );
+  }).catch((cause: unknown) => {
+    // Recorded HERE, on the promise, rather than inside the `onError` callback
+    // above. `onError` is only one of the ways this fails: three's loader goes
+    // through `fetch`, and a URL it cannot even parse rejects without ever
+    // reaching the callback. Anything that keeps a model out of the scene has to
+    // land in `missing`, or the UI goes back to saying nothing.
+    noteMissing(name, url);
+    throw cause instanceof Error ? cause : new Error(String(cause));
   });
   cache.set(name, pending);
   return pending;
 }
 
+function noteMissing(name: string, url: string): void {
+  missing.add(name);
+  // Once, however many models are missing: the common cause is that NONE of
+  // them are staged, and thirty-seven identical errors bury the one sentence
+  // that says what to do about it.
+  if (warned) return;
+  warned = true;
+  console.error(
+    `[clockwork-garden] Could not load "${url}". The CC0 models are not committed ` +
+      `(see CLAUDE.md rule 8) — run \`npm run assets\` to fetch and stage them, ` +
+      `then reload. The garden renders empty until then; nothing else is affected.`
+  );
+}
+
+/** Names of every model that failed to load. Empty when the staging is intact. */
+export function missingModels(): readonly string[] {
+  return [...missing];
+}
+
 /** Drop every cached template. Tests and hot-reload need this; the game does not. */
 export function clearModelCache(): void {
   cache.clear();
+  missing.clear();
+  warned = false;
 }
 
 /**

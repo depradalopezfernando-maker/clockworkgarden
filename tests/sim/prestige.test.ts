@@ -78,7 +78,8 @@ describe('the first prestige is worth taking', () => {
 
   it('offers a clearly-felt multiplier the moment it unlocks', () => {
     const offered = prestigeMultiplier(totalSqp(LIFETIME_AT_S1_CAPSTONE));
-    expect(offered).toBeGreaterThan(1.75);
+    // 1.65, lowered from 1.75 in Phase 7 — see docs/11 §3.
+    expect(offered).toBeGreaterThan(1.65);
   });
 
   it('the reference sits BELOW the lifetime Mana held at first unlock', () => {

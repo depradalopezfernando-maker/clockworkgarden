@@ -229,19 +229,27 @@ place to find out the design does not work, if it does not.
 
 ## Phase 7 — Season 2: Pollination Combo (§6.1)
 
-> **Capstone decided (D4b): "Both Blooms"** — land a Golden Bloom during a Growth
-> Frenzy. Build it LAST in this phase: it cannot be calibrated before Pollination
-> exists in the balance harness, and D4a's target drifting out from under a later
-> change is the failure to avoid repeating. See `docs/04`.
+> **Capstone decided (D4b) and built: "Both Blooms"** — land a Golden Bloom
+> during a Growth Frenzy. It was built last in the phase, as planned: it could
+> not be calibrated before Pollination existed in the balance harness, and D4a's
+> target drifting out from under a later change was the failure to avoid
+> repeating. See `docs/04`.
 
 **Sessions: 2–3** · Entry: Phase 5
 
 Three flower types, 3s chain window, Bronze/Silver/Golden Bloom tiers, Tier 8
-drone auto-attempt at ~40%, stacking with Frenzy. Season 2 capstone ("The Great
-Pollination"). Tiers 6–10.
+drone auto-attempt at ~40%, stacking with Frenzy. Season 2 capstone ("Both
+Blooms", D4b). Tiers 6–10.
 
 **Exit:** sim confirms an actively-playing player reliably beats the 40% drone
 (§6.1's stated guardrail). §10 item 5 — window forgiveness — flagged for Phase 11.
+
+**DONE (2026-08-04).** Exit met with a 1.7× margin: an engaged player holds ×2.00
+against a fully-upgraded drone's ×1.15. Report: `docs/11-phase-7-pollination.md`.
+Window forgiveness also got a player-facing answer (the "Patient Pollen" node),
+though the base 3s stays a HUMAN constant. **One decision came out of this phase
+and blocks nothing yet but should be taken before Phase 8: D7 is reopened —
+`docs/11` §3.**
 
 ---
 

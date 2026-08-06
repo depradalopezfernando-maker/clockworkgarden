@@ -23,6 +23,8 @@ and game feel need human gates.
 | [07 — Phase 4 Report](07-phase-4-kitchen-garden-report.md)  | The Kitchen Garden as built, why it contributed far less than intended, and the fix (§5)                 |
 | [08 — The Vertical Slice](08-vertical-slice.md)             | **How to play it and what to look for.** The human gate                                                  |
 | [09 — Playtest Revisions](09-playtest-revisions.md)         | **What the first real play session changed** — the soft-lock fix, and decision D7                        |
+| [10 — Phase 6 Presentation](10-phase-6-presentation.md)     | The 3D diorama: what renders, what does not yet                                                          |
+| [11 — Phase 7 Pollination](11-phase-7-pollination.md)       | §6.1 as built, the drone guardrail measured, and **the reopened D7 a human must settle** (§3)            |
 
 Plus [`../CLAUDE.md`](../CLAUDE.md) — the standing brief for future sessions.
 

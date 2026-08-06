@@ -54,11 +54,26 @@ export interface GardenView {
    * the debug handle in `GardenCanvas`.
    */
   stats(): GardenStats | null;
+  /**
+   * Models the renderer asked for and could not load. Empty when all is well.
+   *
+   * Distinct from `active`, which answers "is anything drawn at all" — a browser
+   * without WebGL and a checkout without staged models are different problems
+   * with different remedies, and a single flag would tell the player the wrong
+   * one. Rule 8 keeps the models out of git, so the second case is what anyone
+   * who skips `npm run assets` actually hits.
+   */
+  missingModels(): readonly string[];
 }
 
 /** Does nothing, successfully. The 2D build and any WebGL-less browser use it. */
 export class NullGardenView implements GardenView {
   readonly active = false;
+  // Nothing was asked for, so nothing is missing. A WebGL-less browser must not
+  // also be told to go and stage assets it would have no use for.
+  missingModels(): readonly string[] {
+    return [];
+  }
   async mount(): Promise<void> {}
   update(): void {}
   dispose(): void {}

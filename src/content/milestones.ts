@@ -19,7 +19,9 @@ export type MilestoneCondition =
   | { readonly kind: 'lifetime-mana'; readonly amount: number }
   | { readonly kind: 'capstone-cleared'; readonly season: number }
   | { readonly kind: 'prestige-count'; readonly count: number }
-  | { readonly kind: 'played-seconds'; readonly seconds: number };
+  | { readonly kind: 'played-seconds'; readonly seconds: number }
+  /** Longest §6.1 Pollination chain ever landed. Reads `pollination.bestChain`. */
+  | { readonly kind: 'best-chain'; readonly length: number };
 
 export interface Milestone {
   readonly id: string;
@@ -176,6 +178,27 @@ export const MILESTONES: readonly Milestone[] = [
     name: 'Running the Vats',
     condition: { kind: 'own-count', tier: 9, count: 25 },
     reward: 9,
+  },
+  // §6.1's own progression. These pay the player for LEARNING the combo rather
+  // than for owning generators, which is the only kind of milestone that
+  // rewards the Season's actual new verb.
+  {
+    id: 'm-chain-3',
+    name: 'Three Petals',
+    condition: { kind: 'best-chain', length: 3 },
+    reward: 4,
+  },
+  {
+    id: 'm-chain-6',
+    name: 'Silver Touch',
+    condition: { kind: 'best-chain', length: 6 },
+    reward: 7,
+  },
+  {
+    id: 'm-chain-9',
+    name: 'The Golden Bloom',
+    condition: { kind: 'best-chain', length: 9 },
+    reward: 11,
   },
   {
     id: 'm-capstone-2',
