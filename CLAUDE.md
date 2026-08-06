@@ -234,7 +234,15 @@ rationale in `docs/03-technical-architecture.md` §8:
   the gitignored `assets/vendor/`, pinned by URL and SHA-256. UI icons come from
   npm as `@iconify-json/game-icons`. See `docs/05-asset-pipeline.md`.
 - **Node's built-in `fetch` ignores `HTTPS_PROXY`** and 403s at the gateway while
-  `curl` to the same URL works. Run it with `NODE_USE_ENV_PROXY=1` (Node >= 22.21).
+  `curl` to the same URL works. It needs `NODE_USE_ENV_PROXY=1` (Node >= 22.21),
+  and that must be set BEFORE the process starts — Node reads it at boot, so
+  assigning `process.env` in the script is too late (measured). `fetch-assets.mjs`
+  re-execs itself, and only when a proxy is actually configured.
+- **The npm scripts must run on Windows too.** A `VAR=1 node ...` prefix is POSIX
+  syntax that cmd.exe cannot parse; it broke `npm run assets` outright for a
+  playtester. Nothing in `scripts` may carry an env-var prefix, and no tool may
+  assume a Unix binary exists — `fetch-assets.mjs` tries tar, then unzip, then
+  PowerShell rather than calling `unzip` and hoping.
 - **Never disable TLS verification or unset `HTTPS_PROXY`.** If a tool fails TLS
   or gets a 403/405/407, see `/root/.ccr/README.md`.
 

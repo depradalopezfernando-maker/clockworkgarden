@@ -19,15 +19,47 @@
  * policy has changed rather than the site - see /root/.ccr/README.md, and never
  * work around it by disabling TLS verification.
  *
- * The npm script sets NODE_USE_ENV_PROXY=1 because Node's built-in fetch does
- * not read HTTPS_PROXY on its own; without it every request 403s at the gateway
- * while curl to the same URL succeeds, which is a confusing half hour.
+ * PROXIES. Node's built-in fetch does not read HTTPS_PROXY on its own; without
+ * NODE_USE_ENV_PROXY every request 403s at a gateway while curl to the same URL
+ * succeeds, which is a confusing half hour. That used to be a `VAR=1 node ...`
+ * prefix on the npm script — POSIX-only syntax that cmd.exe cannot parse, so
+ * `npm run assets` failed on Windows before it did anything. It is handled here
+ * instead; see `reExecWithProxySupport`.
  */
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * Restart under `NODE_USE_ENV_PROXY=1` when a proxy is configured.
+ *
+ * It has to be a RESTART. Node reads that variable when it boots, so assigning
+ * `process.env.NODE_USE_ENV_PROXY` here is too late — measured, not assumed: in
+ * process it still 403s at the gateway, set by the parent it reaches the host.
+ *
+ * Only fires when there is actually a proxy to honour, so a normal machine
+ * (Windows, macOS, a plain Linux box) runs straight through with no extra
+ * process and no behaviour change. Nothing about this is Windows-specific; it
+ * just stops being expressed in a shell only some platforms speak.
+ */
+function reExecWithProxySupport() {
+  const proxy = process.env.HTTPS_PROXY ?? process.env.https_proxy;
+  if (!proxy || process.env.NODE_USE_ENV_PROXY) return;
+
+  const { status } = spawnSync(
+    process.execPath,
+    [fileURLToPath(import.meta.url), ...process.argv.slice(2)],
+    {
+      stdio: 'inherit',
+      env: { ...process.env, NODE_USE_ENV_PROXY: '1' },
+    }
+  );
+  process.exit(status ?? 1);
+}
+
+reExecWithProxySupport();
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const VENDOR = join(ROOT, 'assets', 'vendor');
@@ -110,10 +142,67 @@ for (const pack of PACKS) {
   mkdirSync(dir, { recursive: true });
   const archive = join(dir, 'pack.zip');
   writeFileSync(archive, bytes);
-  execFileSync('unzip', ['-q', '-o', archive, '-d', dir]);
+  try {
+    extract(archive, dir);
+  } catch (error) {
+    // Reported like a download failure rather than thrown: one pack that cannot
+    // be unzipped should not abort the others, and a stack trace here would bury
+    // the sentence naming what to install.
+    console.log(`FAILED (${error.message})`);
+    failures++;
+    continue;
+  }
   rmSync(archive);
   writeFileSync(stamp, `${pack.sha256}\n`);
   console.log(`ok (${(bytes.length / 1e6).toFixed(1)}MB)`);
+}
+
+/**
+ * Unzip a pack, on whatever this machine happens to be.
+ *
+ * `unzip` used to be called directly. It does not exist on Windows, so a
+ * Windows user got through the proxy fix only to hit "'unzip' is not
+ * recognized" one line later.
+ *
+ * Each candidate is tried in turn rather than branching on `process.platform`:
+ * platform is a decent guess at what is installed but not a fact — plenty of
+ * minimal Linux images ship without `unzip`, and Git Bash on Windows has it.
+ * Trying is cheap and correct where guessing is neither.
+ *
+ *   tar   Windows 10+ bundles bsdtar as tar.exe, which reads zip. macOS's tar
+ *         is bsdtar too. GNU tar (most Linux) does NOT, hence the fallbacks.
+ *   unzip Linux and macOS.
+ *   PS    Expand-Archive, built into Windows 10+, for the case where tar.exe
+ *         is somehow absent.
+ */
+function extract(archive, dir) {
+  const attempts = [
+    ['tar', ['-xf', archive, '-C', dir]],
+    ['unzip', ['-q', '-o', archive, '-d', dir]],
+    [
+      'powershell',
+      [
+        '-NoProfile',
+        '-Command',
+        `Expand-Archive -LiteralPath '${archive}' -DestinationPath '${dir}' -Force`,
+      ],
+    ],
+  ];
+
+  const tried = [];
+  for (const [command, args] of attempts) {
+    try {
+      execFileSync(command, args, { stdio: 'ignore' });
+      return;
+    } catch (error) {
+      tried.push(`${command} (${error.code ?? error.message})`);
+    }
+  }
+
+  throw new Error(
+    `could not unzip ${archive}. Tried: ${tried.join(', ')}. ` +
+      `Install one of tar, unzip, or PowerShell and re-run \`npm run assets\`.`
+  );
 }
 
 if (failures > 0) {

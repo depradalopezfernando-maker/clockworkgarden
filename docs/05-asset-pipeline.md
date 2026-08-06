@@ -25,9 +25,26 @@ them was meant to buy; the repository stays small.
 
 > **Gotcha, already handled:** Node's built-in `fetch` does not read
 > `HTTPS_PROXY`, so every request 403s at the gateway while `curl` to the same
-> URL succeeds. The npm script sets `NODE_USE_ENV_PROXY=1` (Node ≥ 22.21). If a
-> future tool hits the same wall, `/root/.ccr/README.md` lists the per-tool fix —
-> and never work around it by disabling TLS verification.
+> URL succeeds. It needs `NODE_USE_ENV_PROXY=1` (Node ≥ 22.21). If a future tool
+> hits the same wall, `/root/.ccr/README.md` lists the per-tool fix — and never
+> work around it by disabling TLS verification.
+
+> **Gotcha, found the hard way:** that used to be a `NODE_USE_ENV_PROXY=1 node …`
+> prefix on the npm script. It is POSIX syntax, cmd.exe cannot parse it, and
+> `npm run assets` therefore failed on Windows with _"'NODE_USE_ENV_PROXY' is not
+> recognized"_ before it did anything at all. One line further on it would have
+> hit `unzip`, which Windows also does not have.
+>
+> Both live in `fetch-assets.mjs` now. It re-execs itself under the proxy flag —
+> a restart, because Node reads that variable at boot and setting `process.env`
+> mid-script is too late — and only when a proxy is actually configured, so an
+> ordinary machine spawns nothing extra. Extraction tries `tar` (Windows 10+
+> bundles bsdtar, which reads zip), then `unzip`, then PowerShell's
+> `Expand-Archive`, and names all three if none work.
+>
+> **Nothing in `package.json`'s `scripts` may carry an env-var prefix**, and no
+> tool may assume a Unix binary exists. Both were single points of failure for
+> every Windows contributor.
 
 ## The palette is locked (2026-08-04)
 
