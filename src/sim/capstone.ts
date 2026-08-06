@@ -11,10 +11,10 @@
  * Season's peak moment, so the capstone asks for the moment the Season was
  * designed around rather than inventing a second one.
  *
- * Seasons 3 and 4 are still undesigned (`docs/04` item 4). They keep the Phase 1
- * placeholder: readiness alone clears them. `hasDesignedChallenge` marks which
- * is which so a later phase cannot mistake a placeholder for a finished
- * capstone.
+ * Season 3's challenge is still open; Season 4's is specified by §6.3 as The
+ * Long Night but not yet built. Both keep the Phase 1 placeholder: readiness
+ * alone clears them. `hasDesignedChallenge` marks which is which so a later
+ * phase cannot mistake a placeholder for a finished capstone.
  */
 
 import { S1_CAPSTONE_TARGET_RATE } from '@content/balance';
@@ -175,7 +175,7 @@ export function progressCapstone(
 }
 
 /**
- * Clear a capstone that has no designed challenge yet (Seasons 2-4).
+ * Clear a capstone that has no designed challenge yet (Seasons 3-4).
  *
  * PLACEHOLDER. Readiness alone advances the Season, exactly as Phase 1 did.
  * Delete this the moment those capstones are designed.

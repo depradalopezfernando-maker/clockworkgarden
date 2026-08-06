@@ -103,7 +103,7 @@ Full rationale in `docs/04-spec-open-questions.md`
 D1  BarnCapacity = max(500 × TotalManaPerSec, 2.5 × CostOfNextUnpurchasedTier)
 D2  PlotContribution = softCap(BaseFraction × mods × GardenPlotManaPerSec)
     BaseFraction = 0.0314, soft cap 0.55   // docs/09 §3; ~1/3 at full build-out
-D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 10, REF = 1e2
+D3  TotalSQP = max(0, floor(K × log10(LifetimeMana / REF)))  // K = 8, REF = 2e1
     PrestigeMultiplier = 1 + 0.02 × TotalSQP
     LifetimeMana is ALL-TIME and does not reset. SQP is absolute, never summed.
 D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
@@ -111,8 +111,13 @@ D6  Seasons advance on capstone-clear only. §8's timeline is a prediction the
 D4a Season 1 capstone = "First Bloom": reach 1600 Mana/sec DURING a Growth
     Frenzy. Retry instantly on failure, no penalty. Calibrated so a normally
     built player clears it first try but cannot clear it by idling.
+D4b Season 2 capstone = "Both Blooms": land a Golden Bloom (Pollination chain
+    of 9) DURING a Growth Frenzy — §6.1's own "peak moment". Same retry and
+    difficulty rules as D4a. BUILT in Phase 7. It carries NO rate floor: the
+    readiness gate (10x Tier 9) is the build test, the chain is the skill test.
 D7  §8's 6-10h band applies to the idle and casual archetypes. `active` may
-    finish faster; the spread (x1.65) no longer fits the band (x1.67).
+    finish faster. REOPENED by Phase 7: the spread is x2.45, past the band's
+    x1.67, and no pacing constant fixes it. Decide from `docs/11` §3.
 ```
 
 K and REF are **fitted together** (`npm run fit`, and the 2D sweep in `docs/09`
@@ -124,8 +129,11 @@ exactly nothing. See `docs/06` §2 and `docs/09` §6.
 Settled since: **no anti-tamper** (ADR-0004 — single-player, no leaderboards,
 obfuscation costs effort and protects nothing).
 
-**Still open, and they gate later phases — ask, do not guess:** the Season 2 and
-3 capstones (block Phases 7 and 8; Season 1's is decided — D4a); whether prestige
+**Still open, and they gate later phases — ask, do not guess:** the Season 3
+capstone and the **reopened D7** (both block Phase 8; the capstone should test
+the Harvest Festival, and the Barn's shape may move once it is real). Season 1
+and 2 are decided (D4a, D4b) and Season 4's is specified by §6.3 — The Long
+Night. Also open: whether prestige
 wipes banked Insight (`docs/04` item 10 — Reading B implemented); offline Kitchen
 Garden behaviour (`docs/04` item 7 — crops currently grow on engaged-play time
 only). How to make the Kitchen Garden matter is **settled** — option (c),

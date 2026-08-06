@@ -8,7 +8,7 @@
 
 import { NullGardenView, type GardenView } from './GardenView';
 
-export type { GardenSnapshot, GardenView } from './GardenView';
+export type { GardenSnapshot, GardenStats, GardenView } from './GardenView';
 export { NullGardenView } from './GardenView';
 
 /**

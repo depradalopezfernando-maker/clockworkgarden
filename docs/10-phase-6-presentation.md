@@ -1,6 +1,6 @@
 # 10 — Phase 6: 3D Presentation
 
-**Date:** 2026-08-04 · **Session 1 of 4–6** · **Status:** the pipeline works end to end
+**Date:** 2026-08-04 · **Sessions 1–2 of 4–6** · **Status:** pipeline works, and it is instanced
 **Run it:** `npm run assets && npm run dev` · **Verify:** `npm run ci && npm run smoke`
 
 The garden renders. Generator tiers stand in rows, Kitchen Garden plots show the
@@ -93,14 +93,46 @@ Nothing binary is committed. A missing model cannot take the game down — `spaw
 catches and skips — but a test and the staging script both fail loudly instead,
 so it never gets that far.
 
-## 5. What this session did NOT do
+## 5. Instancing (session 2)
+
+Every repeated thing now draws through a `PropPool`: one `InstancedMesh` per
+part of a model, plus one for that part's outline shell. Placing props writes
+matrices; it does not touch the scene graph.
+
+**Measured, at full build-out — every tier owned, twenty plots:**
+
+|                  | before |   after |
+| ---------------- | -----: | ------: |
+| draw calls       |   ~670 | **116** |
+| the ground alone |    162 |   **2** |
+
+The number is now set by how many DISTINCT models are on screen, not by how much
+the player owns — 400 Watering Cans cost exactly what one does. 29 pools, 34,900
+triangles.
+
+Three things made this fit rather than fight the existing renderer:
+
+- **Materials are per-Season, not per-prop.** Instancing requires every copy to
+  share a material, which was already true.
+- **The outline is a scale about the part's own origin**, so it composes as
+  `prop × part × scale` and instances untouched. That is the payoff for building
+  §11's silhouette treatment as an inverted hull rather than a post-processing
+  pass — a screen-space pass would not have survived this.
+- **Nested transforms are baked once.** `describeTemplate` resolves each mesh
+  against the model root, so an instance is a single matrix rather than a
+  subtree.
+
+`GardenView.stats()` reports draw calls straight from three.js, and the smoke run
+asserts a **160 call ceiling**. Measured rather than derived from a count of what
+the code meant to create — the whole point of a budget is catching the case where
+those two disagree.
+
+## 6. What these sessions did NOT do
 
 Honest list, because "it renders" is easy to mistake for "it is finished":
 
-- **No instancing yet.** Every prop is its own `Group` with its own draw calls.
-  Props are capped at five per tier, so the scene is currently ~120 objects and
-  runs fine — but the roadmap's draw-call ceiling and 60fps-on-mid-range-mobile
-  budget have not been measured, and instancing is how that gets met.
+- **60fps on mid-range mobile is still unmeasured.** Draw calls are budgeted and
+  enforced; frame time on real hardware is not, and cannot be from here.
 - **No UI icons.** `@iconify-json/game-icons` is still not installed, and there
   is no credits screen for the CC BY 3.0 attribution it needs.
 - **No interaction.** The diorama is a display. Clicking a plot in the 3D view
@@ -113,7 +145,7 @@ Honest list, because "it renders" is easy to mistake for "it is finished":
   the Winter primary, which is a cool blue-grey. Defensible, and a taste call —
   worth a human eye before it is treated as settled.
 
-## 6. The exit criterion is still ahead
+## 7. The exit criterion is still ahead
 
 > **Exit:** human art review. Does it look like one game, or like three asset packs?
 

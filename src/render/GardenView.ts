@@ -28,6 +28,15 @@ export interface GardenSnapshot {
   readonly frenzied: boolean;
 }
 
+/** What the renderer actually cost on the last frame. */
+export interface GardenStats {
+  /** Draw calls. The number the perf budget is written against. */
+  readonly calls: number;
+  readonly triangles: number;
+  /** Distinct instanced pools resident. */
+  readonly pools: number;
+}
+
 export interface GardenView {
   /** Attach to a container. Safe to call once. */
   mount(container: HTMLElement): Promise<void>;
@@ -37,6 +46,14 @@ export interface GardenView {
   dispose(): void;
   /** False when nothing is actually being drawn, so the UI can say so. */
   readonly active: boolean;
+  /**
+   * Live render cost, or null when nothing is drawn.
+   *
+   * Exists so the draw-call budget can be MEASURED rather than asserted from a
+   * count of what the code meant to create. `tools/smoke.mjs` reads it through
+   * the debug handle in `GardenCanvas`.
+   */
+  stats(): GardenStats | null;
 }
 
 /** Does nothing, successfully. The 2D build and any WebGL-less browser use it. */
@@ -45,4 +62,7 @@ export class NullGardenView implements GardenView {
   async mount(): Promise<void> {}
   update(): void {}
   dispose(): void {}
+  stats(): GardenStats | null {
+    return null;
+  }
 }
