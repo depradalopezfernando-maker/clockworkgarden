@@ -470,15 +470,42 @@ check(
   'one canvas, or none where WebGL is unavailable'
 );
 
-// The draw-call budget, MEASURED off three.js rather than counted from what the
-// code meant to create. Null here means the fallback view, which draws nothing -
-// that is the expected result on a runner with no GPU, and it is checked above.
-{
+// Whether the CC0 models are staged. `public/models/` is gitignored (rule 8), so
+// CI and a fresh clone run WITHOUT them and a dev sandbox that has run
+// `npm run assets` runs WITH them. Both are legitimate; they are just different
+// games to check, so branch rather than pick one and hope.
+const missingModels = await page.evaluate(() => window.__garden?.missingModels() ?? []);
+
+if (missingModels.length > 0) {
+  // The state a playtester actually hit: panel mounts, nothing drawn. The bug
+  // was never the empty garden - it was that this happened in silence, with a
+  // clean console and no hint that `npm run assets` was the answer. Assert the
+  // explanation is there, because CI is the one environment that always
+  // reproduces it.
+  check(
+    (await page.locator('[data-testid="garden-missing-models"]').count()) === 1,
+    'an unstaged garden SAYS it is unstaged instead of drawing an empty box'
+  );
+  check(
+    consoleErrors.some((e) => e.includes('npm run assets')),
+    'the console names the remedy',
+    consoleErrors[0] ?? '(nothing logged)'
+  );
+  // 0 draw calls is not a passing budget, it is an absent scene. Saying so
+  // stops a broken renderer sneaking through as "within budget".
+  console.log('  [skip] draw-call budget — models not staged, so nothing is drawn');
+} else {
   const stats = await page.evaluate(() => window.__garden?.stats() ?? null);
   if (stats) {
     check(
-      stats.calls <= DRAW_CALL_BUDGET,
-      `draw calls within budget`,
+      (await page.locator('[data-testid="garden-missing-models"]').count()) === 0,
+      'a fully staged garden shows no missing-models notice'
+    );
+    // Both bounds. An upper bound alone passes when nothing renders at all,
+    // which is exactly how the empty-diorama bug got through this suite.
+    check(
+      stats.calls > 0 && stats.calls <= DRAW_CALL_BUDGET,
+      `draw calls drawn and within budget`,
       `${stats.calls} / ${DRAW_CALL_BUDGET}`
     );
   } else {
@@ -486,7 +513,11 @@ check(
   }
 }
 
-check(consoleErrors.length === 0, 'no console errors', consoleErrors.join(' | '));
+// The missing-models error is EXPECTED when the models are missing, and it is
+// the whole point of the branch above - so it is not an unexplained console
+// error. Everything else still is.
+const unexpectedErrors = consoleErrors.filter((e) => !e.includes('[clockwork-garden]'));
+check(unexpectedErrors.length === 0, 'no unexpected console errors', unexpectedErrors.join(' | '));
 
 await page.setViewportSize({ width: 1100, height: 850 });
 await page.screenshot({ path: process.env.SMOKE_SCREENSHOT ?? 'smoke.png', fullPage: true });
