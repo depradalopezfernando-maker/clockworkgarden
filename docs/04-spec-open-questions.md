@@ -13,7 +13,7 @@ unblocked. The rest remain open but block only later phases.
 | 1   | **BLOCKER** | §6.2   | Barn Capacity deadlocks 9 of 9 Season 3–4 purchases                     | **RESOLVED**                 |
 | 2   | **BLOCKER** | §2a    | Kitchen Garden yield is self-referential and diverges                   | **RESOLVED**                 |
 | 3   | Major       | §4     | Prestige spans 1.18× → 368,000×; first prestige is worthless            | **RESOLVED**                 |
-| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed       | open — blocks Phase 5        |
+| 4   | Major       | §2     | Season 1 and Season 2 capstones are referenced but never designed       | **closed** — D4a, D4b        |
 | 5   | Medium      | §2     | "Insight skill unlock" gates are unmapped to specific nodes             | **RESOLVED** (Phase 3)       |
 | 6   | Medium      | §2/§8  | Nothing defines what actually advances a Season                         | **RESOLVED**                 |
 | 7   | Medium      | §2a/§7 | Kitchen Garden behaviour while offline is unspecified                   | open — Phase 4               |
@@ -23,7 +23,7 @@ unblocked. The rest remain open but block only later phases.
 
 ---
 
-## Decisions taken — 2026-08-02 (D1–D6), 2026-08-04 (D7)
+## Decisions taken — 2026-08-02 (D1–D6), 2026-08-04 (D4b, D7)
 
 These are authoritative. They override the spec text where they conflict, and
 Phase 1 implements them. Constants marked _sim-fitted_ are starting values for the
@@ -133,6 +133,52 @@ advancement — "Season Change" currently means two different things, one of whi
 wipes your generators, at the exact moment the player is deciding whether to do
 it. Working name: **"Turn the Soil"** (final name is the designer's call; it is a
 string, changeable at any time).
+
+### D4b — Season 2 capstone: "Both Blooms" (2026-08-04)
+
+**Land a Golden Bloom — a Pollination Chain of 9 — while a Growth Frenzy is
+running.** Retry instantly on failure, no penalty. Calibrated so a player who has
+been using Pollination during Season 2 clears it on their first genuine attempt,
+but idling and automation cannot.
+
+§6.1 effectively proposed this itself: "a Golden Bloom window during an active
+Frenzy is the Season's peak moment — intentional, since it rewards mastery of
+both systems together." The capstone simply makes the Season's own peak the thing
+it asks for.
+
+**Why this shape, and not the others considered:**
+
+- It **escalates** rather than repeats. First Bloom (D4a) tested one system; this
+  tests holding two at once. §6 is explicit that each Season should feel
+  different rather than reusing the same reward shape.
+- It **cannot be idled or automated**. The Tier 8 Pollinator Drone Swarm
+  auto-attempts chains at 40% success (§6.1), which will not reliably reach 9 —
+  so §9's "active play out-earns automation" guardrail holds without a special
+  case. This is the property D4a's target lost when the economy grew under it,
+  and the one to protect here from the start.
+- The rejected alternative closest to it, "reach a target rate during a Golden
+  Bloom", is structurally identical to First Bloom and would have read as the
+  same capstone twice.
+
+**Consequences for Phase 7.** Pollination Combo has to exist, and be modelled in
+the balance harness, before this can be built OR calibrated. The capstone is the
+LAST thing Phase 7 builds, not the first.
+
+**Calibration, and the trap to avoid.** D4a's target was measured from a
+simulated playthrough and then drifted: later changes raised the passive rate at
+readiness above the target, and a playtester cleared First Bloom without needing
+a Frenzy at all. The same failure is available here — if the chain window or the
+Frenzy overlap becomes generous enough that drones clear it, the capstone is
+decorative. Whatever numbers Phase 7 picks, they need a test asserting the gap
+between "what a ready player can do actively" and "what automation delivers",
+so the next balance change fails in CI rather than in someone's play session.
+
+**Still undecided: the Season 3 capstone.** Deliberately left until Phase 7 is
+done — it should test the Harvest Festival and Barn Capacity (§6.2), and the
+Barn's shape may change once it is real. Season 4's capstone is NOT open: §6.3
+specifies The Long Night.
+
+---
 
 ### D7 — the archetype spread against §8's band (2026-08-04)
 
