@@ -22,7 +22,7 @@
     "simulate": "vite-node tools/simulate.ts",
     "fit": "vite-node tools/fit.ts",
     "smoke": "node tools/smoke.mjs",
-    "assets:fetch": "NODE_USE_ENV_PROXY=1 node tools/fetch-assets.mjs",
+    "assets:fetch": "node tools/fetch-assets.mjs",
     "assets:stage": "vite-node tools/stage-models.ts",
     "assets": "npm run assets:fetch && npm run assets:stage"
   },
