@@ -641,8 +641,33 @@ body {
 
 .garden-canvas {
   display: block;
+  position: relative;
   width: 100%;
   height: 340px;
+}
+
+/*
+ * Sits OVER the canvas rather than replacing it. The renderer is running fine —
+ * it simply has nothing to draw — so tearing the canvas out would hide a working
+ * system and make the next failure harder to tell apart from this one.
+ */
+.garden-canvas__notice {
+  position: absolute;
+  inset: auto 0 0;
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ui-text);
+  background: var(--ui-surface-raised);
+  border-top: 1px solid var(--ui-border);
+}
+
+.garden-canvas__notice code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: var(--ui-surface);
+  color: var(--ui-insight);
 }
 
 .garden-canvas canvas {

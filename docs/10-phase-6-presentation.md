@@ -153,3 +153,32 @@ One pack is in. The recolour and the outline treatment are doing their job, and
 Winter in particular lands the palette's intent — the warm ember accent really is
 the only warmth in the frame. But §11's question is specifically about what
 happens when a _second_ pack arrives, and that has not been tested.
+
+---
+
+## A fresh clone renders an empty garden
+
+`public/models/` is gitignored (CLAUDE.md rule 8), so cloning the repo and
+running `npm run dev` gives a sky-blue panel with nothing in it until
+`npm run assets` has run. A playtester hit exactly this on Chrome.
+
+The expected part is the empty panel. The bug was that it happened **in
+silence**: `ThreeGardenView` catches every model load failure so a single
+missing prop cannot take the game down, and the catch swallowed the diagnosis
+along with the error. No console output, no UI hint, nothing to distinguish
+"assets not staged" from "the renderer is broken".
+
+Fixed in three places:
+
+- `loadTemplate` records every failure in `missingModels()`, and logs ONE
+  console error naming `npm run assets` however many models are missing.
+- `GardenView` exposes `missingModels()`, kept separate from `active` — a
+  browser without WebGL and a checkout without staged models are different
+  problems with different remedies.
+- `GardenCanvas` shows a notice over the canvas when the list is non-empty.
+
+**The subtle part, and the reason a test exists for it.** The failure must be
+recorded on the PROMISE, not inside three's `onError` callback. The loader goes
+through `fetch`, and a URL it cannot even parse rejects without `onError` ever
+running — the first version of this fix recorded nothing under jsdom for exactly
+that reason, and `tests/render/missingModels.test.ts` caught it.

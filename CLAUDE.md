@@ -184,6 +184,15 @@ three.js is dynamically imported, so a player without WebGL never downloads
 by URL and SHA-256) and stages ONLY the models the registry references into the
 gitignored `public/models/` - 37 files, 0.42MB, out of 329 and 10.5MB.
 
+**A FRESH CLONE THEREFORE RENDERS AN EMPTY GARDEN until `npm run assets` runs.**
+That is expected; what was not is that it used to happen in silence, because
+`ThreeGardenView` catches every load failure so one missing prop cannot take the
+game down. A playtester got a blank blue panel and a clean console. The panel now
+carries a notice naming the command, `loadTemplate` records every failure in
+`missingModels()`, and one console error explains it. Record the failure on the
+PROMISE, not in three's `onError` callback - the loader goes through `fetch` and
+a URL it cannot even parse rejects without the callback ever running.
+
 **6. Protect the invariants.** These encode the design's promises. Full list and
 rationale in `docs/03-technical-architecture.md` §8:
 
