@@ -38,6 +38,10 @@ export function GardenCanvas({ state }: { state: GameState }) {
       }
       view = created;
       viewRef.current = created;
+      // Debug handle. Deliberate and tiny: it is how `npm run smoke` MEASURES
+      // the draw-call budget instead of trusting a count of what the code meant
+      // to create. Reading it changes nothing.
+      (window as unknown as { __garden?: GardenView }).__garden = created;
     })();
 
     return () => {
